@@ -33,7 +33,7 @@
 #define PROTOCOL_JOIN 30
 
 // physics
-#define REALITYSCALE 0.005
+#define REALITYSCALE 0.0005
 #define SHIPMASS 20
 #define GRAVITY 9.81
 #define PI 3.14159

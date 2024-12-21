@@ -483,6 +483,8 @@ int Server()
 						{
 							blue_team.frags--;
 						}
+						std::cout << "player " << players[up].name << "collided with rock at" << players[up].x << "," << players[up].y << std::endl;
+						std::cout << "player " << players[up].name << "collided with rock at" << players[up].x_bmp << "," << players[up].y_bmp << std::endl;
 						players[up].status = JUSTCOLLIDEDROCK;
 					}
 				}

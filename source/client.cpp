@@ -520,6 +520,7 @@ int Client( char * serveradress, char * name )
 		if(SDLNet_ReceiveDatagram(udpsock, &in) && in != NULL)
 		{
 			std::cout << "update. cur status:" << GetStatusString(self->status) << std::endl;
+			std::cout << "x:" << self->x << " y:" << self->y << std::endl;
 			if(in->buflen > 0 && SDLNet_CompareAddresses(in->addr, ipaddr) == 0)
 			{
 				Uint8 * temppoint = in->buf;
