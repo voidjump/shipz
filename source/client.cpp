@@ -43,7 +43,7 @@ int Client( char * serveradress, char * name )
 	int error = 0;
 	int attempts = 0;
 	int done = 0;
-	int iamplayer;
+	int my_player_nr;
 	int number_of_players = 1;
 	int charstyped = 0;
 	
@@ -181,29 +181,30 @@ int Client( char * serveradress, char * name )
 	{
 		if( in->buf[0] == 30 )
 		{
-			iamplayer = in->buf[1];
-			self = &players[iamplayer-1];
+			my_player_nr = in->buf[1];
+			std::cout << "Joined as player " << std::endl;
+			self = &players[my_player_nr-1];
 			Uint8 * tmpptr = &in->buf[2];	
-			for( int temp = 0; temp < MAXPLAYERS; temp++ )
+			for( int player_index = 0; player_index < MAXPLAYERS; player_index++ )
 			{
 				int tmpteam = (int) Read16( tmpptr );
 				if( tmpteam != 0 )
 				{
-					players[temp].playing = 1;
-					players[temp].team = tmpteam;
+					players[player_index].playing = 1;
+					players[player_index].team = tmpteam;
 				}
 				else
 				{
-					players[temp].playing = 0;
+					players[player_index].playing = 0;
 				}
 
-				if( players[temp].playing == 1 )
+				if( players[player_index].playing == 1 )
 				{
-					players[temp].self_sustaining = 1;
-					InitPlayer( &players[temp] );
+					players[player_index].self_sustaining = 1;
+					InitPlayer( &players[player_index] );
 				}
 				tmpptr+=2;
-				strncpy( players[temp].name, (const char*)tmpptr, 12 );
+				strncpy( players[player_index].name, (const char*)tmpptr, 12 );
 				tmpptr+=12;
 			}
 		}
@@ -354,8 +355,8 @@ int Client( char * serveradress, char * name )
 						strcpy( chat3, type_buffer );
 
 						memset( sendbuf, '\0', sizeof( sendbuf ));
-						sendbuf[0] = 50;
-						sendbuf[1] = iamplayer;
+						sendbuf[0] = PROTOCOL_CHAT;
+						sendbuf[1] = my_player_nr;
 						strcpy( (char *)&sendbuf[2], type_buffer );
 	
 						if (! SDLNet_SendDatagram(udpsock, ipaddr, PORT_SERVER, (void *)sendbuf, charstyped+2)) {
@@ -382,7 +383,7 @@ int Client( char * serveradress, char * name )
 		{
 			// send we are leaving
 			memset( sendbuf, '\0', sizeof(sendbuf) );
-			sendbuf[0] = 0; sendbuf[1] = iamplayer; sendbuf[2] = '\0';
+			sendbuf[0] = 0; sendbuf[1] = my_player_nr; sendbuf[2] = '\0';
 			if (! SDLNet_SendDatagram(udpsock, ipaddr, PORT_SERVER, (void *)sendbuf, 2)) {
 				// proper failure
 				SDLNet_DestroyDatagramSocket(udpsock);
@@ -418,7 +419,7 @@ int Client( char * serveradress, char * name )
 					{
 						if( (SDL_GetTicks() - self->lastshottime) > BULLETDELAY )
 						{
-							self->bulletshotnr = ShootBullet( self, iamplayer );
+							self->bulletshotnr = ShootBullet( self, my_player_nr );
 							if( self->bulletshotnr != 6666 )
 							{
 								self->lastshottime = SDL_GetTicks();
@@ -434,7 +435,7 @@ int Client( char * serveradress, char * name )
 					{
 						if( (SDL_GetTicks() - self->lastshottime) > ROCKETDELAY )
 						{
-							self->bulletshotnr = ShootBullet( self, iamplayer );
+							self->bulletshotnr = ShootBullet( self, my_player_nr );
 							if( self->bulletshotnr != 6666 )
 							{
 								self->lastshottime = SDL_GetTicks();
@@ -450,7 +451,7 @@ int Client( char * serveradress, char * name )
 					{
 						if( (SDL_GetTicks() - self->lastshottime) > MINEDELAY )
 						{
-							self->bulletshotnr = ShootBullet( self, iamplayer );
+							self->bulletshotnr = ShootBullet( self, my_player_nr );
 							if( self->bulletshotnr != 6666 )
 							{
 								self->lastshottime = SDL_GetTicks();
@@ -518,14 +519,14 @@ int Client( char * serveradress, char * name )
 			if(in->buflen > 0 && in->addr == ipaddr )
 			{
 				Uint8 * temppoint = in->buf;
-				if( in->buf[0] == 0 )
+				if( in->buf[0] == PROTOCOL_KICK )
 				{
 					// WE ARE KICKED! OMG!
 					// ( should really msg the player though :/ )
 					error = 6;
 					done = 0;
 				}
-				if( in->buf[0] == 40 && in->buf[1] == iamplayer )
+				if( in->buf[0] == PROTOCOL_UPDATE && in->buf[1] == my_player_nr )
 				{
 					// standard game package...
 					Uint8 * tmpptr = & in->buf[2];
@@ -536,7 +537,7 @@ int Client( char * serveradress, char * name )
 
 					for( int rp=0; rp < MAXPLAYERS; rp++ )
 					{
-						if( rp != (iamplayer -1 ))
+						if( rp != (my_player_nr -1 ))
 						{
 							int tempstat = (Sint16) Read16(tmpptr);
 							tmpptr+=2;
@@ -704,7 +705,7 @@ int Client( char * serveradress, char * name )
 
 					tmpptr=NULL; // make sure we don't write in bad memory
 				}
-				if( in->buf[0] == 50 && in->buf[1] == iamplayer )
+				if( in->buf[0] == PROTOCOL_CHAT && in->buf[1] == my_player_nr )
 				{
 					// chat package
 					memset( chat1, '\0', sizeof( chat1 ));
@@ -716,7 +717,7 @@ int Client( char * serveradress, char * name )
 					memset( chat3, '\0', sizeof( chat3 ));
 					strncpy( chat3, (const char*)&in->buf[2], (in->buflen-2) );
 				}
-				if( in->buf[0] == 70 && in->buf[1] == iamplayer )
+				if( in->buf[0] == PROTOCOL_PLAYER_JOINS && in->buf[1] == my_player_nr )
 				{
 					// a player joined
 					number_of_players++;
@@ -726,7 +727,7 @@ int Client( char * serveradress, char * name )
 					strncpy( players[ in->buf[2] - 1].name, (const char*)&in->buf[4], 12 );
 					InitPlayer( &players[ in->buf[2] - 1 ] );
 				}
-				if( in->buf[0] == 80 && in->buf[1] == iamplayer )
+				if( in->buf[0] == PROTOCOL_PLAYER_LEAVES && in->buf[1] == my_player_nr )
 				{
 					// a player leaves
 					number_of_players--;
@@ -761,8 +762,8 @@ int Client( char * serveradress, char * name )
 			// 040 PLAYER STATUS ANGLE X Y VX VY WEAPON NUMBULS ( BULX BULY BULVX BULVY * NUMBULS )
 			memset( sendbuf, '\0', sizeof(sendbuf) );
 			Uint8 * tmpptr = sendbuf;
-			sendbuf[0] = 40;
-			sendbuf[1] = iamplayer;
+			sendbuf[0] = PROTOCOL_UPDATE;
+			sendbuf[1] = my_player_nr;
 			sendbuf[2] = self->status;
 			tmpptr+=3;
 			int count = 3;

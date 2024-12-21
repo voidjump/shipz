@@ -114,7 +114,7 @@ int Server()
 				for( int playerleaves = 0; playerleaves < MAXPLAYERS; playerleaves++ )
 				{
 					memset( sendbuf, '\0', sizeof(sendbuf) );
-					sendbuf[0] = 80;
+					sendbuf[0] = PROTOCOL_PLAYER_LEAVES;
 					sendbuf[1] = playerleaves + 1;
 					sendbuf[2] = in->buf[1];
 					if( players[ playerleaves ].playing )
@@ -125,7 +125,7 @@ int Server()
 				}
 				
 			}
-			if( in->buf[0] == 40 )
+			if( in->buf[0] == PROTOCOL_UPDATE )
 			{
 				int playerread = in->buf[1];
 				playerread--;
@@ -282,7 +282,7 @@ int Server()
 						if( players[ sendplays ].playing == 1 && sendplays != (newnum-1) )
 						{
 							memset( sendbuf, '\0', sizeof(sendbuf) );
-							sendbuf[0] = 70;
+							sendbuf[0] = PROTOCOL_PLAYER_JOINS;
 							sendbuf[1] = sendplays + 1;
 							sendbuf[2] = newnum;
 							sendbuf[3] = newteam;
@@ -336,7 +336,7 @@ int Server()
 					// should fix this in a later stage though..;
 				}
 			}
-			if( in->buf[0] == 20 )
+			if( in->buf[0] == PROTOCOL_STATUS )
 			{
 				// we got a query, return server status/info
 				// Protocol: S: 020 VERSION PLAYERS MAXPLAYERS TYPE LEVELCODE LEVELVERSION
@@ -346,7 +346,7 @@ int Server()
 				memset( sendbuf, '\0', sizeof(sendbuf) );
 				int count = 0;
 				
-				sendbuf[0] = 20;
+				sendbuf[0] = PROTOCOL_STATUS;
 				sendbuf[1] = SHIPZ_VERSION;
 				sendbuf[2] = number_of_players;
 				sendbuf[3] = MAXPLAYERS;
@@ -361,11 +361,12 @@ int Server()
 				// send the package...
 				SDLNet_SendDatagram(udpsock, in->addr, PORT_CLIENT, sendbuf, count);
 			}
-			if( in->buf[0] == 50 )
+			// If we receive a chat package forward it to all players
+			if( in->buf[0] == PROTOCOL_CHAT )
 			{
 				int tempplay = in->buf[1];
 				memset( sendbuf, '\0', sizeof( sendbuf ));
-				sendbuf[0] = 50;
+				sendbuf[0] = PROTOCOL_CHAT;
 				strncpy( (char *)&sendbuf[2], (const char*)&in->buf[2], in->buflen - 2 );
 				for( int sc = 0; sc < MAXPLAYERS; sc++ )
 				{
@@ -413,7 +414,7 @@ int Server()
 				for( int playerleaves = 0; playerleaves < MAXPLAYERS; playerleaves++ )
 				{
 					memset( sendbuf, '\0', sizeof(sendbuf) );
-					sendbuf[0] = 80;
+					sendbuf[0] = PROTOCOL_PLAYER_LEAVES;
 					sendbuf[1] = playerleaves + 1;
 					sendbuf[2] = ci + 1;
 					if( players[playerleaves].playing )
@@ -524,7 +525,7 @@ int Server()
 			// send all the stuff to all the players
 			// S: 040 PLAYER (PSTAT PFRAME PX PY PVX PVY BULX BULY BULVX BULVY) x8
 			memset( sendbuf, '\0', sizeof(sendbuf) );
-			sendbuf[0] = 40;
+			sendbuf[0] = PROTOCOL_UPDATE;
 			sendbuf[1] = 0;
 			int count = 2;
 		
