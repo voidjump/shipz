@@ -30,6 +30,7 @@
 #define PROTOCOL_UPDATE 40
 #define PROTOCOL_PLAYER_JOINS 70
 #define PROTOCOL_PLAYER_LEAVES 80
+#define PROTOCOL_JOIN 30
 
 // physics
 #define REALITYSCALE 0.005
@@ -52,7 +53,7 @@
 #define EXPLOSIONFRAMETIME 50
 
 // statuses:
-#define DEAD 0
+#define DEAD 42 
 #define FLYING 1
 #define LANDED 2
 #define JUSTCOLLIDEDROCK 3
@@ -140,23 +141,23 @@ struct LevelData
 	int type, bases; // obsolete | not used yet
 };
 
-struct base
+struct Base
 {
-	bool used; // is this base used or not used?
+	bool used; // is this Base used or not used?
 	int owner; // RED, BLUE or NEUTRAL
 	int x;
 	int y;
 	int health;
 };
 
-struct team
+struct Team
 {
-	int players; // number of players on the team
-	int bases; // shared money team has
+	int players; // number of players on the Team
+	int bases; // shared money Team has
 	int frags;
 };	
 
-struct bullet
+struct Bullet
 {
 	bool active; // does the bullet exist?
 	float x, y, vx, vy, angle; // coordinates & speed
@@ -166,10 +167,10 @@ struct bullet
 	float minelaidtime;
 };
 
-struct player
+struct Player
 {
 	bool playing; 
-	int kills, deaths, team;
+	int kills, deaths, Team;
 	char name[13];
 	int money;
 	int flamestate, shipframe;
@@ -202,12 +203,12 @@ struct Explosion
 
 extern LevelData lvl;
 
-extern bullet bullets[NUMBEROFBULLETS];
+extern Bullet bullets[NUMBEROFBULLETS];
 
-extern base bases[MAXBASES];
+extern Base bases[MAXBASES];
 
-extern team red_team;
-extern team blue_team;
+extern Team red_team;
+extern Team blue_team;
 
 extern Explosion explosions[NUMBEROFEXPLOSIONS];
 

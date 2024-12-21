@@ -16,76 +16,6 @@
 #include "other.h"
 #include "gfx.h"
 
-#define SHIPZ_VERSION 113
-
-// gfx
-#define XRES 640
-#define YRES 480 
-#define CROSSHAIRDIST 30
-
-// net
-#define PORT 3500
-#define CHATDELAY 1000
-#define MAXCHATCHARS 80
-#define MAXIDLETIME 1000
-#define IDLETIMEBEFOREDROP 2000
-#define SENDDELAY 100
-#define MAXBUFSIZE 1024
-#define MAXPLAYERS 8
-
-// physics
-#define REALITYSCALE 0.005
-#define SHIPMASS 20
-#define GRAVITY 9.81
-#define PI 3.14159
-#define ROTATIONSPEED 400
-#define THRUST 784.8
-#define BULLETSPEED 100
-#define BULLETDELAY 200
-#define ROCKETDELAY 500
-#define ROCKETSPEED 95
-#define ROCKETRADARRADIUS 300
-#define MINEDELAY 2000
-#define MINEDETONATERADIUS 50
-#define MINELIFETIME 30000
-#define MINEACTIVATIONTIME 2000
-#define MAXROCKETTURN 50
-#define EXPLOSIONLIFE 500
-#define EXPLOSIONFRAMETIME 50
-
-// statuses:
-#define DEAD 0
-#define FLYING 1
-#define LANDED 2
-#define JUSTCOLLIDEDROCK 3
-#define JUSTCOLLIDEDSHIP 4
-#define JUSTSHOT 5
-#define RESPAWN 6
-#define LIFTOFF 7
-#define SUICIDE 8
-#define JUSTCOLLIDEDBASE 9
-#define LANDEDBASE 10
-#define LANDEDRESPAWN 11
-
-// weapons:
-#define BULLET 11
-#define ROCKET 22
-#define MINE 33
-
-// player:
-#define STARTING_MONEY 0
-#define LIFTOFFSHOOTDELAY 3000
-
-// teams/bases:
-#define NEUTRAL 0
-#define RED 1
-#define BLUE 2
-
-// internal:
-#define NUMBEROFBULLETS 800
-#define NUMBEROFEXPLOSIONS 200
-#define MAXBASES 16
-
 SDL_Window * sdlWindow;
 SDL_Renderer *sdlRenderer;
 
@@ -133,12 +63,12 @@ float look_sin[360],
  
 LevelData lvl;
 
-bullet bullets[NUMBEROFBULLETS];
+Bullet bullets[NUMBEROFBULLETS];
  
-base bases[MAXBASES];
+Base bases[MAXBASES];
 
-team red_team;
-team blue_team;
+Team red_team;
+Team blue_team;
 
 Explosion explosions[NUMBEROFEXPLOSIONS];
 

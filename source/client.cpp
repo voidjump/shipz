@@ -50,8 +50,8 @@ int Client( char * serveradress, char * name )
 	bool notreadytocontinue = 1;	
 	bool input_given = 0;  // used to decide whether to send a package to the server or not
 
-	player * self;
-	player players[MAXPLAYERS];
+	Player * self;
+	Player players[MAXPLAYERS];
 
 	char type_buffer[80];
 	char chat1[80], chat2[80], chat3[80];
@@ -81,6 +81,9 @@ int Client( char * serveradress, char * name )
 	if( SDLNet_GetAddressStatus(ipaddr) != 1) {
 		FailErr("could not resolve server address");
 	}
+
+	// Resolved address
+	std::cout << "resolved server address:" << SDLNet_GetAddressString(ipaddr) << std::endl;
 
 	udpsock = SDLNet_CreateDatagramSocket(NULL, PORT_CLIENT);
 	if(udpsock == NULL)
@@ -166,7 +169,7 @@ int Client( char * serveradress, char * name )
 	// send the following package according to protocol:
 	// 030 DNAME
 	memset( sendbuf, '\0', sizeof(sendbuf) );
-	sendbuf[0] = 30;
+	sendbuf[0] = PROTOCOL_JOIN;
 	strncpy( (char *)&sendbuf[1], name, 12 ); 
 	sendbuf[13] = '\0';
 	
@@ -179,7 +182,7 @@ int Client( char * serveradress, char * name )
 	in = NULL;
 	if (WaitForPacket(udpsock, &in))
 	{
-		if( in->buf[0] == 30 )
+		if( in->buf[0] == PROTOCOL_JOIN )
 		{
 			my_player_nr = in->buf[1];
 			std::cout << "Joined as player " << std::endl;
@@ -191,7 +194,7 @@ int Client( char * serveradress, char * name )
 				if( tmpteam != 0 )
 				{
 					players[player_index].playing = 1;
-					players[player_index].team = tmpteam;
+					players[player_index].Team = tmpteam;
 				}
 				else
 				{
@@ -516,7 +519,8 @@ int Client( char * serveradress, char * name )
 
 		if(SDLNet_ReceiveDatagram(udpsock, &in) && in != NULL)
 		{
-			if(in->buflen > 0 && in->addr == ipaddr )
+			std::cout << "update. cur status:" << GetStatusString(self->status) << std::endl;
+			if(in->buflen > 0 && SDLNet_CompareAddresses(in->addr, ipaddr) == 0)
 			{
 				Uint8 * temppoint = in->buf;
 				if( in->buf[0] == PROTOCOL_KICK )
@@ -529,6 +533,7 @@ int Client( char * serveradress, char * name )
 				if( in->buf[0] == PROTOCOL_UPDATE && in->buf[1] == my_player_nr )
 				{
 					// standard game package...
+					// DebugPackage("got update", in);
 					Uint8 * tmpptr = & in->buf[2];
 					red_team.frags = (Sint16)Read16(tmpptr);
 					tmpptr+=2;
@@ -541,6 +546,7 @@ int Client( char * serveradress, char * name )
 						{
 							int tempstat = (Sint16) Read16(tmpptr);
 							tmpptr+=2;
+							std::cout << "plyr " << rp+1 << " status:" << GetStatusString(tempstat) << std::endl;
 
 							players[rp].shipframe = (Sint16) Read16(tmpptr);
 							tmpptr+=2;
@@ -583,7 +589,7 @@ int Client( char * serveradress, char * name )
 							if( tx == 0 && ty == 0 && tvx == 0 && tvy == 0 && tn == 0 &&
 							    tbultyp == 0 )
 							{
-								// this is an empty bullet
+								// this is an empty Bullet
 								
 							}
 							else
@@ -617,6 +623,7 @@ int Client( char * serveradress, char * name )
 						else
 						{
 							int tempstatus = (Sint16) Read16(tmpptr);
+							std::cout << "my " << rp+1 << " status:" << GetStatusString(tempstatus) << std::endl;
 							tmpptr+=6;
 							Sint16 tx, ty;
 							tx = (Sint16)Read16( tmpptr );
@@ -625,32 +632,37 @@ int Client( char * serveradress, char * name )
 						
 							if( tempstatus == DEAD && self->status == SUICIDE )
 							{
+								std::cout << "we have just suicided!" << std::endl;
 								NewExplosion( int(self->x), int(self->y));
 								self->status = DEAD;
 							}
 							if( tempstatus == JUSTCOLLIDEDROCK && self->status == FLYING )
 							{
+								std::cout << "we just collided with a rock!" << std::endl;
 								NewExplosion( int(self->x), int(self->y));
 								self->status = DEAD;
 							}
 							if( tempstatus == JUSTCOLLIDEDBASE && self->status == FLYING )
 							{
+								std::cout << "we just collided with Base!" << std::endl;
 								NewExplosion( int(self->x), int(self->y));
 								self->status = DEAD;
 							}
 							if( tempstatus == JUSTSHOT && self->status == FLYING )
 							{
+								std::cout << "we were just shot!" << std::endl;
 								NewExplosion( int(self->x), int(self->y));
 								self->status = DEAD;
 							}
 							if( tempstatus == LANDEDRESPAWN && self->status == RESPAWN )
 							{
-								int tmpbs = FindRespawnBase( self->team );
+								std::cout << "server said we could respawn!" << std::endl;
+								int tmpbs = FindRespawnBase( self->Team );
 
-								// base found, reset the player's speed etc.
+								// Base found, reset the player's speed etc.
 								ResetPlayer( self );
 								UpdatePlayer( self );
-								// mount /dev/player /mnt/base 
+								// mount /dev/player /mnt/Base 
 								self->x = bases[ tmpbs ].x;
 								self->y = bases[ tmpbs ].y - 26;
 
@@ -658,10 +670,12 @@ int Client( char * serveradress, char * name )
 							}
 							if( tempstatus == FLYING && self->status == LIFTOFF )
 							{
+								std::cout << "we are flyig!" << std::endl;
 								self->status = FLYING;
 							}
 							if( tempstatus == LANDED && self->status == FLYING ) 
 							{
+								std::cout << "we have landed!" << std::endl;
 								self->status = LANDED;
 								self->vx = 0;
 								self->vy = 0;
@@ -670,6 +684,7 @@ int Client( char * serveradress, char * name )
 							}
 							if( tempstatus == LANDEDBASE && self->status == FLYING )
 							{
+								std::cout << "we have landed on a Base!" << std::endl;
 								int tmpbase = GetNearestBase( int(self->x), int(self->y));
 														
 								self->y = bases[tmpbase].y - 26;
@@ -723,7 +738,7 @@ int Client( char * serveradress, char * name )
 					number_of_players++;
 					players[ in->buf[2] - 1 ].playing = 1;
 					players[ in->buf[2] - 1 ].self_sustaining = 1;
-					players[ in->buf[2] - 1 ].team = in->buf[3];
+					players[ in->buf[2] - 1 ].Team = in->buf[3];
 					strncpy( players[ in->buf[2] - 1].name, (const char*)&in->buf[4], 12 );
 					InitPlayer( &players[ in->buf[2] - 1 ] );
 				}
@@ -855,11 +870,11 @@ int Client( char * serveradress, char * name )
 			// if ship = 1... etc.. do later
 			if( players[up].playing && players[up].status != DEAD && players[up].status != RESPAWN )
 			{
-				if( players[up].team == RED )
+				if( players[up].Team == RED )
 				{
 					DrawPlayer( shipred, &players[up] );
 				}
-				if( players[up].team == BLUE )
+				if( players[up].Team == BLUE )
 				{
 					DrawPlayer( shipblue, &players[up] );
 				}

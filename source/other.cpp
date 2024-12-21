@@ -200,11 +200,11 @@ bool LoadLevelFile()
 
 int GetNearestBase( int x, int y )
 {
-	// returns a number to the base nearest to x,y
+	// returns a number to the Base nearest to x,y
 	int i; // loop thingy
 	int tdx, tdy; // temp dist
-	float dist, tdist; // the dist of the nearest base so far, temp value for calc of dist.
-	int base; // the nearest base so far
+	float dist, tdist; // the dist of the nearest Base so far, temp value for calc of dist.
+	int Base; // the nearest Base so far
 
 	for( i = 0; i < lvl.bases; i++ )
 	{
@@ -215,10 +215,10 @@ int GetNearestBase( int x, int y )
 		if( tdist < dist || i == 0 )
 		{
 			dist = tdist;
-			base = i;
+			Base = i;
 		}
 	}
-	return base;
+	return Base;
 }
 
 void NewExplosion( int x, int y )

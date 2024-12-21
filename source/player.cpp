@@ -8,7 +8,37 @@
 
 #include "sound.h"
 
-void EmptyPlayer( player * play )
+const char * GetStatusString(int status) {
+	switch(status) {
+		case DEAD:
+			return "DEAD";
+		case FLYING:
+			return "FLYING";
+		case LANDED:
+			return "LANDED";
+		case JUSTCOLLIDEDROCK:
+			return "JUSTCOLLIDEDROCK";
+		case JUSTCOLLIDEDSHIP:
+			return "JUSTCOLLIDEDSHIP";
+		case JUSTSHOT:
+			return "JUSTSHOT";
+		case RESPAWN:
+			return "RESPAWN";
+		case LIFTOFF:
+			return "LIFTOFF";
+		case SUICIDE:
+			return "SUICIDE";
+		case JUSTCOLLIDEDBASE:
+			return "JUSTCOLLIDEDBASE";
+		case LANDEDBASE :
+			return "LANDEDBASE";
+		case LANDEDRESPAWN :
+			return "LANDEDRESPAWN";
+	}
+	return "UNDEFINED";
+}
+
+void EmptyPlayer( Player * play )
 {
 	// empties a player array slot, so it's ready to accept a new player without problems.
 	play->lastliftofftime = -3000;
@@ -19,7 +49,7 @@ void EmptyPlayer( player * play )
 	play->playing = 0;
 	play->kills = 0;
 	play->deaths = 0;
-	play->team = 0;
+	play->Team = 0;
 	strcpy( play->name , "            " );
 	play->money = 0;
 	play->flamestate = 0;
@@ -57,7 +87,7 @@ inline int ConvertAngle( float angle )
 
 
 
-void InitPlayer( player * play )
+void InitPlayer( Player * play )
 {
 	// function is a little bit obsolete, should use emptyplayer instead. do this later!
 	play->shipframe = 0;
@@ -80,7 +110,7 @@ void InitPlayer( player * play )
 	play->typing = 0;
 }
 
-void UpdatePlayer( player * play )
+void UpdatePlayer( Player * play )
 {
 	// updates both local and non-local players. updates positions, stati, etc.
 	// NOTE: this would be the perfect place for a recharge, like the laser battery ( ammo ) recharging
@@ -129,7 +159,7 @@ void UpdatePlayer( player * play )
 	play->fy = 0;
 }
 
-void ResetPlayer( player * play )
+void ResetPlayer( Player * play )
 {
 	// actually used for respawing a player
 	// NOTE: should rename this function to the more appropriate 'RespawnPlayer'
@@ -192,7 +222,7 @@ void GetCollisionMaps( bool ** levelcolmap )
 	SDL_DestroySurface(ship_collision);
 }
 
-bool PlayerCollideWithLevel( player * play, bool ** levelcolmap )
+bool PlayerCollideWithLevel( Player * play, bool ** levelcolmap )
 {
 	// this function checks whether a players has crossed the level borders, or crashed with the level.
 	// in both cases it returns 1.
@@ -230,7 +260,7 @@ bool PlayerCollideWithLevel( player * play, bool ** levelcolmap )
 	return 0;
 }
 
-int PlayerCollideWithBullet( player * play, int playernum, player * players )
+int PlayerCollideWithBullet( Player * play, int playernum, Player * players )
 {
 	// this function checks whether a player has collided with a bullet.
 	// if so, it returns the bullet number. if not it returns -1.
@@ -241,7 +271,7 @@ int PlayerCollideWithBullet( player * play, int playernum, player * players )
 	int cb = 0;
 	for( cb = 0; cb < NUMBEROFBULLETS; cb++ )
 	{
-		if( players[ bullets[cb].owner - 1 ].team != players[ playernum - 1 ].team )
+		if( players[ bullets[cb].owner - 1 ].Team != players[ playernum - 1 ].Team )
 		{
 			if( bullets[cb].type == ROCKET || bullets[cb].type == BULLET)
 			{
@@ -304,9 +334,9 @@ int PlayerCollideWithBullet( player * play, int playernum, player * players )
 	return -1; // return no bullet collide signal.
 }
 
-int PlayerCollideWithBase( player * play )
+int PlayerCollideWithBase( Player * play )
 {
-	// returns the number of the base that is touching, if no base is touching, returns -1
+	// returns the number of the Base that is touching, if no Base is touching, returns -1
 	int i;
 	for( i = 0; i < lvl.bases; i++ )
 	{
@@ -315,11 +345,11 @@ int PlayerCollideWithBase( player * play )
 		    int( play->x ) < bases[i].x-37 ||
 		    int( play->x ) > bases[i].x+37 )
 		{
-			// player isn't touching base for sure
+			// player isn't touching Base for sure
 		}
 		else
 		{
-			// there is a chance player is touching base
+			// there is a chance player is touching Base
 			for( int a =0 ; a < 28 ; a++ )
 			{
 				for( int b = 0; b < 28; b++)
@@ -329,7 +359,7 @@ int PlayerCollideWithBase( player * play )
 						shipcolmap[play->shipframe][a][b] )
 					{
 						//player collided with level
-						return i; // return the number of the base.
+						return i; // return the number of the Base.
 					}	
 				}
 			}
@@ -340,7 +370,7 @@ int PlayerCollideWithBase( player * play )
 	return -1;
 }
 
-void AdjustViewport( player * play )
+void AdjustViewport( Player * play )
 {
 	// this function focusses the viewport on a player. usually this is the normal player, but it can also be used
 	// for spectator view or things like that
@@ -353,7 +383,7 @@ void AdjustViewport( player * play )
 	if( viewporty > ( lvl.height - YRES - 1 )) { viewporty = lvl.height - YRES - 1; }
 }
 
-void PlayerRot( player * play, bool clockwise )
+void PlayerRot( Player * play, bool clockwise )
 {	
 	// rotates a player, scaled by the deltatime interval.
 	// the use of clockwise is pretty obvious i think..
@@ -378,7 +408,7 @@ void PlayerRot( player * play, bool clockwise )
 		play->crossx = look_cos[ConvertAngle( play->angle )] * -CROSSHAIRDIST;
 	}
 }
-void PlayerThrust( player * play )
+void PlayerThrust( Player * play )
 {
 	// thrusts a player forward, scaled by deltatime interval
 	play->engine_on = 1;
@@ -389,7 +419,7 @@ void PlayerThrust( player * play )
 	play->fx -= look_cos[ConvertAngle( play->angle )] * THRUST;
 
 }
-Uint16 ShootBullet( player * play, int owner )
+Uint16 ShootBullet( Player * play, int owner )
 {
 	// searches for an empty spot in the bullets array and adds a bullet there, then returns the array index.
 	// note that each player has an own section in an array, so two players will never 'allocate' the same bullet
@@ -427,7 +457,7 @@ Uint16 ShootBullet( player * play, int owner )
 	return 6666;
 }
 
-int GetNearestEnemyPlayer( player * plyrs, int x, int y, int pteam )
+int GetNearestEnemyPlayer( Player * plyrs, int x, int y, int pteam )
 {
 	// returns a number to the enemy player nearest to x,y
 	int i; // loop thingy
@@ -444,7 +474,7 @@ int GetNearestEnemyPlayer( player * plyrs, int x, int y, int pteam )
 			tdy = int(y - plyrs[i].y);
 			
 			tdist = sqrt(( tdx * tdx ) + ( tdy * tdy ));
-			if( tdist < dist && plyrs[i].team != pteam )
+			if( tdist < dist && plyrs[i].Team != pteam )
 			{
 				dist = tdist;
 				plr = i;
@@ -456,7 +486,7 @@ int GetNearestEnemyPlayer( player * plyrs, int x, int y, int pteam )
 
 }
 
-void UpdateBullets( player * plyrs)
+void UpdateBullets( Player * plyrs)
 {
 	// updates the positions of all active bullets, scaled by deltatime interval
 

@@ -91,17 +91,17 @@ void InitVid()
 	SDL_HideCursor();
 }
 
-void DrawPlayer( SDL_Surface * src, player * play )
+void DrawPlayer( SDL_Surface * src, Player * play )
 {
 	DrawIMG(src, int(play->x - 14 - viewportx), int(play->y -14 - viewporty), 28, 28, play->x_bmp, play->y_bmp);
 	if( play->status == FLYING && (SDL_GetTicks() - play->lastliftofftime) > LIFTOFFSHOOTDELAY  )
 	{
-		if( play->team == RED )
+		if( play->Team == RED )
 		{
 			DrawIMG(crosshairred, (int(play->x + play->crossx - 4 -viewportx)),
 				(int(play->y + play->crossy - 4 - viewporty)));
 		}
-		if( play->team == BLUE )
+		if( play->Team == BLUE )
 		{
 			DrawIMG(crosshairblue, (int(play->x + play->crossx - 4 -viewportx)),
 				(int(play->y + play->crossy - 4 - viewporty)));

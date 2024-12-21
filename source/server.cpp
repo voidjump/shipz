@@ -15,7 +15,7 @@ int Server()
 	SDLNet_Address * ipaddr;
 	SDLNet_DatagramSocket * udpsock;
 	int error = 0;
-	player players[MAXPLAYERS];
+	Player players[MAXPLAYERS];
 	bool ** collisionmap;
 	int done = 0;
 	int number_of_players = 0;
@@ -97,11 +97,11 @@ int Server()
 				// other players.
 				number_of_players--;
 				players[in->buf[1] - 1].playing = 0;
-				if( players[in->buf[1] - 1].team == BLUE )
+				if( players[in->buf[1] - 1].Team == BLUE )
 				{
 					blue_team.players--;
 				}
-				if( players[in->buf[1] - 1].team == RED )
+				if( players[in->buf[1] - 1].Team == RED )
 				{
 					red_team.players--;
 				}
@@ -140,18 +140,22 @@ int Server()
 				}
 				if( in->buf[2] == LIFTOFF )
 				{
+					std::cout << players[playerread].name << " wants to liftoff" << std::endl;
 					if( players[playerread].status == LANDED )
 					{
+						std::cout << players[playerread].name << " taking off from ground" << std::endl;
 						// should check for 3 sec shooting delay!!
 						players[playerread].status = FLYING;
 					}
 					if( players[playerread].status == LANDEDBASE )
 					{
+						std::cout << players[playerread].name << " taking off from Base" << std::endl;
 						// should check for 3 sec shooting delay!!
 						players[playerread].status = FLYING;
 					}
 					if( players[playerread].status == LANDEDRESPAWN )
 					{
+						std::cout << players[playerread].name << " taking off from spawn" << std::endl;
 						players[playerread].status = FLYING;
 					}
 				}
@@ -159,6 +163,7 @@ int Server()
 				{
 					if( in->buf[2] == RESPAWN )
 					{
+						std::cout << players[playerread].name << " wants to respawn" << std::endl;
 						players[playerread].x = -14;       // this is needed for the
 						players[playerread].y = -14;       // ship to appear correctly
 						players[playerread].shipframe = 0; // with all the clients
@@ -234,7 +239,7 @@ int Server()
 				
 				players[ playerread ].lastsendtime = SDL_GetTicks();
 			}
-			if( in->buf[0] == 30 )
+			if( in->buf[0] == PROTOCOL_JOIN )
 			{
 				// a player wants to join
 				number_of_players++; 
@@ -245,7 +250,7 @@ int Server()
 					if( !players[searchempty-1].playing )
 					{
 						newnum = searchempty;
-						// we found a number, now find this (wo)man a team!
+						// we found a number, now find this (wo)man a Team!
 						if( red_team.players <= blue_team.players )
 						{
 							newteam = RED;
@@ -269,7 +274,7 @@ int Server()
 					players[ newnum - 1 ].playing = 1;
 					players[ newnum - 1 ].self_sustaining = 1;
 					InitPlayer( &players[ newnum - 1 ] );
-					players[ newnum - 1 ].team = newteam;
+					players[ newnum - 1 ].Team = newteam;
 
 					std::cout << "Player " << players[newnum-1].name
 						<< " joined into slot " << newnum << std::endl;
@@ -299,7 +304,7 @@ int Server()
 					//   (NAME) P6 (NAME) P7 (NAME) P8 (NAME) 
 					int count = 0;
 					memset( sendbuf, '\0', sizeof(sendbuf) );
-					sendbuf[0] = 30;
+					sendbuf[0] = PROTOCOL_JOIN;
 					sendbuf[1] = newnum; 
 					count = 2;
 					Uint8 * tmpptr;
@@ -308,7 +313,7 @@ int Server()
 					{
 						if( players[ gn ].playing )
 						{
-							Write16( (Uint16) players[ gn ].team, tmpptr );
+							Write16( (Uint16) players[ gn ].Team, tmpptr );
 						}
 						else
 						{
@@ -396,11 +401,11 @@ int Server()
 				SDLNet_SendDatagram(udpsock, players[ci].playaddr, PORT_CLIENT, sendbuf, 3);
 				
 				number_of_players--;
-				if( players[ci].team == BLUE )
+				if( players[ci].Team == BLUE )
 				{
 					blue_team.players--;
 				}
-				if( players[ci].team == RED )
+				if( players[ci].Team == RED )
 				{
 					red_team.players--;
 				}
@@ -443,12 +448,12 @@ int Server()
 						players[up].status = LANDEDBASE;
 						//if( bases[ baseresult ].owner == NEUTRAL )
 						//{
-						//	bases[ baseresult ].owner = players[up].team;
+						//	bases[ baseresult ].owner = players[up].Team;
 						//}
 					}
 					else
 					{
-						if( players[up].team == RED )
+						if( players[up].Team == RED )
 						{
 							red_team.frags--;
 						}
@@ -470,7 +475,7 @@ int Server()
 					else
 					{
 						// send a chat pkg! :P
-						if( players[up].team == RED )
+						if( players[up].Team == RED )
 						{
 							red_team.frags--;
 						}
@@ -491,7 +496,7 @@ int Server()
 					if( bullets[bulletresult].owner == RED )
 					{
 						if( bullets[bulletresult].type == MINE &&
-							players[up].team == RED )
+							players[up].Team == RED )
 						{
 							red_team.frags--;
 						}
@@ -503,7 +508,7 @@ int Server()
 					else
 					{
 						if( bullets[bulletresult].type == MINE &&
-							players[up].team == BLUE )
+							players[up].Team == BLUE )
 						{
 							blue_team.frags--;
 						}

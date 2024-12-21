@@ -13,7 +13,7 @@ void DrawIMG(SDL_Surface *img, int x, int y);
 void DrawIMG(SDL_Surface *img, int x, int y,
                                 int w, int h, int x2, int y2);
 void InitVid();
-void DrawPlayer( SDL_Surface * src, player * play );
+void DrawPlayer( SDL_Surface * src, Player * play );
 void DrawBases( SDL_Surface * basesimg );
 void DrawBullets( SDL_Surface * bulpixmap );
 void DrawExplosions();

@@ -2,7 +2,7 @@
 
 # Compiler and flags
 CXX = g++
-CXXFLAGS = -I/usr/local/include -lc++ -DSHAREPATH="\"./\""
+CXXFLAGS = -I/usr/local/include -DSHAREPATH="\"./\""
 LDFLAGS = -L/usr/local/lib -lSDL3 -lSDL3_image -lSDL3_mixer -lSDL3_net -lSDL3_ttf
 RPATH = /usr/local/lib
 
@@ -17,7 +17,7 @@ all: $(EXEC)
 
 $(EXEC): $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
-	export DYLD_LIBRARY_PATH=$(RPATH):$$DYLD_LIBRARY_PATH
+	export DYLD_LIBRARY_PATH=$(RPATH)
 
 %.o: %.cpp
 	$(CXX) -c $(CXXFLAGS) $< -o $@

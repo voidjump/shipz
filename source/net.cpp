@@ -1,5 +1,7 @@
 #include <string.h>
 #include <stdint.h>
+#include <iostream>
+#include <iomanip>  // for std::hex, std::setw, std::setfill
 
 #include <SDL3/SDL.h>
 #include <SDL3_net/SDL_net.h>
@@ -30,4 +32,20 @@ void Write16(Uint16 value, void *area)
     // Write the 16-bit value in network byte order (big-endian)
     ptr[0] = (value >> 8) & 0xFF;  // Most significant byte
     ptr[1] = value & 0xFF;         // Least significant byte
+}
+
+// Function to print raw bytes
+void PrintRawBytes(const char* data, size_t length) {
+    for (size_t i = 0; i < length; ++i) {
+        // Print in hexadecimal format, ensuring 2 digits per byte
+        std::cout << std::setw(2) << std::setfill('0')  // Ensure 2-digit hex
+                  << std::hex << (0xFF & data[i]) << " ";  // Print byte as hex
+    }
+    std::cout << std::dec << std::endl;  // Switch back to decimal for any future output
+}
+
+// Log a datagram to stdout
+void DebugPackage(const char* debug_msg, SDLNet_Datagram * dgram) {
+    std::cout << debug_msg << " : ";
+    PrintRawBytes((const char*)dgram->buf, dgram->buflen);
 }
