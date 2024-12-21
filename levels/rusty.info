@@ -1,0 +1,26 @@
+author=Steve van Bennekom
+name=Rusty
+version=1
+bases=8
+collisionmap=rusty-col.bmp
+image=rusty.png
+basesblue=2
+basex=240
+basey=838
+basex=160
+basey=582
+basesred=2
+basex=830
+basey=900
+basex=1020
+basey=900
+basesneutral=4
+basex=400
+basey=482
+basex=1000
+basey=326
+basex=400
+basey=680
+basex=100
+basey=292
+end

@@ -1,0 +1,26 @@
+author=steve van bennekom
+name=The Baby Redone
+version=1
+bases=8
+collisionmap=level2_collision.bmp
+image=level4.png
+basesblue=2
+basex=166
+basey=390
+basex=226
+basey=134
+basesred=2
+basex=1075
+basey=207
+basex=876
+basey=492
+basesneutral=4
+basex=528
+basey=447
+basex=956
+basey=717
+basex=404
+basey=949
+basex=579
+basey=206
+end

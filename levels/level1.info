@@ -1,0 +1,16 @@
+author=steve van bennekom
+name=my first baby
+version=1
+bases=3
+collisionmap=level1_collision.bmp
+image=level1.png
+basesblue=1
+basex=386
+basey=439
+basesred=1
+basex=259
+basey=72
+basesneutral=1
+basex=446
+basey=226
+end

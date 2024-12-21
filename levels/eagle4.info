@@ -1,0 +1,14 @@
+author=Raymond Jelierse
+name=KillaFish is bliss
+version=1
+bases=2
+collisionmap=eagle4_collmap.bmp
+image=eagle4.png
+basesblue=1
+basex=200
+basey=375
+basesred=1
+basex=600
+basey=375
+basesneutral=0
+end

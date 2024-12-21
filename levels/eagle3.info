@@ -1,0 +1,22 @@
+author=Raymond Jelierse
+name=The Construct
+version=1
+bases=6
+collisionmap=eagle3_collmap.bmp
+image=eagle3.png
+basesblue=2
+basex=710
+basey=790
+basex=1010
+basey=790
+basesred=2
+basex=130
+basey=790
+basex=300
+basey=600
+basesneutral=2
+basex=360
+basey=400
+basex=630
+basey=240
+end
