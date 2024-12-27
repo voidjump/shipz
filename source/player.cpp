@@ -6,8 +6,8 @@
 
 #include "types.h"
 #include "gfx.h"
-
 #include "sound.h"
+#include "other.h"
 
 const char * GetStatusString(int status) {
 	switch(status) {
@@ -188,14 +188,16 @@ void TestColmaps() {
 	snprintf( tmpfilename, 100, "%s./gfx/%s", SHAREPATH, "ship_collision.bmp" );
 	
 	test_map = SDL_LoadBMP(tmpfilename);
+	test_map = SDL_ConvertSurface(test_map, SDL_PIXELFORMAT_RGBA8888);
+	SDL_SaveBMP(test_map, "testoutput.bmp");
 	
 	std::cout << "testing colmaps" << std::endl;
-	for( int a = 0; a < 28; a++ )
+	for( int x = 0; x < test_map->w; x++ )
 	{
-		for( int b = 0; b < 28; b++ )
+		for( int y = 0; y < test_map->h; y++ )
 		{
 			// std::cout << a << b;
-			if (GetPixel(test_map, a, b) ){
+			if (GetPixel(test_map, x, y) ){
 				std::cout << "1";
 			} else
 			std::cout << "0";
@@ -211,18 +213,8 @@ void GetCollisionMaps( bool ** levelcolmap )
 	SDL_Surface *ship_collision;
 	SDL_Surface *level_collision;
 
-	char tmpfilename[100];
-	
-	memset( tmpfilename, '\0', sizeof( tmpfilename ));
-	snprintf( tmpfilename, 100, "%s./gfx/%s", SHAREPATH, "ship_collision.bmp" );
-	
-	ship_collision = SDL_LoadBMP(tmpfilename);
-	
-	memset( tmpfilename, '\0', sizeof( tmpfilename ));
-	snprintf( tmpfilename, 100, "%s./gfx/%s", SHAREPATH, lvl.colmap );
- 	
-	level_collision = SDL_LoadBMP(tmpfilename);
-	bool * tmpptr;
+	ship_collision = LoadBMP("ship_collision.bmp");
+	level_collision = LoadBMP(lvl.colmap);
 	
 	for( int a = 0; a < lvl.width; a++ )
 	{

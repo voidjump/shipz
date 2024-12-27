@@ -70,6 +70,21 @@ SDL_Surface * LoadIMG( const char * filename )
 	return loaded_image;
 }
 
+// Load Bitmap file and convert it's bitmap format
+SDL_Surface * LoadBMP( const char * filename ) {
+	SDL_Surface *surface, *converted_map;
+	char tmpfilename[100];
+	
+	memset( tmpfilename, '\0', sizeof( tmpfilename ));
+	snprintf( tmpfilename, 100, "%s./gfx/%s", SHAREPATH, filename );
+	
+	surface = SDL_LoadBMP(tmpfilename);
+	converted_map = SDL_ConvertSurface(surface, SDL_PIXELFORMAT_RGBA8888);
+
+	// SDL_DestroySurface(surface);
+	return converted_map;
+}
+
 void CreateGonLookup() // create lookup tables for sin and cos
 {
 	int i = 0;

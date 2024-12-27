@@ -28,5 +28,7 @@ void CleanAllExplosions();
 
 void EndMessage();
 
+SDL_Surface * LoadBMP( const char * filename );
+
 Mix_Chunk * LoadSound( const char * filename );
 #endif
