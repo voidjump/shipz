@@ -135,12 +135,6 @@ bool Buffer::WriteString(const char* source) {
     this->position += string_length;
     this->length += string_length;
 
-    // Optionally, add a null terminator if necessary
-    if (this->position < this->data + MAXBUFSIZE) {
-        *this->position = '\0';
-        this->position++;
-    }
-
     return true;
 }
 
