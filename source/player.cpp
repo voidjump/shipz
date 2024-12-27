@@ -1,4 +1,5 @@
 #include <string.h>
+#include <iostream>
 #include <stdlib.h>
 #include <math.h>
 #include <SDL3/SDL.h>
@@ -178,6 +179,31 @@ void ResetPlayer( Player * play )
 	play->weapon = BULLET;
 }
 
+void TestColmaps() {
+	SDL_Surface *test_map;
+
+	char tmpfilename[100];
+	
+	memset( tmpfilename, '\0', sizeof( tmpfilename ));
+	snprintf( tmpfilename, 100, "%s./gfx/%s", SHAREPATH, "ship_collision.bmp" );
+	
+	test_map = SDL_LoadBMP(tmpfilename);
+	
+	std::cout << "testing colmaps" << std::endl;
+	for( int a = 0; a < 28; a++ )
+	{
+		for( int b = 0; b < 28; b++ )
+		{
+			// std::cout << a << b;
+			if (GetPixel(test_map, a, b) ){
+				std::cout << "1";
+			} else
+			std::cout << "0";
+		}
+		std::cout << std::endl;
+	}
+}
+
 void GetCollisionMaps( bool ** levelcolmap )
 {
 	// loads the levelcollisionmaps and shipcollisionmap from their image files.
@@ -229,19 +255,19 @@ bool PlayerCollideWithLevel( Player * play, bool ** levelcolmap )
 	
 	if( play->x > ( lvl.width - 14 ))
 	{
-		return 1;
+		return true;
 	}
 	if( play->x < 14 )
 	{
-		return 1;
+		return true;
 	}
 	if( play->y > ( lvl.height - 14 ))
 	{
-		return 1;
+		return true;
 	}
 	if( play->y < 14 )
 	{
-		return 1;
+		return true;
 	}
 	
 	// fix this awful loop
@@ -252,12 +278,12 @@ bool PlayerCollideWithLevel( Player * play, bool ** levelcolmap )
 			if( levelcolmap[int(play->x)+a-14][int(play->y)+b-14] && shipcolmap[play->shipframe][a][b] )
 			{
 				//player collided with level
-				return 1;
+				return true;
 			}	
 		}
 	}
 	//player didn't collide with level
-	return 0;
+	return false;
 }
 
 int PlayerCollideWithBullet( Player * play, int playernum, Player * players )

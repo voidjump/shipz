@@ -3,6 +3,7 @@
 
 #include <SDL3/SDL.h>
 
+#include "net.h"
 #include "types.h"
 
 SDL_Surface * LoadIMG( const char * filename );
@@ -17,7 +18,7 @@ int GetNearestBase( int x, int y );
 
 bool CheckForQuitSignal();
 
-void GetTyping( char * buffer, uint key, uint mod, int * charstyped );
+void GetTyping( Buffer * buffer, uint key, uint mod);
 
 void NewExplosion( int x, int y );
 

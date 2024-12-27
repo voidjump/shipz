@@ -126,7 +126,9 @@ int main( int argc, char *argv[] )
 		else
 		{
 			InitVid();
-			error = Client( client_ip, client_nick );
+			Client client(client_ip, client_nick);
+			client.Init();
+			client.Run();
 		}
 	}
 	

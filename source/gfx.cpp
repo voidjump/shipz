@@ -8,8 +8,8 @@
 // shipz drawing functions
 
 // this function is for the creating of collision map. it checks whether a pixel is black or white.
-// returns black = 1, white = 0
-int GetPixel(SDL_Surface *surf, int x, int y)
+// returns black = true, white = false
+bool GetPixel(SDL_Surface *surf, int x, int y)
 { 
   Uint8 red = 0;
 
@@ -19,11 +19,7 @@ int GetPixel(SDL_Surface *surf, int x, int y)
 	SDL_Quit();
 	exit(1);
   }
-  if (red == 255) {
-	return 1;
-  } else {
-	return 0;
-  }
+  return (red == 0);
 }
 
 void Slock(SDL_Surface *screen)

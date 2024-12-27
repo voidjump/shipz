@@ -2,7 +2,7 @@
 #define SHIPZPLAYER_H
 
 #include "types.h"
-
+void TestColmaps();
 const char * GetStatusString(int status);
 void EmptyPlayer( Player * play );
 inline int ConvertAngle( float angle );

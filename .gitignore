@@ -1,3 +1,4 @@
 shipz
 source/*.o
 ss*.bmp
+.DS_Store

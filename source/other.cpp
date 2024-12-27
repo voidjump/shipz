@@ -2,6 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <string.h>
+#include <map>
 
 #include <SDL3/SDL.h>
 #include <SDL3_image/SDL_image.h>
@@ -10,6 +11,45 @@
 #include "types.h"
 #include "player.h"
 #include "sound.h"
+#include "net.h"
+
+std::map<unsigned int, char> upper_case_keys = {
+	{SDLK_PERIOD, '>'},
+	{SDLK_COMMA, '<'},
+	{SDLK_SEMICOLON, ':'},
+	{SDLK_SPACE, ' '},
+	{SDLK_MINUS, '_'},
+	{SDLK_APOSTROPHE, '\"'},
+	{SDLK_SLASH, '?'},
+	{SDLK_0,')'},
+	{SDLK_1,'!'},
+	{SDLK_2,'@'},
+	{SDLK_3,'#'},
+	{SDLK_4,'$'},
+	{SDLK_5,'%'},
+	{SDLK_6,'^'},
+	{SDLK_7,'&'},
+	{SDLK_8,'*'},
+	{SDLK_9,'('}};
+
+std::map<unsigned int, char> lower_case_keys = {
+	{SDLK_PERIOD, '.'},
+	{SDLK_COMMA, ','},
+	{SDLK_SEMICOLON, ';'},
+	{SDLK_SPACE, ' '},
+	{SDLK_MINUS, '-'},
+	{SDLK_APOSTROPHE, '\''},
+	{SDLK_SLASH, '/'},
+	{SDLK_0,'0'},
+	{SDLK_1,'1'},
+	{SDLK_2,'2'},
+	{SDLK_3,'3'},
+	{SDLK_4,'4'},
+	{SDLK_5,'5'},
+	{SDLK_6,'6'},
+	{SDLK_7,'7'},
+	{SDLK_8,'8'},
+	{SDLK_9,'9'}};
 
 // Load an image from the /gfx/ directory
 // Returns surface containing loaded image
@@ -295,129 +335,40 @@ bool CheckForQuitSignal()
 	return 0;
 }	
 
-
-
-void GetTyping( char * buffer, uint key, uint mod, int * charstyped )
+// Add typed keys to a buffer
+void GetTyping( Buffer *buffer, uint key, uint mod)
 {
 	bool shift = 0; bool caps = 0;
 	if( mod & SDL_KMOD_LSHIFT || mod & SDL_KMOD_RSHIFT ) { shift = 1; }
 	if( mod & SDL_KMOD_CAPS ) { caps = 1; }
 
-	if( charstyped[0] < 79 )
-	{	
-		// a-z / A-Z
-		if( (shift && !caps) || caps )
-		{
-			if( key == SDLK_A  ) { buffer[ charstyped[0] ] = 'A'; charstyped[0]++; } 
-			if( key == SDLK_B  ) { buffer[ charstyped[0] ] = 'B'; charstyped[0]++; }
-			if( key == SDLK_C  ) { buffer[ charstyped[0] ] = 'C'; charstyped[0]++; }
-			if( key == SDLK_D  ) { buffer[ charstyped[0] ] = 'D'; charstyped[0]++; }
-			if( key == SDLK_E  ) { buffer[ charstyped[0] ] = 'E'; charstyped[0]++; }
-			if( key == SDLK_F  ) { buffer[ charstyped[0] ] = 'F'; charstyped[0]++; }
-			if( key == SDLK_G  ) { buffer[ charstyped[0] ] = 'G'; charstyped[0]++; }
-			if( key == SDLK_H  ) { buffer[ charstyped[0] ] = 'H'; charstyped[0]++; } 
-			if( key == SDLK_I  ) { buffer[ charstyped[0] ] = 'I'; charstyped[0]++; }
-			if( key == SDLK_J  ) { buffer[ charstyped[0] ] = 'J'; charstyped[0]++; }
-			if( key == SDLK_K  ) { buffer[ charstyped[0] ] = 'K'; charstyped[0]++; }
-			if( key == SDLK_L  ) { buffer[ charstyped[0] ] = 'L'; charstyped[0]++; }
-			if( key == SDLK_M  ) { buffer[ charstyped[0] ] = 'M'; charstyped[0]++; }
-			if( key == SDLK_N  ) { buffer[ charstyped[0] ] = 'N'; charstyped[0]++; }
-			if( key == SDLK_O  ) { buffer[ charstyped[0] ] = 'O'; charstyped[0]++; } 
-			if( key == SDLK_P  ) { buffer[ charstyped[0] ] = 'P'; charstyped[0]++; }
-			if( key == SDLK_Q  ) { buffer[ charstyped[0] ] = 'Q'; charstyped[0]++; }
-			if( key == SDLK_R  ) { buffer[ charstyped[0] ] = 'R'; charstyped[0]++; }
-			if( key == SDLK_S  ) { buffer[ charstyped[0] ] = 'S'; charstyped[0]++; }
-			if( key == SDLK_T  ) { buffer[ charstyped[0] ] = 'T'; charstyped[0]++; }
-			if( key == SDLK_U  ) { buffer[ charstyped[0] ] = 'U'; charstyped[0]++; }
-			if( key == SDLK_V  ) { buffer[ charstyped[0] ] = 'V'; charstyped[0]++; } 
-			if( key == SDLK_W  ) { buffer[ charstyped[0] ] = 'W'; charstyped[0]++; }
-			if( key == SDLK_X  ) { buffer[ charstyped[0] ] = 'X'; charstyped[0]++; }
-			if( key == SDLK_Y  ) { buffer[ charstyped[0] ] = 'Y'; charstyped[0]++; }
-			if( key == SDLK_Z  ) { buffer[ charstyped[0] ] = 'Z'; charstyped[0]++; }
-		}	
-		else
-		{
-			if( key == SDLK_A  ) { buffer[ charstyped[0] ] = 'a'; charstyped[0]++; } 
-			if( key == SDLK_B  ) { buffer[ charstyped[0] ] = 'b'; charstyped[0]++; }
-			if( key == SDLK_C  ) { buffer[ charstyped[0] ] = 'c'; charstyped[0]++; }
-			if( key == SDLK_D  ) { buffer[ charstyped[0] ] = 'd'; charstyped[0]++; }
-			if( key == SDLK_E  ) { buffer[ charstyped[0] ] = 'e'; charstyped[0]++; }
-			if( key == SDLK_F  ) { buffer[ charstyped[0] ] = 'f'; charstyped[0]++; }
-			if( key == SDLK_G  ) { buffer[ charstyped[0] ] = 'g'; charstyped[0]++; }
-			if( key == SDLK_H  ) { buffer[ charstyped[0] ] = 'h'; charstyped[0]++; } 
-			if( key == SDLK_I  ) { buffer[ charstyped[0] ] = 'i'; charstyped[0]++; }
-			if( key == SDLK_J  ) { buffer[ charstyped[0] ] = 'j'; charstyped[0]++; }
-			if( key == SDLK_K  ) { buffer[ charstyped[0] ] = 'k'; charstyped[0]++; }
-			if( key == SDLK_L  ) { buffer[ charstyped[0] ] = 'l'; charstyped[0]++; }
-			if( key == SDLK_M  ) { buffer[ charstyped[0] ] = 'm'; charstyped[0]++; }
-			if( key == SDLK_N  ) { buffer[ charstyped[0] ] = 'n'; charstyped[0]++; }
-			if( key == SDLK_O  ) { buffer[ charstyped[0] ] = 'o'; charstyped[0]++; } 
-			if( key == SDLK_P  ) { buffer[ charstyped[0] ] = 'p'; charstyped[0]++; }
-			if( key == SDLK_Q  ) { buffer[ charstyped[0] ] = 'q'; charstyped[0]++; }
-			if( key == SDLK_R  ) { buffer[ charstyped[0] ] = 'r'; charstyped[0]++; }
-			if( key == SDLK_S  ) { buffer[ charstyped[0] ] = 's'; charstyped[0]++; }
-			if( key == SDLK_T  ) { buffer[ charstyped[0] ] = 't'; charstyped[0]++; }
-			if( key == SDLK_U  ) { buffer[ charstyped[0] ] = 'u'; charstyped[0]++; }
-			if( key == SDLK_V  ) { buffer[ charstyped[0] ] = 'v'; charstyped[0]++; } 
-			if( key == SDLK_W  ) { buffer[ charstyped[0] ] = 'w'; charstyped[0]++; }
-			if( key == SDLK_X  ) { buffer[ charstyped[0] ] = 'x'; charstyped[0]++; }
-			if( key == SDLK_Y  ) { buffer[ charstyped[0] ] = 'y'; charstyped[0]++; }
-			if( key == SDLK_Z  ) { buffer[ charstyped[0] ] = 'z'; charstyped[0]++; }
-		}
-						
-		
-		
-		// end a-z / A-Z
-		if( shift )
-		{
-			if( key == SDLK_PERIOD ) { buffer[ charstyped[0] ] = '>'; charstyped[0]++; }
-			if( key == SDLK_COMMA ) { buffer[ charstyped[0] ] = '<'; charstyped[0]++; }
-			if( key == SDLK_SEMICOLON ) { buffer[ charstyped[0] ] = ':'; charstyped[0]++; }
-			if( key == SDLK_SPACE  ) { buffer[ charstyped[0] ] = ' '; charstyped[0]++; }
-			if( key == SDLK_MINUS ) { buffer[ charstyped[0] ] = '_'; charstyped[0]++; }
-			if( key == SDLK_APOSTROPHE ) { buffer[ charstyped[0] ] = '\"'; charstyped[0]++; }
-			if( key == SDLK_SLASH ) { buffer[ charstyped[0] ] = '?'; charstyped[0]++; }
+	if( key == SDLK_BACKSPACE  )
+		buffer->DecreasePosition(1);
 
-			if( key == SDLK_0  ) { buffer[ charstyped[0] ] = ')'; charstyped[0]++; }
-			if( key == SDLK_1  ) { buffer[ charstyped[0] ] = '!'; charstyped[0]++; } 
-			if( key == SDLK_2  ) { buffer[ charstyped[0] ] = '@'; charstyped[0]++; }
-			if( key == SDLK_3  ) { buffer[ charstyped[0] ] = '#'; charstyped[0]++; }
-			if( key == SDLK_4  ) { buffer[ charstyped[0] ] = '$'; charstyped[0]++; }
-			if( key == SDLK_5  ) { buffer[ charstyped[0] ] = '%'; charstyped[0]++; }
-			if( key == SDLK_6  ) { buffer[ charstyped[0] ] = '^'; charstyped[0]++; }
-			if( key == SDLK_7  ) { buffer[ charstyped[0] ] = '&'; charstyped[0]++; }
-			if( key == SDLK_8  ) { buffer[ charstyped[0] ] = '*'; charstyped[0]++; } 
-			if( key == SDLK_9  ) { buffer[ charstyped[0] ] = '('; charstyped[0]++; }
-		}
-		else
-		{
-			if( key == SDLK_PERIOD ) { buffer[ charstyped[0] ] = '.'; charstyped[0]++; }
-			if( key == SDLK_COMMA ) { buffer[ charstyped[0] ] = ','; charstyped[0]++; }
-			if( key == SDLK_SEMICOLON ) { buffer[ charstyped[0] ] = ';'; charstyped[0]++; }
-			if( key == SDLK_SPACE  ) { buffer[ charstyped[0] ] = ' '; charstyped[0]++; }
-			if( key == SDLK_MINUS ) { buffer[ charstyped[0] ] = '-'; charstyped[0]++; }
-			if( key == SDLK_APOSTROPHE ) { buffer[ charstyped[0] ] = '\''; charstyped[0]++; }
-			if( key == SDLK_SLASH ) { buffer[ charstyped[0] ] = '/'; charstyped[0]++; }
+	if( buffer->Available() == 0)
+		return;
+	// a-z / A-Z
+	if( key >= SDLK_A && key <= SDLK_Z ) {
+		Uint8 typed = (Uint8)'a' + (key - SDLK_A);
 
-			
-			if( key == SDLK_0  ) { buffer[ charstyped[0] ] = '0'; charstyped[0]++; } 
-			if( key == SDLK_1  ) { buffer[ charstyped[0] ] = '1'; charstyped[0]++; }
-			if( key == SDLK_2  ) { buffer[ charstyped[0] ] = '2'; charstyped[0]++; }
-			if( key == SDLK_3  ) { buffer[ charstyped[0] ] = '3'; charstyped[0]++; }
-			if( key == SDLK_4  ) { buffer[ charstyped[0] ] = '4'; charstyped[0]++; }
-			if( key == SDLK_5  ) { buffer[ charstyped[0] ] = '5'; charstyped[0]++; }
-			if( key == SDLK_6  ) { buffer[ charstyped[0] ] = '6'; charstyped[0]++; }
-			if( key == SDLK_7  ) { buffer[ charstyped[0] ] = '7'; charstyped[0]++; } 
-			if( key == SDLK_8  ) { buffer[ charstyped[0] ] = '8'; charstyped[0]++; }
-			if( key == SDLK_9  ) { buffer[ charstyped[0] ] = '9'; charstyped[0]++; }
+		if( (shift && !caps) || caps ) {
+			typed = typed & (1 << 6);
+		}
+		buffer->Write8(typed);
+		return;
+	}
+	
+	// end a-z / A-Z
+	if( shift ) {
+		if(upper_case_keys.count(key) == 1) {
+			buffer->Write8((Uint8)upper_case_keys[key]);
 		}
 	}
-	if( charstyped[0] > 0 )
-	{
-		if( key == SDLK_BACKSPACE  )
-		{ buffer[ charstyped[0] - 1 ] = 0; charstyped[0]--; }
+	else {
+		if(lower_case_keys.count(key) == 1) {
+			buffer->Write8((Uint8)lower_case_keys[key]);
+		}
 	}
-
 }
 
 void EndMessage()

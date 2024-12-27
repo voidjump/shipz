@@ -6,7 +6,7 @@
 
 #include "types.h"
 
-int GetPixel(SDL_Surface *screen, int x, int y);
+bool GetPixel(SDL_Surface *screen, int x, int y);
 void Slock(SDL_Surface *screen);
 void Sulock(SDL_Surface *screen);
 void DrawIMG(SDL_Surface *img, int x, int y);

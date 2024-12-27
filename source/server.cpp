@@ -90,7 +90,7 @@ int Server()
 		
 		if(SDLNet_ReceiveDatagram(udpsock, &in) && in != NULL ) {
 			Uint8 * tmpptr = in->buf;
-			if( in->buf[0] == 0 )
+			if( in->buf[0] == PROTOCOL_LEAVE )
 			{
 				// the players tells us he's leaving.
 				// remove him from the player list and send notification to all the
@@ -484,7 +484,6 @@ int Server()
 							blue_team.frags--;
 						}
 						std::cout << "player " << players[up].name << "collided with rock at" << players[up].x << "," << players[up].y << std::endl;
-						std::cout << "player " << players[up].name << "collided with rock at" << players[up].x_bmp << "," << players[up].y_bmp << std::endl;
 						players[up].status = JUSTCOLLIDEDROCK;
 					}
 				}
@@ -527,7 +526,7 @@ int Server()
 			}
 		}
 						
-		if((SDL_GetTicks() - lastsendtime) > SENDDELAY)
+		if((float(SDL_GetTicks()) - lastsendtime) > SENDDELAY)
 		{
 			// send all the stuff to all the players
 			// S: 040 PLAYER (PSTAT PFRAME PX PY PVX PVY BULX BULY BULVX BULVY) x8
@@ -664,7 +663,7 @@ int Server()
 					}
 				}
 			}
-			lastsendtime = SDL_GetTicks();
+			lastsendtime = float(SDL_GetTicks());
 		}
 		
 	}
