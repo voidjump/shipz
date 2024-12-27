@@ -2,9 +2,10 @@
 
 # Compiler and flags
 CXX = g++
-CXXFLAGS = -I/usr/local/include -DSHAREPATH="\"./\""
-LDFLAGS = -L/usr/local/lib -lSDL3 -lSDL3_image -lSDL3_mixer -lSDL3_net -lSDL3_ttf
+CXXFLAGS = -std=c++11 -I/usr/local/include -DSHAREPATH="\"./\""
+LDFLAGS = -L/usr/local/lib -lSDL3 -lSDL3_image -lSDL3_mixer -lSDL3_net -lSDL3_ttf -rpath /usr/local/lib
 RPATH = /usr/local/lib
+DEBUG_FLAGS = -g -O0
 
 # Source and object files
 SRCDIR = source
@@ -17,10 +18,14 @@ all: $(EXEC)
 
 $(EXEC): $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
-	export DYLD_LIBRARY_PATH=$(RPATH)
+	# export DYLD_LIBRARY_PATH=$(RPATH)
 
 %.o: %.cpp
 	$(CXX) -c $(CXXFLAGS) $< -o $@
+
+# Debug build target
+debug: CXXFLAGS += $(DEBUG_FLAGS)  # Add debug flags to CXXFLAGS
+debug: $(EXEC)
 
 # Clean up build files
 clean:
