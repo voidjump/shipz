@@ -358,9 +358,19 @@ void Client::GameLoop() {
 					// standard game package...
 					// DebugPackage("got update", in);
 					Uint8 * tmpptr = & in->buf[2];
-					red_team.frags = (Sint16)Read16(tmpptr);
+					Uint32 basestates = Read32(tmpptr);
+					for( int bidx = 0; bidx < MAXBASES; bidx++ ) {
+						if( basestates & (1 << (bidx *2))) {
+							bases[bidx].owner = RED;
+						} 
+						if( basestates & (1 << (bidx *2 +1))) {
+							bases[bidx].owner = BLUE;
+						}
+					}
+					tmpptr +=4;
+					red_team.bases = (Sint16)Read16(tmpptr);
 					tmpptr+=2;
-					blue_team.frags = (Sint16)Read16(tmpptr);
+					blue_team.bases = (Sint16)Read16(tmpptr);
 					tmpptr+=2;
 
 					for( int rp=0; rp < MAXPLAYERS; rp++ )

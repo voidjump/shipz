@@ -21,6 +21,16 @@ Uint16 Read16(void *area) {
     return SDL_Swap16(value);  // SDL_Swap16 converts to host byte order
 }
 
+// Read a 32 bit value from a buffer
+Uint32 Read32(void *area) {
+    uint8_t *ptr = (uint8_t*)area;
+
+    Uint32 value = (ptr[0] << 24) | (ptr[1] << 16) | (ptr[2] << 8) | ptr[3];
+
+    // Convert the value from network byte order (big-endian) to host byte order
+    return SDL_Swap32(value);  // SDL_Swap16 converts to host byte order
+}
+
 void Write16(Uint16 value, void *area) {
     // 'area' is a pointer to the memory buffer
     uint8_t *ptr = (uint8_t*)area;
@@ -31,6 +41,20 @@ void Write16(Uint16 value, void *area) {
     // Write the 16-bit value in network byte order (big-endian)
     ptr[0] = (value >> 8) & 0xFF;  // Most significant byte
     ptr[1] = value & 0xFF;         // Least significant byte
+}
+
+void Write32(Uint32 value, void *area) {
+    // 'area' is a pointer to the memory buffer
+    uint8_t *ptr = (uint8_t*)area;
+
+    // Convert the value from host byte order to network byte order (big-endian)
+    value = SDL_Swap32(value);  // SDL_Swap16 converts from host to network byte order
+
+    // Write the 16-bit value in network byte order (big-endian)
+    ptr[0] = (value >> 24) & 0xFF;  // Most significant byte
+    ptr[1] = (value >> 16) & 0xFF; 
+    ptr[2] = (value >> 8) & 0xFF;  
+    ptr[3] = value & 0xFF;         // Least significant byte
 }
 
 // Function to print raw bytes
@@ -110,6 +134,24 @@ bool Buffer::Write16(Uint16 value) {
     return true;
 }
 
+bool Buffer::Write32(Uint32 value) {
+    if ((MAXBUFSIZE - this->length) <= 3) {
+        return false;
+    }
+
+    // Convert the value from host byte order to network byte order (big-endian)
+    value = SDL_Swap32(value);  // SDL_Swap16 converts from host to network byte order
+
+    // Write the 16-bit value in network byte order (big-endian)
+    this->position[0] = (value >> 24) & 0xFF;  // Most significant byte
+    this->position[1] = (value >> 16) & 0xFF; 
+    this->position[2] = (value >> 8) & 0xFF;  
+    this->position[3] = value & 0xFF;         // Least significant byte
+    this->position += 4;
+    this->length += 4;
+    return true;
+}
+
 // Write a string to the buffer (Does not have to be nul terminated)
 bool Buffer::WriteOctets(const char * source, size_t string_length) {
     if((MAXBUFSIZE - this->length) < string_length) {
@@ -159,6 +201,15 @@ Uint16 Buffer::Read16() {
 
     // Convert the value from network byte order (big-endian) to host byte order
     return SDL_Swap16(value);  // SDL_Swap16 converts to host byte order
+}
+
+// Read a 32 bit value from the buffer
+Uint32 Buffer::Read32() {
+    Uint32 value = (this->position[0] << 24) | (this->position[1] << 16) | (this->position[2] << 8) | this->position[3];
+    this->position += 4;
+
+    // Convert the value from network byte order (big-endian) to host byte order
+    return SDL_Swap32(value);  // SDL_Swap32 converts to host byte order
 }
 
 // Read a string from the buffer and copy it into the destination buffer.

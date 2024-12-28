@@ -8,6 +8,26 @@
 #include "other.h"
 #include "net.h"
 
+
+void UpdateBases() {
+	red_team.bases = 0;
+	blue_team.bases = 0;
+	for(int bidx =0; bidx < MAXBASES; bidx++ ) {
+		if (bases[bidx].owner == RED) {
+			red_team.bases++;
+		}
+		if (bases[bidx].owner == BLUE) {
+			blue_team.bases++;
+		}
+	}
+	if( red_team.bases == 0 ) {
+		std::cout << "BLUE WINS" << std::endl;
+	}
+	if( blue_team.bases == 0 ) {
+		std::cout << "RED WINS" << std::endl;
+	}
+}
+
 int Server()
 {
 	Uint8 sendbuf[MAXBUFSIZE];
@@ -446,10 +466,12 @@ int Server()
 					    players[up].vy < 60 && players[up].vy > 0 )
 					{
 						players[up].status = LANDEDBASE;
-						//if( bases[ baseresult ].owner == NEUTRAL )
-						//{
-						//	bases[ baseresult ].owner = players[up].Team;
-						//}
+						if( bases[ baseresult ].owner != players[up].Team )
+						{
+							std::cout << "team " << players[up].Team << " has captured base #" << baseresult << std::endl;
+							bases[ baseresult ].owner = players[up].Team;
+							UpdateBases();
+						}
 					}
 					else
 					{
@@ -529,18 +551,30 @@ int Server()
 		if((float(SDL_GetTicks()) - lastsendtime) > SENDDELAY)
 		{
 			// send all the stuff to all the players
-			// S: 040 PLAYER (PSTAT PFRAME PX PY PVX PVY BULX BULY BULVX BULVY) x8
+			// S: 040 PLAYER BASESTATES TEAMSTATES (PSTAT PFRAME PX PY PVX PVY BULX BULY BULVX BULVY) x8
 			memset( sendbuf, '\0', sizeof(sendbuf) );
 			sendbuf[0] = PROTOCOL_UPDATE;
 			sendbuf[1] = 0;
 			int count = 2;
 		
 			Uint8 * tmpptr = sendbuf;
+			tmpptr+=2;
+
+			Uint32 basestates = 0;
+			for( int bidx = 0; bidx < MAXBASES; bidx++ ) {
+				if( bases[bidx].owner == RED ) {
+					basestates |= (1 << (bidx *2));
+				}
+				if( bases[bidx].owner == BLUE ) {
+					basestates |= (1 << (bidx *2 +1));
+				}
+			}
+			Write32( basestates, tmpptr);
+			tmpptr+=4;
 			
+			Write16( Sint16( red_team.bases ), tmpptr );
 			tmpptr+=2;
-			Write16( Sint16( red_team.frags ), tmpptr );
-			tmpptr+=2;
-			Write16( Sint16( blue_team.frags ), tmpptr );
+			Write16( Sint16( blue_team.bases ), tmpptr );
 			tmpptr+=2;
 			count +=4;
 			

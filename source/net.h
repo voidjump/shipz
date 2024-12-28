@@ -4,7 +4,9 @@
 #include <SDL3_net/SDL_net.h>
 
 Uint16 Read16(void *area);
+Uint32 Read32(void *area);
 void Write16(Uint16 value, void *area);
+void Write32(Uint32 value, void *area);
 void PrintRawBytes(const char* data, size_t length);
 void DebugPackage(const char* debug_msg, SDLNet_Datagram * dgram);
 
@@ -27,6 +29,8 @@ class Buffer {
     bool Write8(Uint8);
     // Write 2 bytes
     bool Write16(Uint16);
+    // Write 4 bytes
+    bool Write32(Uint32);
     // Write a null terminated string
     bool WriteOctets(const char *, size_t);
     bool WriteString(const char *);
@@ -37,6 +41,8 @@ class Buffer {
     Uint8 Read8();
     // Read 16 bytes
     Uint16 Read16();
+    // Read 32 bytes
+    Uint32 Read32();
     // Read string into destination buffer
     void ReadStringCopyInto(void *, size_t);
     // Decrease the position pointer

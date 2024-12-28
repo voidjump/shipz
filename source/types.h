@@ -36,7 +36,7 @@
 // physics
 #define REALITYSCALE 0.0005
 #define SHIPMASS 20
-#define GRAVITY 9.81
+#define GRAVITY 8.00
 #define PI 3.14159
 #define ROTATIONSPEED 400
 #define THRUST 784.8
