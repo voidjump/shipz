@@ -51,6 +51,8 @@ class Buffer {
     const char * AsString();
     // Write similar bytes to buffer
     void WriteBytes(size_t number, Uint8 value);
+    // Set a byte at a Position
+    void SetPosByte(Uint16 pos, Uint8 value);
 };
 
 #endif

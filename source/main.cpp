@@ -9,7 +9,6 @@
 
 #include <SDL3/SDL.h>
 
-#include "error.h"
 #include "server.h"
 #include "client.h"
 #include "menu.h"
@@ -121,7 +120,8 @@ int main( int argc, char *argv[] )
 		InitSDL();
 		if( iamserver )
 		{
-			error = Server();
+			Server server(lvl.filename);
+			server.Run();
 		}
 		else
 		{
@@ -132,7 +132,6 @@ int main( int argc, char *argv[] )
 		}
 	}
 	
-	ShowError( error );
 	SDL_Quit();
 	EndMessage();
 }

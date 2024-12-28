@@ -242,3 +242,10 @@ void Buffer::WriteBytes(size_t number, Uint8 value) {
     }
 }
 
+
+// Set a byte at a position
+// This is a dirty hack
+// TODO: Fix this
+void Buffer::SetPosByte(Uint16 pos, Uint8 value) {
+    data[pos] = value;
+}
