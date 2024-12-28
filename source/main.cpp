@@ -31,7 +31,6 @@ SDL_Surface * rocketpixmap;
 SDL_Surface * minepixmap;
 SDL_Surface * chatpixmap;
 SDL_Surface * explosionpixmap;
-SDL_Surface * money;
 SDL_Surface * rocket_icon;
 SDL_Surface * bullet_icon;
 SDL_Surface * mine_icon;

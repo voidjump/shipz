@@ -52,7 +52,6 @@ void EmptyPlayer( Player * play )
 	play->deaths = 0;
 	play->Team = 0;
 	strcpy( play->name , "            " );
-	play->money = 0;
 	play->flamestate = 0;
 	play->shipframe = 0;
 	play->weapon = BULLET;
@@ -98,7 +97,6 @@ void InitPlayer( Player * play )
 	play->angle = 0;
 	play->kills = 0;
 	play->deaths = 0;
-	play->money = STARTING_MONEY;	
 	play->engine_on = 0;
 	play->vx = 0;
 	play->vy = 0;

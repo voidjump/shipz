@@ -73,7 +73,6 @@
 #define MINE 33
 
 // player:
-#define STARTING_MONEY 0
 #define LIFTOFFSHOOTDELAY 3000
 
 // teams/bases:
@@ -104,7 +103,6 @@ extern SDL_Surface * rocketpixmap;
 extern SDL_Surface * minepixmap;
 extern SDL_Surface * chatpixmap;
 extern SDL_Surface * explosionpixmap;
-extern SDL_Surface * money;
 extern SDL_Surface * rocket_icon;
 extern SDL_Surface * bullet_icon;
 extern SDL_Surface * mine_icon;
@@ -154,7 +152,7 @@ struct Base
 struct Team
 {
 	int players; // number of players on the Team
-	int bases; // shared money Team has
+	int bases; // number of bases a team has 
 	int frags;
 };	
 
@@ -173,7 +171,6 @@ struct Player
 	bool playing; 
 	int kills, deaths, Team;
 	char name[13];
-	int money;
 	int flamestate, shipframe;
 	int weapon; // weapon player is 'carrying'
 	int status;

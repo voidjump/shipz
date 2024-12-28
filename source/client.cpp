@@ -803,7 +803,6 @@ void Client::Load() {
 	minepixmap = LoadIMG( "mines.png" );
 	basesimg = LoadIMG( "bases.png" );
 	explosionpixmap = LoadIMG( "explosions.png" );
-	money = LoadIMG( "money.png" );
 	rocket_icon = LoadIMG( "rocket_icon.png" );
 	bullet_icon = LoadIMG( "bullet_icon.png" );
 	mine_icon = LoadIMG( "mine_icon.png" );
@@ -901,8 +900,6 @@ void Client::Draw() {
 	snprintf( tempstr,10, "%i", red_team.bases );
 	DrawFont( sansbold, tempstr, 79, YRES-17, FONT_WHITE );
 
-	
-	DrawIMG( money, 140, YRES - 17 );
 	switch( self->weapon )
 	{
 		case BULLET:
@@ -937,7 +934,6 @@ Client::~Client() {
 	SDL_DestroySurface( rocketpixmap );
 	SDL_DestroySurface( minepixmap );
 	SDL_DestroySurface( basesimg );
-	SDL_DestroySurface( money );
 	SDL_DestroySurface( rocket_icon );
 	SDL_DestroySurface( bullet_icon );
 	SDL_DestroySurface( mine_icon );

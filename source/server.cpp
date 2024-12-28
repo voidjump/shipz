@@ -534,7 +534,7 @@ void Server::UpdatePlayers() {
 				// the function returns -1 when a player didn't collide, so he must've collided
 				// note down the bullet for removal and change the player status
 				// NOTE: in a later stage we should report which player shot him and
-				// update money, etc.
+				// update etc.
 				if( bullets[bulletresult].owner == RED )
 				{
 					if( bullets[bulletresult].type == MINE &&
