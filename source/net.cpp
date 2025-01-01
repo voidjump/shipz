@@ -9,6 +9,8 @@
 #include "types.h"
 #include "net.h"
 
+// TODO rewrite this using c++ streams?
+
 Uint16 Read16(void *area) {
     // 'area' is a pointer to the data buffer
     uint8_t *ptr = (uint8_t*)area;
@@ -181,8 +183,13 @@ bool Buffer::WriteString(const char* source) {
 }
 
 // Return how much space is available in the buffer
-uint Buffer::Available() {
+Uint16 Buffer::AvailableWrite() {
     return MAXBUFSIZE-this->length;
+}
+
+// Return how many bytes are available left to read
+Uint16 Buffer::AvailableRead() {
+    return this->length - (this->position - this->data);
 }
 
 // Read 8 and increment buffer
@@ -216,6 +223,13 @@ Uint32 Buffer::Read32() {
 // TODO: Safety
 void Buffer::ReadStringCopyInto(void * destination_buffer, size_t max_read) {
 	strncpy( (char *)destination_buffer, (char *)&this->position, max_read); 
+}
+
+// Read into new string
+std::string& Buffer::ReadString() {
+    std::string *string = new std::string((const char *)this->position);
+    this->position += string->length() + 1;
+    return *string;
 }
 
 // Decrease the position by n. Will not increase beyond position 0

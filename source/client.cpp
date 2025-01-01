@@ -13,6 +13,7 @@
 #include "gfx.h"
 #include "sound.h"
 #include "font.h"
+#include "event.h"
 
 // TODO:
 // Candidates for bitwise state flags
@@ -56,13 +57,13 @@ void Client::CreateUDPSocket() {
 // Send Buffer to server
 void Client::SendBuffer() {
 	std::cout << "Sending buffer:";
-	PrintRawBytes(this->buffer.AsString(), this->buffer.length);
+	PrintRawBytes(this->send_buffer.AsString(), this->send_buffer.length);
 	std::cout << std::endl;
 	if (! SDLNet_SendDatagram(this->udpsock, 
 							  this->ipaddr, 
 							  PORT_SERVER, 
-							  (void *)this->buffer.data, 
-							  this->buffer.length)) {
+							  (void *)this->send_buffer.data, 
+							  this->send_buffer.length)) {
 		// proper failure
 		SDLNet_DestroyDatagramSocket(this->udpsock);
 		FailErr("Cannot send buffer to server");
@@ -75,10 +76,10 @@ void Client::Connect(const char *connect_address) {
 	this->CreateUDPSocket();
 
 	// Send a status message
-	this->buffer.Clear();
-	this->buffer.Write8(PROTOCOL_STATUS);
-	this->buffer.Write8(SHIPZ_VERSION);
-	this->buffer.Write8('\0');
+	this->send_buffer.Clear();
+	this->send_buffer.Write8(PROTOCOL_STATUS);
+	this->send_buffer.Write8(SHIPZ_VERSION);
+	this->send_buffer.Write8('\0');
 	
 	std::cout << "@ querying server status.." << std::endl;
 	
@@ -328,277 +329,340 @@ void Client::HandleInputs() {
 	}
 }
 
-void Client::GameLoop() {
-	while(!this->done)
+bool Client::ReceivedPacket() {
+	bool result = false;
+	if(!SDLNet_ReceiveDatagram(udpsock, &in) || in == NULL) {
+		// did not receive packet or it is invalid
+		return false;
+	}
+
+	if(in->buflen == 0 || SDLNet_CompareAddresses(in->addr, ipaddr) != 0) {
+		// packet is 0 byte or it is not addressed to us
+		std::cout << "received packet not addressed to us" << std::endl;
+		result = false;
+		goto return_result;
+	}
+
+	// import packet to buffer
+	this->receive_buffer.Clear();
+	if(!this->receive_buffer.ImportBytes(in->buf, in->buflen)) {
+		std::cout << "failed to import packet to buffer" << std::endl;
+		result = false;
+		goto return_result;
+	} else {
+		result = true;
+	}
+
+	return_result:
+	SDLNet_DestroyDatagram(in);
+	return result;
+}
+
+void Client::HandleKicked() {
+	std::cout << "Kicked by server" << std::endl;
+	done = true;
+}
+
+void Client::HandleUpdate() {
+	// Legacy check
+	if( my_player_nr != receive_buffer.Read8()) {
+		return;
+	}
+
+	Uint32 basestates = receive_buffer.Read32();
+	for( int bidx = 0; bidx < MAXBASES; bidx++ ) {
+		if( basestates & (1 << (bidx *2))) {
+			bases[bidx].owner = RED;
+		} 
+		if( basestates & (1 << (bidx *2 +1))) {
+			bases[bidx].owner = BLUE;
+		}
+	}
+	red_team.bases = (Sint16)receive_buffer.Read16();
+	blue_team.bases = (Sint16)receive_buffer.Read16();
+
+	for( int rp=0; rp < MAXPLAYERS; rp++ )
 	{
-		this->HandleInputs();
-	
+		if( rp != (my_player_nr -1 ))
+		{
+			int tempstat = (Sint16) receive_buffer.Read16();
+
+			players[rp].shipframe = (Sint16) receive_buffer.Read16();
+			players[rp].typing = (Sint16) receive_buffer.Read16();
+			players[rp].x = (Sint16) receive_buffer.Read16();
+			players[rp].y = (Sint16) receive_buffer.Read16();
+			players[rp].vx = (Sint16) receive_buffer.Read16();
+			players[rp].vy = (Sint16) receive_buffer.Read16();
 		
-		oldtime = newtime;
-		newtime = float(SDL_GetTicks());
-		deltatime = newtime - oldtime;
-
-
-		if(SDLNet_ReceiveDatagram(udpsock, &in) && in != NULL)
-		{
-			std::cout << "update. cur status:" << GetStatusString(self->status) << std::endl;
-			std::cout << "x:" << self->x << " y:" << self->y << std::endl;
-			if(in->buflen > 0 && SDLNet_CompareAddresses(in->addr, ipaddr) == 0)
+			if( tempstat == FLYING && (players[rp].status == LANDED ||
+				players[rp].status == LANDEDBASE))
 			{
-				Uint8 * temppoint = in->buf;
-				if( in->buf[0] == PROTOCOL_KICK )
-				{
-					// WE ARE KICKED! OMG!
-					// ( should really msg the player though :/ )
-					error = 6;
-					done = false;
-				}
-				if( in->buf[0] == PROTOCOL_UPDATE && in->buf[1] == my_player_nr )
-				{
-					// standard game package...
-					// DebugPackage("got update", in);
-					Uint8 * tmpptr = & in->buf[2];
-					Uint32 basestates = Read32(tmpptr);
-					for( int bidx = 0; bidx < MAXBASES; bidx++ ) {
-						if( basestates & (1 << (bidx *2))) {
-							bases[bidx].owner = RED;
-						} 
-						if( basestates & (1 << (bidx *2 +1))) {
-							bases[bidx].owner = BLUE;
-						}
-					}
-					tmpptr +=4;
-					red_team.bases = (Sint16)Read16(tmpptr);
-					tmpptr+=2;
-					blue_team.bases = (Sint16)Read16(tmpptr);
-					tmpptr+=2;
-
-					for( int rp=0; rp < MAXPLAYERS; rp++ )
-					{
-						if( rp != (my_player_nr -1 ))
-						{
-							int tempstat = (Sint16) Read16(tmpptr);
-							tmpptr+=2;
-							std::cout << "plyr " << rp+1 << " status:" << GetStatusString(tempstat) << std::endl;
-
-							players[rp].shipframe = (Sint16) Read16(tmpptr);
-							tmpptr+=2;
-							players[rp].typing = (Sint16) Read16(tmpptr);
-							tmpptr+=2;
-							players[rp].x = (Sint16) Read16(tmpptr);
-							tmpptr+=2;
-							players[rp].y = (Sint16) Read16(tmpptr);
-							tmpptr+=2;
-							players[rp].vx = (Sint16) Read16(tmpptr);
-							tmpptr+=2;
-							players[rp].vy = (Sint16) Read16(tmpptr);
-							tmpptr+=2;
-						
-							if( tempstat == FLYING && (players[rp].status == LANDED ||
-							   players[rp].status == LANDEDBASE))
-							{
-								players[rp].lastliftofftime = SDL_GetTicks();
-							}
-							if( tempstat == DEAD && players[rp].status != DEAD )
-							{
-								NewExplosion( int(players[rp].x),int( players[rp].y ));
-							}
-							players[rp].status = tempstat;
-
-						
-							Sint16 tx, ty, tvx, tvy, tn, tbultyp;
-							tn = (Sint16)Read16( tmpptr );
-							tmpptr+=2;
-							tbultyp = (Sint16)Read16( tmpptr );
-							tmpptr+=2;
-							tx = (Sint16)Read16( tmpptr );
-							tmpptr+=2;
-							ty = (Sint16)Read16( tmpptr );
-							tmpptr+=2;
-							tvx = (Sint16)Read16( tmpptr );
-							tmpptr+=2;
-							tvy = (Sint16)Read16( tmpptr );
-							tmpptr+=2;
-							if( tx == 0 && ty == 0 && tvx == 0 && tvy == 0 && tn == 0 &&
-							    tbultyp == 0 )
-							{
-								// this is an empty Bullet
-								
-							}
-							else
-							{
-								if( tbultyp == MINE )
-								{
-									bullets[tn].x = (float)tx;
-									bullets[tn].y = (float)ty;
-									bullets[tn].minelaidtime = SDL_GetTicks();
-								}
-								if( tbultyp == BULLET )
-								{
-									bullets[tn].x = (float)tx;
-									bullets[tn].y = (float)ty;
-									bullets[tn].vx = (float)tvx;
-									bullets[tn].vy = (float)tvy;
-								}
-								if( tbultyp == ROCKET )
-								{
-									bullets[tn].x = (float)tvx;
-									bullets[tn].y = (float)tvy;
-									bullets[tn].angle = (float)ty;
-									PlaySound( rocketsound );
-								}
-								bullets[tn].type = tbultyp;
-								bullets[tn].active = 1;
-								bullets[tn].collide = 0;
-								bullets[tn].owner = rp+1;
-							}
-						}
-						else
-						{
-							int tempstatus = (Sint16) Read16(tmpptr);
-							std::cout << "my " << rp+1 << " status:" << GetStatusString(tempstatus) << std::endl;
-							tmpptr+=6;
-							Sint16 tx, ty;
-							tx = (Sint16)Read16( tmpptr );
-							tmpptr+=2;
-							ty = (Sint16)Read16( tmpptr );
-						
-							if( tempstatus == DEAD && self->status == SUICIDE )
-							{
-								std::cout << "we have just suicided!" << std::endl;
-								NewExplosion( int(self->x), int(self->y));
-								self->status = DEAD;
-							}
-							if( tempstatus == JUSTCOLLIDEDROCK && self->status == FLYING )
-							{
-								std::cout << "we just collided with a rock!" << std::endl;
-								NewExplosion( int(self->x), int(self->y));
-								self->status = DEAD;
-							}
-							if( tempstatus == JUSTCOLLIDEDBASE && self->status == FLYING )
-							{
-								std::cout << "we just collided with Base!" << std::endl;
-								NewExplosion( int(self->x), int(self->y));
-								self->status = DEAD;
-							}
-							if( tempstatus == JUSTSHOT && self->status == FLYING )
-							{
-								std::cout << "we were just shot!" << std::endl;
-								NewExplosion( int(self->x), int(self->y));
-								self->status = DEAD;
-							}
-							if( tempstatus == LANDEDRESPAWN && self->status == RESPAWN )
-							{
-								std::cout << "server said we could respawn!" << std::endl;
-								int tmpbs = FindRespawnBase( self->Team );
-
-								// Base found, reset the player's speed etc.
-								ResetPlayer( self );
-								UpdatePlayer( self );
-								// mount /dev/player /mnt/Base 
-								self->x = bases[ tmpbs ].x;
-								self->y = bases[ tmpbs ].y - 26;
-
-								self->status = LANDEDRESPAWN;
-							}
-							if( tempstatus == FLYING && self->status == LIFTOFF )
-							{
-								std::cout << "we are flyig!" << std::endl;
-								self->status = FLYING;
-							}
-							if( tempstatus == LANDED && self->status == FLYING ) 
-							{
-								std::cout << "we have landed!" << std::endl;
-								self->status = LANDED;
-								self->vx = 0;
-								self->vy = 0;
-								self->engine_on = 0;
-								self->flamestate = 0;
-							}
-							if( tempstatus == LANDEDBASE && self->status == FLYING )
-							{
-								std::cout << "we have landed on a Base!" << std::endl;
-								int tmpbase = GetNearestBase( int(self->x), int(self->y));
-														
-								self->y = bases[tmpbase].y - 26;
-								self->angle = 0;
-								self->shipframe = 0;
-								self->status = LANDEDBASE;
-								self->vx = 0;
-								self->vy = 0;
-								self->engine_on = 0;
-								self->flamestate = 0;
-								UpdatePlayer(self);
-							}
-							tmpptr+=18;
-						}
-					}
-					
-					Sint16 tmpval = 0;
-					tmpval = (Sint16)Read16( tmpptr);
-					tmpptr+=2;
-					if( tmpval != 0 )
-					{
-						for( int gcb = 0; gcb < tmpval; gcb++ )
-						{
-							Sint16 num = (Sint16)Read16( tmpptr );
-							tmpptr+=2;
-							if( bullets[num].type == MINE || bullets[num].type == ROCKET )
-							{
-								NewExplosion( int(bullets[num].x), int(bullets[num].y));
-							}
-							CleanBullet( int( num ) );
-						}
-					}
-
-					tmpptr=NULL; // make sure we don't write in bad memory
-				}
-				if( in->buf[0] == PROTOCOL_CHAT && in->buf[1] == my_player_nr )
-				{
-					// chat package
-					memset( chat1, '\0', sizeof( chat1 ));
-					strcpy( chat1, chat2 );
-				
-					memset( chat2, '\0', sizeof( chat2 ));
-					strcpy( chat2, chat3 );
-
-					memset( chat3, '\0', sizeof( chat3 ));
-					strncpy( chat3, (const char*)&in->buf[2], (in->buflen-2) );
-				}
-				if( in->buf[0] == PROTOCOL_PLAYER_JOINS && in->buf[1] == my_player_nr )
-				{
-					// a player joined
-					number_of_players++;
-					players[ in->buf[2] - 1 ].playing = 1;
-					players[ in->buf[2] - 1 ].self_sustaining = 1;
-					players[ in->buf[2] - 1 ].Team = in->buf[3];
-					strncpy( players[ in->buf[2] - 1].name, (const char*)&in->buf[4], 12 );
-					InitPlayer( &players[ in->buf[2] - 1 ] );
-				}
-				if( in->buf[0] == PROTOCOL_PLAYER_LEAVES && in->buf[1] == my_player_nr )
-				{
-					// a player leaves
-					number_of_players--;
-					players[ in->buf[2] - 1 ].playing = 0;
-					players[ in->buf[2] - 1 ].self_sustaining = 0;
-					InitPlayer( &players[ in->buf[2] - 1 ] );
-				}
+				players[rp].lastliftofftime = SDL_GetTicks();
 			}
-
-			// Free packet
-			SDLNet_DestroyDatagram(in);
-		}
-
-		for( int up = 0; up < 8; up++ )
-		{
-			if( players[up].playing )
+			if( tempstat == DEAD && players[rp].status != DEAD )
 			{
-				if( players[up].status == FLYING )
+				NewExplosion( int(players[rp].x),int( players[rp].y ));
+			}
+			players[rp].status = tempstat;
+
+		
+			Sint16 tx, ty, tvx, tvy, tn, tbultyp;
+			tn = (Sint16) receive_buffer.Read16();
+			tbultyp = (Sint16) receive_buffer.Read16();
+			tx = (Sint16) receive_buffer.Read16();
+			ty = (Sint16) receive_buffer.Read16();
+			tvx = (Sint16) receive_buffer.Read16();
+			tvy = (Sint16) receive_buffer.Read16();
+			if( tx == 0 && ty == 0 && tvx == 0 && tvy == 0 && tn == 0 &&
+				tbultyp == 0 )
+			{
+				// this is an empty Bullet
+			}
+			else
+			{
+				if( tbultyp == MINE )
 				{
-					UpdatePlayer( &players[up] );
+					bullets[tn].x = (float)tx;
+					bullets[tn].y = (float)ty;
+					bullets[tn].minelaidtime = SDL_GetTicks();
 				}
+				if( tbultyp == BULLET )
+				{
+					bullets[tn].x = (float)tx;
+					bullets[tn].y = (float)ty;
+					bullets[tn].vx = (float)tvx;
+					bullets[tn].vy = (float)tvy;
+				}
+				if( tbultyp == ROCKET )
+				{
+					bullets[tn].x = (float)tvx;
+					bullets[tn].y = (float)tvy;
+					bullets[tn].angle = (float)ty;
+					PlaySound( rocketsound );
+				}
+				bullets[tn].type = tbultyp;
+				bullets[tn].active = 1;
+				bullets[tn].collide = 0;
+				bullets[tn].owner = rp+1;
 			}
 		}
+		else
+		{
+			int tempstatus = (Sint16) receive_buffer.Read16();
+			Sint16 tx, ty;
+			tx = (Sint16)receive_buffer.Read16();
+			ty = (Sint16)receive_buffer.Read16();
+		
+			if( tempstatus == DEAD && self->status == SUICIDE )
+			{
+				std::cout << "we have just suicided!" << std::endl;
+				NewExplosion( int(self->x), int(self->y));
+				self->status = DEAD;
+			}
+			if( tempstatus == JUSTCOLLIDEDROCK && self->status == FLYING )
+			{
+				std::cout << "we just collided with a rock!" << std::endl;
+				NewExplosion( int(self->x), int(self->y));
+				self->status = DEAD;
+			}
+			if( tempstatus == JUSTCOLLIDEDBASE && self->status == FLYING )
+			{
+				std::cout << "we just collided with Base!" << std::endl;
+				NewExplosion( int(self->x), int(self->y));
+				self->status = DEAD;
+			}
+			if( tempstatus == JUSTSHOT && self->status == FLYING )
+			{
+				std::cout << "we were just shot!" << std::endl;
+				NewExplosion( int(self->x), int(self->y));
+				self->status = DEAD;
+			}
+			if( tempstatus == LANDEDRESPAWN && self->status == RESPAWN )
+			{
+				std::cout << "server said we could respawn!" << std::endl;
+				int tmpbs = FindRespawnBase( self->Team );
+
+				// Base found, reset the player's speed etc.
+				ResetPlayer( self );
+				UpdatePlayer( self );
+				// mount /dev/player /mnt/Base 
+				self->x = bases[ tmpbs ].x;
+				self->y = bases[ tmpbs ].y - 26;
+
+				self->status = LANDEDRESPAWN;
+			}
+			if( tempstatus == FLYING && self->status == LIFTOFF )
+			{
+				std::cout << "we are flyig!" << std::endl;
+				self->status = FLYING;
+			}
+			if( tempstatus == LANDED && self->status == FLYING ) 
+			{
+				std::cout << "we have landed!" << std::endl;
+				self->status = LANDED;
+				self->vx = 0;
+				self->vy = 0;
+				self->engine_on = 0;
+				self->flamestate = 0;
+			}
+			if( tempstatus == LANDEDBASE && self->status == FLYING )
+			{
+				std::cout << "we have landed on a Base!" << std::endl;
+				int tmpbase = GetNearestBase( int(self->x), int(self->y));
+										
+				self->y = bases[tmpbase].y - 26;
+				self->angle = 0;
+				self->shipframe = 0;
+				self->status = LANDEDBASE;
+				self->vx = 0;
+				self->vy = 0;
+				self->engine_on = 0;
+				self->flamestate = 0;
+				UpdatePlayer(self);
+			}
+		}
+	}
+	
+	Sint16 tmpval = 0;
+	tmpval = (Sint16)receive_buffer.Read16();
+	if( tmpval != 0 )
+	{
+		for( int gcb = 0; gcb < tmpval; gcb++ )
+		{
+			Sint16 num = (Sint16)receive_buffer.Read16();
+			if( bullets[num].type == MINE || bullets[num].type == ROCKET )
+			{
+				NewExplosion( int(bullets[num].x), int(bullets[num].y));
+			}
+			CleanBullet( int( num ) );
+		}
+	}
+}
+
+void Client::HandleChat() {
+	// Legacy check
+	if( my_player_nr != receive_buffer.Read8()) {
+		return;
+	}
+	// chat package
+	memset( chat1, '\0', sizeof( chat1 ));
+	strcpy( chat1, chat2 );
+
+	memset( chat2, '\0', sizeof( chat2 ));
+	strcpy( chat2, chat3 );
+
+	memset( chat3, '\0', sizeof( chat3 ));
+	receive_buffer.ReadStringCopyInto(chat3, sizeof(chat3));
+}
+
+void Client::HandlePlayerJoins() {
+	// Legacy check
+	if( my_player_nr != receive_buffer.Read8()) {
+		return;
+	}
+	Uint8 new_player_id = receive_buffer.Read8() - 1;
+	Uint8 new_player_team = receive_buffer.Read8();
+	// a player joined
+	number_of_players++;
+	players[new_player_id].playing = 1;
+	players[new_player_id].self_sustaining = 1;
+	players[new_player_id].Team = new_player_team;
+	receive_buffer.ReadStringCopyInto(players[new_player_id].name, 12);
+	InitPlayer( &players[new_player_id] );
+}
+
+void Client::HandlePlayerLeaves() {
+	// Legacy check
+	if( my_player_nr != receive_buffer.Read8()) {
+		return;
+	}
+	Uint8 player_leave_id = receive_buffer.Read8() - 1;
+	// a player leaves
+	number_of_players--;
+	players[player_leave_id].playing = 0;
+	players[player_leave_id].self_sustaining = 0;
+	InitPlayer( &players[player_leave_id] );
+}
+
+void Client::HandleEvent() {
+	std::cout << "handling event" << std::endl;
+	// Somehow this is not being handled correctly
+	// Maybe write a unit test?
+	Event * event = Event::Deserialize(&receive_buffer);
+	if( event == NULL )	 {
+		std::cout << "event = null?" << std::endl;
+		return;
+	}
+	switch( event->event_type ) {
+		case TEAM_WINS:
+			std::cout << "Team " << static_cast<EventTeamWins*>(event)->team << " wins!" << std::endl;
+			done = true;
+			break;
+		default:
+			std::cout << "Unimplemented event type" << std::endl;
+	}
+}
+
+void Client::UpdatePlayers() {
+	for( int up = 0; up < 8; up++ )
+	{
+		if( players[up].playing )
+		{
+			if( players[up].status == FLYING )
+			{
+				UpdatePlayer( &players[up] );
+			}
+		}
+	}
+}
+
+void Client::Tick() {
+	oldtime = newtime;
+	newtime = float(SDL_GetTicks());
+	deltatime = newtime - oldtime;
+}
+
+void Client::GameLoop() {
+	while(!done)
+	{
+		HandleInputs();
+	
+		Tick();
+
+		if(ReceivedPacket()) {
+			Uint8 protocol_header = receive_buffer.Read8();
+			switch(protocol_header) {
+				case PROTOCOL_KICK:
+					std::cout << "received kick notice" << std::endl;
+					HandleKicked();
+					break;
+				case PROTOCOL_UPDATE:
+					std::cout << "received update" << std::endl;
+					HandleUpdate();
+					break;
+				case PROTOCOL_CHAT:
+					std::cout << "received chat" << std::endl;
+					HandleChat();
+					break;
+				case PROTOCOL_PLAYER_JOINS:
+					std::cout << "received joins" << std::endl;
+					HandlePlayerJoins();
+					break;
+				case PROTOCOL_PLAYER_LEAVES:
+					std::cout << "received leaves" << std::endl;
+					HandlePlayerLeaves();
+					break;
+				case PROTOCOL_EVENT:
+					std::cout << "received event" << std::endl;
+					HandleEvent();
+					break;
+				default:
+					std::cout << "received unknown packet type" << std::endl;
+					break;
+			}
+		}
+
+		UpdatePlayers();
 		UpdateBullets( players );
 		ClearOldExplosions();
 				
@@ -606,50 +670,50 @@ void Client::GameLoop() {
 		&& input_given*/)
 				|| SDL_GetTicks() - lastsendtime > MAXIDLETIME )
 		{
-			this->SendUpdate();
+			SendUpdate();
 	
 		}
 
-		this->Draw();
+		Draw();
 	}
-	this->Leave();
+	Leave();
 }
 
 // should send the following stuff:
 // 040 PLAYER STATUS ANGLE X Y VX VY WEAPON NUMBULS ( BULX BULY BULVX BULVY * NUMBULS )
 void Client::SendUpdate() {
-	this->buffer.Clear();
+	this->send_buffer.Clear();
 
-	this->buffer.Write8(PROTOCOL_UPDATE);
-	this->buffer.Write8(my_player_nr);
-	this->buffer.Write8(self->status);
+	this->send_buffer.Write8(PROTOCOL_UPDATE);
+	this->send_buffer.Write8(my_player_nr);
+	this->send_buffer.Write8(self->status);
 
-	this->buffer.Write16( Sint16( self->shipframe ));
-	this->buffer.Write16( Sint16( self->typing ));
-	this->buffer.Write16( Sint16( self->x ));
-	this->buffer.Write16( Sint16( self->y ));
-	this->buffer.Write16( Sint16( self->vx ));
-	this->buffer.Write16( Sint16( self->vy ));
+	this->send_buffer.Write16( Sint16( self->shipframe ));
+	this->send_buffer.Write16( Sint16( self->typing ));
+	this->send_buffer.Write16( Sint16( self->x ));
+	this->send_buffer.Write16( Sint16( self->y ));
+	this->send_buffer.Write16( Sint16( self->vx ));
+	this->send_buffer.Write16( Sint16( self->vy ));
 
 	if( self->bullet_shot )
 	{
-		this->buffer.Write16( Sint16(self->bulletshotnr));
-		this->buffer.Write16( Sint16( bullets[self->bulletshotnr].type));
+		this->send_buffer.Write16( Sint16(self->bulletshotnr));
+		this->send_buffer.Write16( Sint16( bullets[self->bulletshotnr].type));
 		if( bullets[self->bulletshotnr].type == BULLET ||
 			bullets[self->bulletshotnr].type == MINE )
 		{
-			this->buffer.Write16( Sint16( bullets[self->bulletshotnr].x));
-			this->buffer.Write16( Sint16( bullets[self->bulletshotnr].y));
-			this->buffer.Write16( Sint16( bullets[self->bulletshotnr].vx));
-			this->buffer.Write16( Sint16( bullets[self->bulletshotnr].vy));
+			this->send_buffer.Write16( Sint16( bullets[self->bulletshotnr].x));
+			this->send_buffer.Write16( Sint16( bullets[self->bulletshotnr].y));
+			this->send_buffer.Write16( Sint16( bullets[self->bulletshotnr].vx));
+			this->send_buffer.Write16( Sint16( bullets[self->bulletshotnr].vy));
 		}
 		if( bullets[self->bulletshotnr].type == ROCKET)
 		{
 			// Why is this here?
-			this->buffer.Write16( 0 );
-			this->buffer.Write16( Sint16( bullets[self->bulletshotnr].angle));
-			this->buffer.Write16( Sint16( bullets[self->bulletshotnr].x));
-			this->buffer.Write16( Sint16( bullets[self->bulletshotnr].y));
+			this->send_buffer.Write16( 0 );
+			this->send_buffer.Write16( Sint16( bullets[self->bulletshotnr].angle));
+			this->send_buffer.Write16( Sint16( bullets[self->bulletshotnr].x));
+			this->send_buffer.Write16( Sint16( bullets[self->bulletshotnr].y));
 
 		}
 		self->bullet_shot = false;
@@ -657,7 +721,7 @@ void Client::SendUpdate() {
 	}
 	else
 	{
-		this->buffer.WriteBytes(12, 0x00);
+		this->send_buffer.WriteBytes(12, 0x00);
 	}
 
 	this->SendBuffer();
@@ -698,10 +762,10 @@ bool Client::Join() {
 	// server is there, everything is OK proceed with joining
 	// send the following package according to protocol:
 	// 030 DNAME
-	this->buffer.Clear();
-	this->buffer.Write8(PROTOCOL_JOIN);
-	this->buffer.WriteString(this->name);
-	this->buffer.Write8('\0');
+	this->send_buffer.Clear();
+	this->send_buffer.Write8(PROTOCOL_JOIN);
+	this->send_buffer.WriteString(this->name);
+	this->send_buffer.Write8('\0');
 
 	this->SendBuffer();
 	
@@ -762,10 +826,10 @@ bool Client::Join() {
 
 void Client::Leave() {
 	// send we are leaving
-	this->buffer.Clear();
-	this->buffer.Write8(PROTOCOL_LEAVE);
-	this->buffer.Write8(my_player_nr);
-	this->buffer.Write8('\0');
+	this->send_buffer.Clear();
+	this->send_buffer.Write8(PROTOCOL_LEAVE);
+	this->send_buffer.Write8(my_player_nr);
+	this->send_buffer.Write8('\0');
 	this->SendBuffer();
 }
 
@@ -787,7 +851,6 @@ void Client::Load() {
 	
 	// Init the font-engine
 	// Weird place for this§
-	InitSound();
 	InitFont();
 	
 	std::cout << "@ loading data" << std::endl;
@@ -976,10 +1039,10 @@ void Client::SendChatLine() {
 	memset( chat3, '\0', sizeof( chat3 ));
 	strcpy( chat3, this->type_buffer.AsString() );
 
-	this->buffer.Clear();
-	this->buffer.Write8(PROTOCOL_CHAT);
-	this->buffer.Write8(this->my_player_nr);
-	this->buffer.WriteString(this->type_buffer.AsString());
+	this->send_buffer.Clear();
+	this->send_buffer.Write8(PROTOCOL_CHAT);
+	this->send_buffer.Write8(this->my_player_nr);
+	this->send_buffer.WriteString(this->type_buffer.AsString());
 
 	this->SendBuffer();
 	self->typing = false;

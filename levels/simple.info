@@ -1,0 +1,13 @@
+author=steve van bennekom
+name=simple testlevel
+version=1
+bases=2
+collisionmap=simple_colmap.bmp
+image=simple.png
+basesblue=1
+basex=380
+basey=480
+basesred=1
+basex=580
+basey=480
+end

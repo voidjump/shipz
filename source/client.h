@@ -5,7 +5,8 @@
 
 class Client {
     private:
-        Buffer buffer; // transmission buffer
+        Buffer send_buffer; // transmission buffer
+        Buffer receive_buffer;
         Buffer type_buffer;
         const bool* keys;
 
@@ -92,6 +93,23 @@ class Client {
 
         // Wait for a packet for a while
         bool WaitForPacket(SDLNet_DatagramSocket * sock, SDLNet_Datagram ** dgram);
+
+        // Wait for a packet without blocking
+        bool ReceivedPacket();
+
+        // Update timers
+        void Tick();
+
+        // Update other players
+        void UpdatePlayers();
+
+        // Packet handlers:
+        void HandleKicked();
+        void HandleUpdate();
+        void HandleChat();
+        void HandlePlayerJoins();
+        void HandlePlayerLeaves();
+        void HandleEvent();
 };
 
 #endif

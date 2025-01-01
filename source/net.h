@@ -35,7 +35,8 @@ class Buffer {
     bool WriteOctets(const char *, size_t);
     bool WriteString(const char *);
 
-    uint Available();
+    Uint16 AvailableWrite();
+    Uint16 AvailableRead();
 
     // Read 8 bytes
     Uint8 Read8();
@@ -45,6 +46,8 @@ class Buffer {
     Uint32 Read32();
     // Read string into destination buffer
     void ReadStringCopyInto(void *, size_t);
+    // Read into new string
+    std::string& ReadString();
     // Decrease the position pointer
     void DecreasePosition(uint n);
     // Return buffer as string

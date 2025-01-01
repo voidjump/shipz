@@ -2,6 +2,7 @@
 #define SHIPZSERVER_H
 
 #include "types.h"
+#include "event.h"
 #include "net.h"
 
 #define SERVER_RUNSTATE_OK 1
@@ -22,7 +23,7 @@ class Server {
         int done = 0;
         int number_of_players = 0;
         SDLNet_Address * my_ip_address;
-
+        std::vector<Event*> events;
         uint runstate;
 
     public:
@@ -30,6 +31,8 @@ class Server {
         Server(const char *);
         ~Server();
 
+        Uint8 CheckVictory();
+        void SendEvent(Event *event);
         void Init();
         void Run();
         void GameLoop();

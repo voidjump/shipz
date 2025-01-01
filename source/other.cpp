@@ -360,7 +360,7 @@ void GetTyping( Buffer *buffer, uint key, uint mod)
 	if( key == SDLK_BACKSPACE  )
 		buffer->DecreasePosition(1);
 
-	if( buffer->Available() == 0)
+	if( buffer->AvailableWrite() == 0)
 		return;
 	// a-z / A-Z
 	if( key >= SDLK_A && key <= SDLK_Z ) {

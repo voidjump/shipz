@@ -22,12 +22,6 @@ void UpdateBases() {
 			blue_team.bases++;
 		}
 	}
-	if( red_team.bases == 0 ) {
-		std::cout << "BLUE WINS" << std::endl;
-	}
-	if( blue_team.bases == 0 ) {
-		std::cout << "RED WINS" << std::endl;
-	}
 }
 
 Server::Server(const char * levelname) {
@@ -43,6 +37,18 @@ Server::~Server() {
 	delete collisionmap;
 	SDLNet_DestroyDatagramSocket(udpsock);
 	SDLNet_Quit();
+}
+
+Uint8 Server::CheckVictory() {
+	if( red_team.bases == 0 ) {
+		std::cout << "BLUE WINS" << std::endl;
+		return BLUE;
+	}
+	if( blue_team.bases == 0 ) {
+		std::cout << "RED WINS" << std::endl;
+		return RED;
+	}
+	return NEUTRAL;
 }
 
 void Server::LoadLevel() {
@@ -717,10 +723,30 @@ void Server::GameLoop() {
 		UpdateBullets( players );
 		CheckBulletCollides( collisionmap );
 		UpdatePlayers();
-						
-		if((float(SDL_GetTicks()) - lastsendtime) > SENDDELAY)
+		// TODO: Update logic:
+		// If a player conquers the last base, keep
+		// running the base loop but do not allow further captures
+		// After a few seconds, send event quit
+		if(CheckVictory() != NEUTRAL) {
+			auto event = new EventTeamWins(CheckVictory());
+			SendEvent(event);
+			done = true;
+			runstate = SERVER_RUNSTATE_QUIT;
+
+		} else if((float(SDL_GetTicks()) - lastsendtime) > SENDDELAY)
 		{
 			this->SendUpdates();
 		}
+	}
+}
+
+void Server::SendEvent(Event *event) {
+	this->sendbuf.Clear();
+	this->sendbuf.Write8(PROTOCOL_EVENT);
+	if(!event->Serialize(&this->sendbuf)) {
+		throw new std::runtime_error("Insufficient buffer for sending event");
+	}
+	for(uint p = 0; p < MAXPLAYERS; p++ ) {
+		SendBuffer(players[p].playaddr);
 	}
 }
