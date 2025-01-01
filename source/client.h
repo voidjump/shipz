@@ -2,6 +2,7 @@
 #define SHIPZCLIENT_H
 #include "types.h"
 #include "net.h"
+#include "player.h"
 
 class Client {
     private:

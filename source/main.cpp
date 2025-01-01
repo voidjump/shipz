@@ -63,11 +63,6 @@ LevelData lvl;
 
 Bullet bullets[NUMBEROFBULLETS];
  
-Base bases[MAXBASES];
-
-Team red_team;
-Team blue_team;
-
 Explosion explosions[NUMBEROFEXPLOSIONS];
 
 
@@ -77,8 +72,6 @@ int main( int argc, char *argv[] )
 {
 	bool cli_init = 0;
 	int error = 0, menu_result;
-	red_team.players = 0;
-	blue_team.players = 0;
 
 	char client_ip[16];
 	char client_nick[13];

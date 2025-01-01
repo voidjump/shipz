@@ -33,7 +33,7 @@ bool Event::Serialize(Buffer * buffer) {
 // of event deserialized
 Event* Event::Deserialize(Buffer *buffer) {
     Event *event;
-    // if( buffer->Read8() != PROTOCOL_EVENT ) {
+    // if( buffer->Read8() != SHIPZ_MESSAGE::EVENT ) {
     //     return NULL;
     // }
     std::cout << "team wins?" << std::endl;

@@ -8,32 +8,33 @@
 #include "gfx.h"
 #include "sound.h"
 #include "other.h"
+#include "player.h"
+#include "team.h"
+#include "base.h"
 
 const char * GetStatusString(int status) {
 	switch(status) {
-		case DEAD:
+		case PLAYER_STATUS::DEAD:
 			return "DEAD";
-		case FLYING:
+		case PLAYER_STATUS::FLYING:
 			return "FLYING";
-		case LANDED:
+		case PLAYER_STATUS::LANDED:
 			return "LANDED";
-		case JUSTCOLLIDEDROCK:
+		case PLAYER_STATUS::JUSTCOLLIDEDROCK:
 			return "JUSTCOLLIDEDROCK";
-		case JUSTCOLLIDEDSHIP:
-			return "JUSTCOLLIDEDSHIP";
-		case JUSTSHOT:
+		case PLAYER_STATUS::JUSTSHOT:
 			return "JUSTSHOT";
-		case RESPAWN:
+		case PLAYER_STATUS::RESPAWN:
 			return "RESPAWN";
-		case LIFTOFF:
+		case PLAYER_STATUS::LIFTOFF:
 			return "LIFTOFF";
-		case SUICIDE:
+		case PLAYER_STATUS::SUICIDE:
 			return "SUICIDE";
-		case JUSTCOLLIDEDBASE:
+		case PLAYER_STATUS::JUSTCOLLIDEDBASE:
 			return "JUSTCOLLIDEDBASE";
-		case LANDEDBASE :
+		case PLAYER_STATUS::LANDEDBASE :
 			return "LANDEDBASE";
-		case LANDEDRESPAWN :
+		case PLAYER_STATUS::LANDEDRESPAWN :
 			return "LANDEDRESPAWN";
 	}
 	return "UNDEFINED";
@@ -46,7 +47,7 @@ void EmptyPlayer( Player * play )
 	play->lastshottime = 0;
 	play->bullet_shot = 0;
 	play->bulletshotnr = 0;
-	play->status = DEAD;
+	play->status = PLAYER_STATUS::DEAD;
 	play->playing = 0;
 	play->kills = 0;
 	play->deaths = 0;
@@ -55,7 +56,6 @@ void EmptyPlayer( Player * play )
 	play->flamestate = 0;
 	play->shipframe = 0;
 	play->weapon = BULLET;
-	play->status = DEAD;
 	play->x = 0;
 	play->y = 0;
 	play->vx = 0;
@@ -104,7 +104,7 @@ void InitPlayer( Player * play )
 	play->fy = 0;
 	play->crossx = 0;
 	play->crossy = -CROSSHAIRDIST;
-	play->status = DEAD;
+	play->status = PLAYER_STATUS::DEAD;
 	play->weapon = BULLET;
 	play->typing = 0;
 }
@@ -116,7 +116,7 @@ void UpdatePlayer( Player * play )
 	if( !play->self_sustaining )
 	{
 		// this is the client himself ( a local player )
-		if( play->status != LANDED )
+		if( play->status != PLAYER_STATUS::LANDED )
 		{
 			play->shipframe = ( int(play->angle) / 10 );
 			if( play->shipframe > 35 ) 
@@ -484,7 +484,7 @@ int GetNearestEnemyPlayer( Player * plyrs, int x, int y, int pteam )
 
 	for( i = 0; i < MAXPLAYERS; i++ )
 	{
-		if( plyrs[i].playing && plyrs[i].status == FLYING  )
+		if( plyrs[i].playing && plyrs[i].status == PLAYER_STATUS::FLYING  )
 		{
 			tdx = int(x - plyrs[i].x);
 			tdy = int(y - plyrs[i].y);
@@ -652,14 +652,14 @@ int FindRespawnBase( int rspwnteam )
 			}
 		}
 	}
-	if( rspwnteam == RED )
+	if( rspwnteam == SHIPZ_TEAM::RED )
 	{
 		rndint = int(rand())%int(red_team.bases) + 1;
 		for( i = 0; i < MAXBASES; i++ )
 		{
 			if( bases[i].used )
 			{
-				if( bases[i].owner == RED )
+				if( bases[i].owner == SHIPZ_TEAM::RED )
 				{	
 					tmpctr++;
 					if( tmpctr == rndint )

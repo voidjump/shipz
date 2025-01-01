@@ -14,6 +14,8 @@
 #include "sound.h"
 #include "font.h"
 #include "event.h"
+#include "team.h"
+#include "base.h"
 
 // TODO:
 // Candidates for bitwise state flags
@@ -77,7 +79,7 @@ void Client::Connect(const char *connect_address) {
 
 	// Send a status message
 	this->send_buffer.Clear();
-	this->send_buffer.Write8(PROTOCOL_STATUS);
+	this->send_buffer.Write8(SHIPZ_MESSAGE::STATUS);
 	this->send_buffer.Write8(SHIPZ_VERSION);
 	this->send_buffer.Write8('\0');
 	
@@ -93,7 +95,7 @@ void Client::Connect(const char *connect_address) {
 			// got a response.
 
 			// TODO: Safely read from buffer
-			if( in->buflen > 0 && in->buf[0] == PROTOCOL_STATUS )
+			if( in->buflen > 0 && in->buf[0] == SHIPZ_MESSAGE::STATUS )
 			{
 				if( in->buf[1] == SHIPZ_VERSION )
 				{
@@ -211,7 +213,7 @@ void Client::HandleInputs() {
 	}
 	
 	keys = SDL_GetKeyboardState(NULL);
-	if( self->status == FLYING )
+	if( self->status == PLAYER_STATUS::FLYING )
 	{
 		if( keys[SDL_SCANCODE_RIGHT] )
 		{
@@ -289,29 +291,29 @@ void Client::HandleInputs() {
 	
 	if( keys[SDL_SCANCODE_UP] )
 	{
-		if( self->status == LANDED || self->status == LANDEDBASE )
+		if( self->status == PLAYER_STATUS::LANDED || self->status == PLAYER_STATUS::LANDEDBASE )
 		{
-			self->status = LIFTOFF;
+			self->status = PLAYER_STATUS::LIFTOFF;
 			self->y -= 10;
 			input_given = 1;
 			self->lastliftofftime = SDL_GetTicks();
 		}
-		if( self->status == LANDEDRESPAWN )
+		if( self->status == PLAYER_STATUS::LANDEDRESPAWN )
 		{
 			// no bullet delay after respawn, so don't reset lastliftofftime
-			self->status = LIFTOFF;
+			self->status = PLAYER_STATUS::LIFTOFF;
 			self->y -= 10;
 			input_given = 1;
 		}
 	}
-	if( self->status == DEAD )
+	if( self->status == PLAYER_STATUS::DEAD )
 	{
 		if( keys[SDL_SCANCODE_SPACE] && !self->typing )
 		{
 			// respawn
 			input_given = 1;
 			//ResetPlayer( self );
-			self->status = RESPAWN;
+			self->status = PLAYER_STATUS::RESPAWN;
 			//UpdatePlayer(self);
 		}
 	}
@@ -320,9 +322,9 @@ void Client::HandleInputs() {
 	{
 		if( keys[SDL_SCANCODE_X] )
 		{
-			if( self->status != DEAD && self->status != RESPAWN )
+			if( self->status != PLAYER_STATUS::DEAD && self->status != PLAYER_STATUS::RESPAWN )
 			{
-				self->status = SUICIDE;
+				self->status = PLAYER_STATUS::SUICIDE;
 				input_given = 1;
 			}
 		}
@@ -372,10 +374,10 @@ void Client::HandleUpdate() {
 	Uint32 basestates = receive_buffer.Read32();
 	for( int bidx = 0; bidx < MAXBASES; bidx++ ) {
 		if( basestates & (1 << (bidx *2))) {
-			bases[bidx].owner = RED;
+			bases[bidx].owner = SHIPZ_TEAM::RED;
 		} 
 		if( basestates & (1 << (bidx *2 +1))) {
-			bases[bidx].owner = BLUE;
+			bases[bidx].owner = SHIPZ_TEAM::BLUE;
 		}
 	}
 	red_team.bases = (Sint16)receive_buffer.Read16();
@@ -394,12 +396,12 @@ void Client::HandleUpdate() {
 			players[rp].vx = (Sint16) receive_buffer.Read16();
 			players[rp].vy = (Sint16) receive_buffer.Read16();
 		
-			if( tempstat == FLYING && (players[rp].status == LANDED ||
-				players[rp].status == LANDEDBASE))
+			if( tempstat == PLAYER_STATUS::FLYING && (players[rp].status == PLAYER_STATUS::LANDED ||
+				players[rp].status == PLAYER_STATUS::LANDEDBASE))
 			{
 				players[rp].lastliftofftime = SDL_GetTicks();
 			}
-			if( tempstat == DEAD && players[rp].status != DEAD )
+			if( tempstat == PLAYER_STATUS::DEAD && players[rp].status != PLAYER_STATUS::DEAD )
 			{
 				NewExplosion( int(players[rp].x),int( players[rp].y ));
 			}
@@ -453,31 +455,31 @@ void Client::HandleUpdate() {
 			tx = (Sint16)receive_buffer.Read16();
 			ty = (Sint16)receive_buffer.Read16();
 		
-			if( tempstatus == DEAD && self->status == SUICIDE )
+			if( tempstatus == PLAYER_STATUS::DEAD && self->status == PLAYER_STATUS::SUICIDE )
 			{
 				std::cout << "we have just suicided!" << std::endl;
 				NewExplosion( int(self->x), int(self->y));
-				self->status = DEAD;
+				self->status = PLAYER_STATUS::DEAD;
 			}
-			if( tempstatus == JUSTCOLLIDEDROCK && self->status == FLYING )
+			if( tempstatus == PLAYER_STATUS::JUSTCOLLIDEDROCK && self->status == PLAYER_STATUS::FLYING )
 			{
 				std::cout << "we just collided with a rock!" << std::endl;
 				NewExplosion( int(self->x), int(self->y));
-				self->status = DEAD;
+				self->status = PLAYER_STATUS::DEAD;
 			}
-			if( tempstatus == JUSTCOLLIDEDBASE && self->status == FLYING )
+			if( tempstatus == PLAYER_STATUS::JUSTCOLLIDEDBASE && self->status == PLAYER_STATUS::FLYING )
 			{
 				std::cout << "we just collided with Base!" << std::endl;
 				NewExplosion( int(self->x), int(self->y));
-				self->status = DEAD;
+				self->status = PLAYER_STATUS::DEAD;
 			}
-			if( tempstatus == JUSTSHOT && self->status == FLYING )
+			if( tempstatus == PLAYER_STATUS::JUSTSHOT && self->status == PLAYER_STATUS::FLYING )
 			{
 				std::cout << "we were just shot!" << std::endl;
 				NewExplosion( int(self->x), int(self->y));
-				self->status = DEAD;
+				self->status = PLAYER_STATUS::DEAD;
 			}
-			if( tempstatus == LANDEDRESPAWN && self->status == RESPAWN )
+			if( tempstatus == PLAYER_STATUS::LANDEDRESPAWN && self->status == PLAYER_STATUS::RESPAWN )
 			{
 				std::cout << "server said we could respawn!" << std::endl;
 				int tmpbs = FindRespawnBase( self->Team );
@@ -489,23 +491,23 @@ void Client::HandleUpdate() {
 				self->x = bases[ tmpbs ].x;
 				self->y = bases[ tmpbs ].y - 26;
 
-				self->status = LANDEDRESPAWN;
+				self->status = PLAYER_STATUS::LANDEDRESPAWN;
 			}
-			if( tempstatus == FLYING && self->status == LIFTOFF )
+			if( tempstatus == PLAYER_STATUS::FLYING && self->status == PLAYER_STATUS::LIFTOFF )
 			{
 				std::cout << "we are flyig!" << std::endl;
-				self->status = FLYING;
+				self->status = PLAYER_STATUS::FLYING;
 			}
-			if( tempstatus == LANDED && self->status == FLYING ) 
+			if( tempstatus == PLAYER_STATUS::LANDED && self->status == PLAYER_STATUS::FLYING ) 
 			{
 				std::cout << "we have landed!" << std::endl;
-				self->status = LANDED;
+				self->status = PLAYER_STATUS::LANDED;
 				self->vx = 0;
 				self->vy = 0;
 				self->engine_on = 0;
 				self->flamestate = 0;
 			}
-			if( tempstatus == LANDEDBASE && self->status == FLYING )
+			if( tempstatus == PLAYER_STATUS::LANDEDBASE && self->status == PLAYER_STATUS::FLYING )
 			{
 				std::cout << "we have landed on a Base!" << std::endl;
 				int tmpbase = GetNearestBase( int(self->x), int(self->y));
@@ -513,7 +515,7 @@ void Client::HandleUpdate() {
 				self->y = bases[tmpbase].y - 26;
 				self->angle = 0;
 				self->shipframe = 0;
-				self->status = LANDEDBASE;
+				self->status = PLAYER_STATUS::LANDEDBASE;
 				self->vx = 0;
 				self->vy = 0;
 				self->engine_on = 0;
@@ -608,7 +610,7 @@ void Client::UpdatePlayers() {
 	{
 		if( players[up].playing )
 		{
-			if( players[up].status == FLYING )
+			if( players[up].status == PLAYER_STATUS::FLYING )
 			{
 				UpdatePlayer( &players[up] );
 			}
@@ -632,27 +634,27 @@ void Client::GameLoop() {
 		if(ReceivedPacket()) {
 			Uint8 protocol_header = receive_buffer.Read8();
 			switch(protocol_header) {
-				case PROTOCOL_KICK:
+				case SHIPZ_MESSAGE::KICK:
 					std::cout << "received kick notice" << std::endl;
 					HandleKicked();
 					break;
-				case PROTOCOL_UPDATE:
+				case SHIPZ_MESSAGE::UPDATE:
 					std::cout << "received update" << std::endl;
 					HandleUpdate();
 					break;
-				case PROTOCOL_CHAT:
+				case SHIPZ_MESSAGE::CHAT:
 					std::cout << "received chat" << std::endl;
 					HandleChat();
 					break;
-				case PROTOCOL_PLAYER_JOINS:
+				case SHIPZ_MESSAGE::MSG_PLAYER_JOINS:
 					std::cout << "received joins" << std::endl;
 					HandlePlayerJoins();
 					break;
-				case PROTOCOL_PLAYER_LEAVES:
+				case SHIPZ_MESSAGE::MSG_PLAYER_LEAVES:
 					std::cout << "received leaves" << std::endl;
 					HandlePlayerLeaves();
 					break;
-				case PROTOCOL_EVENT:
+				case SHIPZ_MESSAGE::EVENT:
 					std::cout << "received event" << std::endl;
 					HandleEvent();
 					break;
@@ -684,7 +686,7 @@ void Client::GameLoop() {
 void Client::SendUpdate() {
 	this->send_buffer.Clear();
 
-	this->send_buffer.Write8(PROTOCOL_UPDATE);
+	this->send_buffer.Write8(SHIPZ_MESSAGE::UPDATE);
 	this->send_buffer.Write8(my_player_nr);
 	this->send_buffer.Write8(self->status);
 
@@ -763,7 +765,7 @@ bool Client::Join() {
 	// send the following package according to protocol:
 	// 030 DNAME
 	this->send_buffer.Clear();
-	this->send_buffer.Write8(PROTOCOL_JOIN);
+	this->send_buffer.Write8(SHIPZ_MESSAGE::JOIN);
 	this->send_buffer.WriteString(this->name);
 	this->send_buffer.Write8('\0');
 
@@ -772,7 +774,7 @@ bool Client::Join() {
 	in = NULL;
 	if (WaitForPacket(udpsock, &in))
 	{
-		if( in->buf[0] == PROTOCOL_JOIN )
+		if( in->buf[0] == SHIPZ_MESSAGE::JOIN )
 		{
 			my_player_nr = in->buf[1];
 			std::cout << "Joined as player " << this->name << std::endl;
@@ -827,7 +829,7 @@ bool Client::Join() {
 void Client::Leave() {
 	// send we are leaving
 	this->send_buffer.Clear();
-	this->send_buffer.Write8(PROTOCOL_LEAVE);
+	this->send_buffer.Write8(SHIPZ_MESSAGE::LEAVE);
 	this->send_buffer.Write8(my_player_nr);
 	this->send_buffer.Write8('\0');
 	this->SendBuffer();
@@ -885,7 +887,7 @@ void Client::Load() {
 	self->playing = 1;
 	self->x = 320;
 	self->y = 300;
-	self->status = DEAD; 
+	self->status = PLAYER_STATUS::DEAD; 
 	
 	memset ( chat1, '\0', sizeof( chat1 ));
 	memset ( chat2, '\0', sizeof( chat2 ));
@@ -913,55 +915,55 @@ void Client::Draw() {
 	for( int up = 0; up < 8; up++ )
 	{
 		// if ship = 1... etc.. do later
-		if( players[up].playing && players[up].status != DEAD && players[up].status != RESPAWN )
+		if( players[up].playing && players[up].status != PLAYER_STATUS::DEAD && players[up].status != PLAYER_STATUS::RESPAWN )
 		{
-			if( players[up].Team == RED )
+			if( players[up].Team == SHIPZ_TEAM::RED )
 			{
 				DrawPlayer( shipred, &players[up] );
 			}
-			if( players[up].Team == BLUE )
+			if( players[up].Team == SHIPZ_TEAM::BLUE )
 			{
 				DrawPlayer( shipblue, &players[up] );
 			}
 		}
 	}
 	DrawBases( basesimg );
-	if( self->status == DEAD )
+	if( self->status == PLAYER_STATUS::DEAD )
 	{
-		DrawFont( sansboldbig, "Press space to respawn.", XRES-280, YRES-13, FONT_WHITE  );
+		DrawFont( sansboldbig, "Press space to respawn.", XRES-280, YRES-13, FONT_COLOR::WHITE  );
 	}
 
 	DrawExplosions();
 
 	if( strlen(chat1) )
 	{
-		DrawFont( sansbold, chat1, 5, 5, FONT_WHITE );
+		DrawFont( sansbold, chat1, 5, 5, FONT_COLOR::WHITE );
 	}
 	if( strlen(chat2) )
 	{
-		DrawFont( sansbold, chat2, 5, 16, FONT_WHITE );
+		DrawFont( sansbold, chat2, 5, 16, FONT_COLOR::WHITE );
 	}
 	if( strlen(chat3) )
 	{
-		DrawFont( sansbold, chat3, 5, 27, FONT_WHITE );
+		DrawFont( sansbold, chat3, 5, 27, FONT_COLOR::WHITE );
 	}
 
 	DrawIMG( scores, 0, YRES - 19 );
 	char tempstr[10];
 	// draw blue frags:
 	snprintf( tempstr, 10, "%i", blue_team.frags );
-	DrawFont( sansbold, tempstr, 4, YRES-17, FONT_WHITE );
+	DrawFont( sansbold, tempstr, 4, YRES-17, FONT_COLOR::WHITE );
 	// draw blue bases:
 	snprintf( tempstr, 10, "%i", blue_team.bases );
-	DrawFont( sansbold, tempstr, 29, YRES-17, FONT_WHITE );
+	DrawFont( sansbold, tempstr, 29, YRES-17, FONT_COLOR::WHITE );
 	
 	// draw red frags:
 	snprintf( tempstr, 10, "%i", red_team.frags );
-	DrawFont( sansbold, tempstr, 54, YRES-17, FONT_WHITE );
+	DrawFont( sansbold, tempstr, 54, YRES-17, FONT_COLOR::WHITE );
 	
 	// draw red bases:
 	snprintf( tempstr,10, "%i", red_team.bases );
-	DrawFont( sansbold, tempstr, 79, YRES-17, FONT_WHITE );
+	DrawFont( sansbold, tempstr, 79, YRES-17, FONT_COLOR::WHITE );
 
 	switch( self->weapon )
 	{
@@ -978,7 +980,7 @@ void Client::Draw() {
 	
 	if( self->typing )
 	{
-		DrawFont( sansbold, type_buffer.AsString(), 5, YRES-26, FONT_WHITE );
+		DrawFont( sansbold, type_buffer.AsString(), 5, YRES-26, FONT_COLOR::WHITE );
 	}
 
 	UpdateScreen();
@@ -1040,7 +1042,7 @@ void Client::SendChatLine() {
 	strcpy( chat3, this->type_buffer.AsString() );
 
 	this->send_buffer.Clear();
-	this->send_buffer.Write8(PROTOCOL_CHAT);
+	this->send_buffer.Write8(SHIPZ_MESSAGE::CHAT);
 	this->send_buffer.Write8(this->my_player_nr);
 	this->send_buffer.WriteString(this->type_buffer.AsString());
 

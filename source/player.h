@@ -2,6 +2,46 @@
 #define SHIPZPLAYER_H
 
 #include "types.h"
+
+enum PLAYER_STATUS {
+ DEAD,
+ FLYING, 
+ LANDED,
+ JUSTCOLLIDEDROCK,
+ JUSTSHOT,
+ RESPAWN,
+ LIFTOFF,
+ SUICIDE,
+ JUSTCOLLIDEDBASE, 
+ LANDEDBASE, 
+ LANDEDRESPAWN,
+};
+
+struct Player
+{
+	bool playing; 
+	int kills, deaths, Team;
+	char name[13];
+	int flamestate, shipframe;
+	int weapon; // weapon player is 'carrying'
+	int status;
+	float x, y, vx, vy, fx, fy, angle;
+	bool engine_on;
+	int y_bmp, x_bmp;
+	float crossx, crossy; // x and y of the crosshair
+	bool self_sustaining; // is the player local or remote?
+	SDLNet_Address * playaddr;
+	float lastsendtime;
+
+	bool typing; // is the player typing a message?
+
+	float lastliftofftime;
+	bool bullet_shot;
+	Uint16 bulletshotnr;
+	float lastshottime;
+};
+
+
 void TestColmaps();
 const char * GetStatusString(int status);
 void EmptyPlayer( Player * play );

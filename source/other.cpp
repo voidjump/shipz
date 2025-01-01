@@ -12,6 +12,8 @@
 #include "player.h"
 #include "sound.h"
 #include "net.h"
+#include "team.h"
+#include "base.h"
 
 std::map<unsigned int, char> upper_case_keys = {
 	{SDLK_PERIOD, '>'},
@@ -192,21 +194,21 @@ bool LoadLevelFile()
 			{
 				tmppoint+=10;
 				std::cout << "  blue bases: " << tmppoint << std::endl;
-				bascur = BLUE;
+				bascur = SHIPZ_TEAM::BLUE;
 				continue;
 			}
 			if( strstr( tempread, "basesred=" ))
 			{
 				tmppoint+=9;
 				std::cout << "  red bases: " << tmppoint << std::endl;
-				bascur = RED;
+				bascur = SHIPZ_TEAM::RED;
 				continue;
 			}
 			if( strstr( tempread, "basesneutral=" ))
 			{
 				tmppoint+=13;
 				std::cout << "  neutral bases: " << tmppoint << std::endl;
-				bascur = NEUTRAL;
+				bascur = SHIPZ_TEAM::NEUTRAL;
 				continue;
 			}
 			if( strstr( tempread, "basex=" ))
@@ -218,11 +220,11 @@ bool LoadLevelFile()
 			if( strstr( tempread, "basey=" ))
 			{
 				tmppoint+=6;
-				if( bascur == RED )
+				if( bascur == SHIPZ_TEAM::RED )
 				{
 					red_team.bases++;
 				}
-				if( bascur == BLUE )
+				if( bascur == SHIPZ_TEAM::BLUE )
 				{
 					blue_team.bases++;
 				}

@@ -4,6 +4,8 @@
 #include "types.h"
 #include "event.h"
 #include "net.h"
+#include "team.h"
+#include "player.h"
 
 #define SERVER_RUNSTATE_OK 1
 #define SERVER_RUNSTATE_FAIL 2
@@ -18,13 +20,14 @@ class Server {
         SDLNet_Address * ipaddr;
         SDLNet_DatagramSocket * udpsock;
         int error = 0;
-        Player players[MAXPLAYERS];
         bool ** collisionmap;
         int done = 0;
         int number_of_players = 0;
         SDLNet_Address * my_ip_address;
         std::vector<Event*> events;
         uint runstate;
+
+        Player players[MAXPLAYERS];
 
     public:
         // Start server
@@ -48,6 +51,7 @@ class Server {
         void SendUpdates();
         // Send buffer to a client
         void SendBuffer(SDLNet_Address * client_address);
+        void UpdateBases();
 };
 
 #endif

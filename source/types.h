@@ -1,5 +1,5 @@
-#ifndef SHIPZTYPES_H
-#define SHIPZTYPES_H
+#ifndef SHIPZ_TYPES_H
+#define SHIPZ_TYPES_H
 
 #include <SDL3/SDL.h>
 #include <SDL3_net/SDL_net.h>
@@ -24,15 +24,6 @@
 #define MAXBUFSIZE 1024
 #define MAXPLAYERS 8
 
-#define PROTOCOL_CHAT 50
-#define PROTOCOL_STATUS 20 
-#define PROTOCOL_KICK 0 
-#define PROTOCOL_LEAVE 0
-#define PROTOCOL_UPDATE 40
-#define PROTOCOL_PLAYER_JOINS 70
-#define PROTOCOL_PLAYER_LEAVES 80
-#define PROTOCOL_JOIN 30
-#define PROTOCOL_EVENT 90
 
 // physics
 #define REALITYSCALE 0.0005
@@ -55,18 +46,6 @@
 #define EXPLOSIONFRAMETIME 50
 
 // statuses:
-#define DEAD 42 
-#define FLYING 1
-#define LANDED 2
-#define JUSTCOLLIDEDROCK 3
-#define JUSTCOLLIDEDSHIP 4
-#define JUSTSHOT 5
-#define RESPAWN 6
-#define LIFTOFF 7
-#define SUICIDE 8
-#define JUSTCOLLIDEDBASE 9
-#define LANDEDBASE 10
-#define LANDEDRESPAWN 11
 
 // weapons:
 #define BULLET 11
@@ -76,20 +55,12 @@
 // player:
 #define LIFTOFFSHOOTDELAY 3000
 
-// teams/bases:
-#define NEUTRAL 0
-#define RED 1
-#define BLUE 2
 
 // internal:
 #define NUMBEROFBULLETS 800
 #define NUMBEROFEXPLOSIONS 200
 #define MAXBASES 16
 
-// font colours:
-#define FONT_BLACK 1
-#define FONT_WHITE 2
-#define FONT_YELLOW 3
 
 // gfx
 extern SDL_Window * sdlWindow;
@@ -141,21 +112,7 @@ struct LevelData
 	int type, bases; // obsolete | not used yet
 };
 
-struct Base
-{
-	bool used; // is this Base used or not used?
-	int owner; // RED, BLUE or NEUTRAL
-	int x;
-	int y;
-	int health;
-};
 
-struct Team
-{
-	int players; // number of players on the Team
-	int bases; // number of bases a team has 
-	int frags;
-};	
 
 struct Bullet
 {
@@ -165,30 +122,6 @@ struct Bullet
 	int type; // type of bullet
 	bool collide; // collided flag
 	float minelaidtime;
-};
-
-struct Player
-{
-	bool playing; 
-	int kills, deaths, Team;
-	char name[13];
-	int flamestate, shipframe;
-	int weapon; // weapon player is 'carrying'
-	int status;
-	float x, y, vx, vy, fx, fy, angle;
-	bool engine_on;
-	int y_bmp, x_bmp;
-	float crossx, crossy; // x and y of the crosshair
-	bool self_sustaining; // is the player local or remote?
-	SDLNet_Address * playaddr;
-	float lastsendtime;
-
-	bool typing; // is the player typing a message?
-
-	float lastliftofftime;
-	bool bullet_shot;
-	Uint16 bulletshotnr;
-	float lastshottime;
 };
 
 struct Explosion
@@ -204,10 +137,6 @@ extern LevelData lvl;
 
 extern Bullet bullets[NUMBEROFBULLETS];
 
-extern Base bases[MAXBASES];
-
-extern Team red_team;
-extern Team blue_team;
 
 extern Explosion explosions[NUMBEROFEXPLOSIONS];
 

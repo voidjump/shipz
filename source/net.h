@@ -1,5 +1,5 @@
-#ifndef SHIPZNET_H
-#define SHIPZNET_H
+#ifndef SHIPZ_NET_H
+#define SHIPZ_NET_H
 
 #include <SDL3_net/SDL_net.h>
 
@@ -10,6 +10,17 @@ void Write32(Uint32 value, void *area);
 void PrintRawBytes(const char* data, size_t length);
 void DebugPackage(const char* debug_msg, SDLNet_Datagram * dgram);
 
+enum SHIPZ_MESSAGE {
+    CHAT,
+    STATUS,
+    KICK,
+    LEAVE,
+    UPDATE,
+    MSG_PLAYER_JOINS,
+    MSG_PLAYER_LEAVES,
+    JOIN,
+    EVENT,
+};
 
 class Buffer {
     private:

@@ -5,6 +5,10 @@
 #include <iostream>
 
 #include "types.h"
+#include "player.h"
+#include "team.h"
+#include "base.h"
+
 // shipz drawing functions
 
 // this function is for the creating of collision map. it checks whether a pixel is black or white.
@@ -94,20 +98,20 @@ void InitVid()
 void DrawPlayer( SDL_Surface * src, Player * play )
 {
 	DrawIMG(src, int(play->x - 14 - viewportx), int(play->y -14 - viewporty), 28, 28, play->x_bmp, play->y_bmp);
-	if( play->status == FLYING && (SDL_GetTicks() - play->lastliftofftime) > LIFTOFFSHOOTDELAY  )
+	if( play->status == PLAYER_STATUS::FLYING && (SDL_GetTicks() - play->lastliftofftime) > LIFTOFFSHOOTDELAY  )
 	{
-		if( play->Team == RED )
+		if( play->Team == SHIPZ_TEAM::RED )
 		{
 			DrawIMG(crosshairred, (int(play->x + play->crossx - 4 -viewportx)),
 				(int(play->y + play->crossy - 4 - viewporty)));
 		}
-		if( play->Team == BLUE )
+		if( play->Team == SHIPZ_TEAM::BLUE )
 		{
 			DrawIMG(crosshairblue, (int(play->x + play->crossx - 4 -viewportx)),
 				(int(play->y + play->crossy - 4 - viewporty)));
 		}
 	}
-	if( play->status != DEAD && play->status != RESPAWN )
+	if( play->status != PLAYER_STATUS::DEAD && play->status != PLAYER_STATUS::RESPAWN )
 	{
 		if( play->typing == 1 ) // player is typing, show the cartoony text cloud
 		{
@@ -123,17 +127,17 @@ void DrawBases( SDL_Surface * basesimg )
 	{
 		if( bases[i].used ) // should remove, not neccesary
 		{
-			if( bases[i].owner == NEUTRAL )
+			if( bases[i].owner == SHIPZ_TEAM::NEUTRAL )
 			{
 				DrawIMG( basesimg, bases[i].x - 20 - viewportx,
 						bases[i].y - 17 - viewporty, 41, 18, 0, 38 );
 			}
-			if( bases[i].owner == RED )
+			if( bases[i].owner == SHIPZ_TEAM::RED )
 			{
 				DrawIMG( basesimg, bases[i].x - 20 - viewportx,
 						bases[i].y - 17 - viewporty, 41, 18, 0, 0 );
 			}
-			if( bases[i].owner == BLUE )
+			if( bases[i].owner == SHIPZ_TEAM::BLUE )
 			{
 				DrawIMG( basesimg, bases[i].x - 20 - viewportx,
 						bases[i].y - 17 - viewporty, 41, 18, 0, 19 );

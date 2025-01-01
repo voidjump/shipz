@@ -1,7 +1,8 @@
+#include <iostream>
 #include <SDL3_ttf/SDL_ttf.h>
 #include "types.h"
 #include "gfx.h"
-#include <iostream>
+#include "font.h"
 
 void InitFont()
 {
@@ -31,17 +32,17 @@ void DrawFont( TTF_Font * font, const char * string, int x, int y, int color )
 	SDL_Color col; 
 	switch( color )
 	{
-		case FONT_BLACK:
+		case FONT_COLOR::BLACK:
 			col.r = 0;
 			col.b = 0;
 			col.g = 0;
 			break;
-		case FONT_WHITE:
+		case FONT_COLOR::WHITE:
 			col.r = 255;
 			col.b = 255;
 			col.g = 255;
 			break;
-		case FONT_YELLOW:
+		case FONT_COLOR::YELLOW:
 			col.r = 253;
 			col.g = 220;
 			col.b = 37;

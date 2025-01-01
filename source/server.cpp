@@ -8,17 +8,19 @@
 #include "other.h"
 #include "net.h"
 #include "server.h"
+#include "team.h"
+#include "base.h"
 
 // TODO: add some kind of 'Broadcast' function that sends a package to all players
 
-void UpdateBases() {
+void Server::UpdateBases() {
 	red_team.bases = 0;
 	blue_team.bases = 0;
 	for(int bidx =0; bidx < MAXBASES; bidx++ ) {
-		if (bases[bidx].owner == RED) {
+		if (bases[bidx].owner == SHIPZ_TEAM::RED) {
 			red_team.bases++;
 		}
-		if (bases[bidx].owner == BLUE) {
+		if (bases[bidx].owner == SHIPZ_TEAM::BLUE) {
 			blue_team.bases++;
 		}
 	}
@@ -42,13 +44,13 @@ Server::~Server() {
 Uint8 Server::CheckVictory() {
 	if( red_team.bases == 0 ) {
 		std::cout << "BLUE WINS" << std::endl;
-		return BLUE;
+		return SHIPZ_TEAM::BLUE;
 	}
 	if( blue_team.bases == 0 ) {
 		std::cout << "RED WINS" << std::endl;
-		return RED;
+		return SHIPZ_TEAM::RED;
 	}
-	return NEUTRAL;
+	return SHIPZ_TEAM::NEUTRAL;
 }
 
 void Server::LoadLevel() {
@@ -111,9 +113,6 @@ void Server::Init() {
 	{
 		CleanBullet( zb );
 	}
-	
-	red_team.frags = 0;
-	blue_team.frags = 0;
 }
 
 // Run the server
@@ -144,11 +143,11 @@ void Server::HandleLeave() {
 	number_of_players--;
 
 	leaving_player->playing = 0;
-	if( leaving_player->Team == BLUE )
+	if( leaving_player->Team == SHIPZ_TEAM::BLUE )
 	{
 		blue_team.players--;
 	}
-	if( leaving_player->Team == RED )
+	if( leaving_player->Team == SHIPZ_TEAM::RED )
 	{
 		red_team.players--;
 	}
@@ -166,7 +165,7 @@ void Server::HandleLeave() {
 		}
 
 		sendbuf.Clear();
-		sendbuf.Write8(PROTOCOL_PLAYER_LEAVES);
+		sendbuf.Write8(SHIPZ_MESSAGE::MSG_PLAYER_LEAVES);
 		sendbuf.Write8(playerleaves + 1); // Intended recipient
 		sendbuf.Write8(in->buf[1]); // The leaving player
 
@@ -193,40 +192,40 @@ void Server::HandleUpdate() {
 	
 	Uint8 * tmpptr = in->buf;
 
-	if( in->buf[2] == SUICIDE )
+	if( in->buf[2] == PLAYER_STATUS::SUICIDE )
 	{
-		players[playerread].status = DEAD;
+		players[playerread].status = PLAYER_STATUS::DEAD;
 	}
-	if( in->buf[2] == LIFTOFF )
+	if( in->buf[2] == PLAYER_STATUS::LIFTOFF )
 	{
 		std::cout << players[playerread].name << " wants to liftoff" << std::endl;
-		if( players[playerread].status == LANDED )
+		if( players[playerread].status == PLAYER_STATUS::LANDED )
 		{
 			std::cout << players[playerread].name << " taking off from ground" << std::endl;
 			// should check for 3 sec shooting delay!!
-			players[playerread].status = FLYING;
+			players[playerread].status = PLAYER_STATUS::FLYING;
 		}
-		if( players[playerread].status == LANDEDBASE )
+		if( players[playerread].status == PLAYER_STATUS::LANDEDBASE )
 		{
 			std::cout << players[playerread].name << " taking off from Base" << std::endl;
 			// should check for 3 sec shooting delay!!
-			players[playerread].status = FLYING;
+			players[playerread].status = PLAYER_STATUS::FLYING;
 		}
-		if( players[playerread].status == LANDEDRESPAWN )
+		if( players[playerread].status == PLAYER_STATUS::LANDEDRESPAWN )
 		{
 			std::cout << players[playerread].name << " taking off from spawn" << std::endl;
-			players[playerread].status = FLYING;
+			players[playerread].status = PLAYER_STATUS::FLYING;
 		}
 	}
-	if( players[playerread].status == DEAD )
+	if( players[playerread].status == PLAYER_STATUS::DEAD )
 	{
-		if( in->buf[2] == RESPAWN )
+		if( in->buf[2] == PLAYER_STATUS::RESPAWN )
 		{
 			std::cout << players[playerread].name << " wants to respawn" << std::endl;
 			players[playerread].x = -14;       // this is needed for the
 			players[playerread].y = -14;       // ship to appear correctly
 			players[playerread].shipframe = 0; // with all the clients
-			players[playerread].status = LANDEDRESPAWN;
+			players[playerread].status = PLAYER_STATUS::LANDEDRESPAWN;
 		}
 	}
 	tmpptr+=3;
@@ -311,12 +310,12 @@ void Server::HandleJoin() {
 			// we found a number, now find this (wo)man a Team!
 			if( red_team.players <= blue_team.players )
 			{
-				newteam = RED;
+				newteam = SHIPZ_TEAM::RED;
 				red_team.players++;
 			}
 			else
 			{
-				newteam = BLUE;
+				newteam = SHIPZ_TEAM::BLUE;
 				blue_team.players++;
 			}
 			break;
@@ -345,7 +344,7 @@ void Server::HandleJoin() {
 			if( players[ sendplays ].playing == 1 && sendplays != (newnum-1) )
 			{
 				sendbuf.Clear();
-				sendbuf.Write8(PROTOCOL_PLAYER_JOINS);
+				sendbuf.Write8(SHIPZ_MESSAGE::MSG_PLAYER_JOINS);
 				sendbuf.Write8(sendplays + 1);
 				sendbuf.Write8(newnum);
 				sendbuf.Write8(newteam);
@@ -358,7 +357,7 @@ void Server::HandleJoin() {
 		//S: 030 PLAYER NAME P1 (NAME) P2 (NAME) P3 (NAME) P4 (NAME) P5
 		//   (NAME) P6 (NAME) P7 (NAME) P8 (NAME) 
 		sendbuf.Clear();
-		sendbuf.Write8(PROTOCOL_JOIN);
+		sendbuf.Write8(SHIPZ_MESSAGE::JOIN);
 		sendbuf.Write8(newnum);
 		for( int gn = 0; gn < MAXPLAYERS; gn++ )
 		{
@@ -395,7 +394,7 @@ void Server::HandleStatus() {
 	sendbuf.Clear();
 	int count = 0;
 	
-	sendbuf.Write8(PROTOCOL_STATUS);
+	sendbuf.Write8(SHIPZ_MESSAGE::STATUS);
 	sendbuf.Write8(SHIPZ_VERSION);
 	sendbuf.Write8(number_of_players);
 	sendbuf.Write8(MAXPLAYERS);
@@ -412,7 +411,7 @@ void Server::HandleChat() {
 	int tempplay = in->buf[1];
 
 	sendbuf.Clear();
-	sendbuf.Write8(PROTOCOL_CHAT);
+	sendbuf.Write8(SHIPZ_MESSAGE::CHAT);
 	sendbuf.Write8(0);
 	sendbuf.WriteString((const char*)&in->buf[2]);
 	sendbuf.Write8('\0');
@@ -444,11 +443,11 @@ void Server::CheckIdlePlayers() {
 			SendBuffer(players[ci].playaddr);
 			
 			number_of_players--;
-			if( players[ci].Team == BLUE )
+			if( players[ci].Team == SHIPZ_TEAM::BLUE )
 			{
 				blue_team.players--;
 			}
-			if( players[ci].Team == RED )
+			if( players[ci].Team == SHIPZ_TEAM::RED )
 			{
 				red_team.players--;
 			}
@@ -466,7 +465,7 @@ void Server::CheckIdlePlayers() {
 					continue;
 				}
 				sendbuf.Clear();
-				sendbuf.Write8(PROTOCOL_PLAYER_LEAVES);
+				sendbuf.Write8(SHIPZ_MESSAGE::MSG_PLAYER_LEAVES);
 				sendbuf.Write8(playerleaves + 1);
 				sendbuf.Write8(ci + 1);
 				SendBuffer(players[playerleaves].playaddr);
@@ -479,7 +478,7 @@ void Server::CheckIdlePlayers() {
 void Server::UpdatePlayers() {
 	for( int up = 0; up < MAXPLAYERS; up++ )
 	{
-		if( players[up].playing && players[up].status == FLYING )
+		if( players[up].playing && players[up].status == PLAYER_STATUS::FLYING )
 		{
 			UpdatePlayer( &players[up] );
 			
@@ -490,7 +489,7 @@ void Server::UpdatePlayers() {
 				if( players[up].vx < 40 && players[up].vx > -40 &&
 					players[up].vy < 60 && players[up].vy > 0 )
 				{
-					players[up].status = LANDEDBASE;
+					players[up].status = PLAYER_STATUS::LANDEDBASE;
 					if( bases[ baseresult ].owner != players[up].Team )
 					{
 						std::cout << "team " << players[up].Team << " has captured base #" << baseresult << std::endl;
@@ -500,7 +499,7 @@ void Server::UpdatePlayers() {
 				}
 				else
 				{
-					if( players[up].Team == RED )
+					if( players[up].Team == SHIPZ_TEAM::RED )
 					{
 						red_team.frags--;
 					}
@@ -508,7 +507,7 @@ void Server::UpdatePlayers() {
 					{
 						blue_team.frags--;
 					}
-					players[up].status = JUSTCOLLIDEDBASE; // JUSTCOLLIDEDBASE
+					players[up].status = PLAYER_STATUS::JUSTCOLLIDEDBASE;
 				}
 			}
 		
@@ -517,12 +516,12 @@ void Server::UpdatePlayers() {
 				if( players[up].vx < 40 && players[up].vx > -40 &&
 					players[up].vy < 60 && players[up].vy > 0)
 				{
-					players[up].status = LANDED;
+					players[up].status = PLAYER_STATUS::LANDED;
 				}
 				else
 				{
 					// send a chat pkg! :P
-					if( players[up].Team == RED )
+					if( players[up].Team == SHIPZ_TEAM::RED )
 					{
 						red_team.frags--;
 					}
@@ -531,7 +530,7 @@ void Server::UpdatePlayers() {
 						blue_team.frags--;
 					}
 					std::cout << "player " << players[up].name << "collided with rock at" << players[up].x << "," << players[up].y << std::endl;
-					players[up].status = JUSTCOLLIDEDROCK;
+					players[up].status = PLAYER_STATUS::JUSTCOLLIDEDROCK;
 				}
 			}
 			int bulletresult = PlayerCollideWithBullet( &players[up], up+1, players );
@@ -541,10 +540,10 @@ void Server::UpdatePlayers() {
 				// note down the bullet for removal and change the player status
 				// NOTE: in a later stage we should report which player shot him and
 				// update etc.
-				if( bullets[bulletresult].owner == RED )
+				if( bullets[bulletresult].owner == SHIPZ_TEAM::RED )
 				{
 					if( bullets[bulletresult].type == MINE &&
-						players[up].Team == RED )
+						players[up].Team == SHIPZ_TEAM::RED )
 					{
 						red_team.frags--;
 					}
@@ -556,7 +555,7 @@ void Server::UpdatePlayers() {
 				else
 				{
 					if( bullets[bulletresult].type == MINE &&
-						players[up].Team == BLUE )
+						players[up].Team == SHIPZ_TEAM::BLUE )
 					{
 						blue_team.frags--;
 					}
@@ -568,7 +567,7 @@ void Server::UpdatePlayers() {
 
 				bullets[bulletresult].collide = 1;
 				
-				players[up].status = JUSTSHOT;
+				players[up].status = PLAYER_STATUS::JUSTSHOT;
 			}
 		}
 	}
@@ -579,15 +578,15 @@ void Server::SendUpdates() {
 	// send all the stuff to all the players
 	// S: 040 PLAYER BASESTATES TEAMSTATES (PSTAT PFRAME PX PY PVX PVY BULX BULY BULVX BULVY) x8
 	sendbuf.Clear();
-	sendbuf.Write8(PROTOCOL_UPDATE);
+	sendbuf.Write8(SHIPZ_MESSAGE::UPDATE);
 	sendbuf.Write8(0);
 
 	Uint32 basestates = 0;
 	for( int bidx = 0; bidx < MAXBASES; bidx++ ) {
-		if( bases[bidx].owner == RED ) {
+		if( bases[bidx].owner == SHIPZ_TEAM::RED ) {
 			basestates |= (1 << (bidx *2));
 		}
-		if( bases[bidx].owner == BLUE ) {
+		if( bases[bidx].owner == SHIPZ_TEAM::BLUE ) {
 			basestates |= (1 << (bidx *2 +1));
 		}
 	}
@@ -668,17 +667,17 @@ void Server::SendUpdates() {
 			SendBuffer(players[sp].playaddr);
 		
 			// deal with stati
-			if(players[sp].status == JUSTCOLLIDEDBASE)
+			if(players[sp].status == PLAYER_STATUS::JUSTCOLLIDEDBASE)
 			{
-				players[sp].status = DEAD;
+				players[sp].status = PLAYER_STATUS::DEAD;
 			}
-			if(players[sp].status == JUSTCOLLIDEDROCK)
+			if(players[sp].status == PLAYER_STATUS::JUSTCOLLIDEDROCK)
 			{
-				players[sp].status = DEAD;
+				players[sp].status = PLAYER_STATUS::DEAD;
 			}
-			if( players[sp].status == JUSTSHOT )
+			if( players[sp].status == PLAYER_STATUS::JUSTSHOT )
 			{
-				players[sp].status = DEAD;
+				players[sp].status = PLAYER_STATUS::DEAD;
 			}
 		}
 	}
@@ -698,19 +697,19 @@ void Server::GameLoop() {
 		
 		if(SDLNet_ReceiveDatagram(udpsock, &in) && in != NULL ) {
 			switch(in->buf[0]) {
-				case PROTOCOL_LEAVE:
+				case SHIPZ_MESSAGE::LEAVE:
 					this->HandleLeave();
 					break;
-				case PROTOCOL_UPDATE:
+				case SHIPZ_MESSAGE::UPDATE:
 					this->HandleUpdate();
 					break;
-				case PROTOCOL_JOIN:
+				case SHIPZ_MESSAGE::JOIN:
 					this->HandleJoin();
 					break;
-				case PROTOCOL_STATUS:
+				case SHIPZ_MESSAGE::STATUS:
 					this->HandleStatus();
 					break;
-				case PROTOCOL_CHAT:
+				case SHIPZ_MESSAGE::CHAT:
 					this->HandleChat();
 					break;
 			}
@@ -727,7 +726,7 @@ void Server::GameLoop() {
 		// If a player conquers the last base, keep
 		// running the base loop but do not allow further captures
 		// After a few seconds, send event quit
-		if(CheckVictory() != NEUTRAL) {
+		if(CheckVictory() != SHIPZ_TEAM::NEUTRAL) {
 			auto event = new EventTeamWins(CheckVictory());
 			SendEvent(event);
 			done = true;
@@ -742,7 +741,7 @@ void Server::GameLoop() {
 
 void Server::SendEvent(Event *event) {
 	this->sendbuf.Clear();
-	this->sendbuf.Write8(PROTOCOL_EVENT);
+	this->sendbuf.Write8(SHIPZ_MESSAGE::EVENT);
 	if(!event->Serialize(&this->sendbuf)) {
 		throw new std::runtime_error("Insufficient buffer for sending event");
 	}
