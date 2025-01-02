@@ -101,7 +101,7 @@ void Buffer::Clear() {
 }
 
 // Seek the position pointer to an index.
-bool Buffer::Seek(uint index) {
+bool Buffer::Seek(Uint16 index) {
     if (index >= this->length) {
         return false;
     }
@@ -233,7 +233,7 @@ std::string& Buffer::ReadString() {
 }
 
 // Decrease the position by n. Will not increase beyond position 0
-void Buffer::DecreasePosition(uint n) {
+void Buffer::DecreasePosition(Uint16 n) {
     if( n >= this->length ) {
         this->Clear();
     } else {

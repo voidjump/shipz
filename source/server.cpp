@@ -10,6 +10,7 @@
 #include "server.h"
 #include "team.h"
 #include "base.h"
+#include "level.h"
 
 // TODO: add some kind of 'Broadcast' function that sends a package to all players
 
@@ -27,12 +28,12 @@ void Server::UpdateBases() {
 }
 
 Server::Server(const char * levelname) {
-	// TODO: Set levelname here?
+	lvl.SetFile(levelname);
 }
 
 Server::~Server() {
 	// Todo: Belongs in some kind of collisionmap class
-	for(int row = 0; row < lvl.width; row++)
+	for(int row = 0; row < lvl.m_width; row++)
    	{
      		delete collisionmap[row];
 	}
@@ -54,10 +55,10 @@ Uint8 Server::CheckVictory() {
 }
 
 void Server::LoadLevel() {
-	if( !LoadLevelFile() ) // load everything into the lvl struct
+	if( !lvl.Load() ) // load everything into the lvl struct
 	{	
 		// Todo: Belongs in some kind of collisionmap class
-		for(int row = 0; row < lvl.width; row++)
+		for(int row = 0; row < lvl.m_width; row++)
    		{
      			delete this->collisionmap[row];
 		}
@@ -94,11 +95,11 @@ void Server::Init() {
 
 	this->LoadLevel();
 	
-	collisionmap = new bool *[lvl.width];
+	collisionmap = new bool *[lvl.m_width];
 	
-	for(int row = 0; row < lvl.width; row++)
+	for(int row = 0; row < lvl.m_width; row++)
    	{
-     		collisionmap[row] = new bool[lvl.height];
+     		collisionmap[row] = new bool[lvl.m_height];
 	}
 
 	GetCollisionMaps( collisionmap ); // load level & ship collisionmap
@@ -387,7 +388,7 @@ void Server::HandleJoin() {
 
 void Server::HandleStatus() {
 	// we got a query, return server status/info
-	// Protocol: S: 020 VERSION PLAYERS MAXPLAYERS TYPE LEVELCODE LEVELVERSION
+	// Protocol: S: 020 VERSION PLAYERS MAXPLAYERS TYPE 
 
 	int templen = 0;
 						
@@ -398,10 +399,9 @@ void Server::HandleStatus() {
 	sendbuf.Write8(SHIPZ_VERSION);
 	sendbuf.Write8(number_of_players);
 	sendbuf.Write8(MAXPLAYERS);
-	sendbuf.Write8(1); // TODO: Change later?
-	sendbuf.Write8(1); // TODO: Change later?
-	
-	sendbuf.WriteString(lvl.filename);
+	sendbuf.Write8(lvl.m_levelversion);
+	sendbuf.WriteString(lvl.m_filename.c_str());
+
 	sendbuf.Write8('\0');
 	
 	SendBuffer(in->addr);
@@ -732,7 +732,7 @@ void Server::GameLoop() {
 			done = true;
 			runstate = SERVER_RUNSTATE_QUIT;
 
-		} else if((float(SDL_GetTicks()) - lastsendtime) > SENDDELAY)
+		} else if((float(SDL_GetTicks()) - lastsendtime) > SEND_DELAY)
 		{
 			this->SendUpdates();
 		}

@@ -2,6 +2,8 @@
 #define SHIPZ_NET_H
 
 #include <SDL3_net/SDL_net.h>
+#include <string>
+#define MAXBUFSIZE 1024
 
 Uint16 Read16(void *area);
 Uint32 Read32(void *area);
@@ -35,7 +37,7 @@ class Buffer {
     // Clear the buffer
     void Clear();
     // Seek to a location
-    bool Seek(uint);
+    bool Seek(Uint16);
     // Write a byte
     bool Write8(Uint8);
     // Write 2 bytes
@@ -60,7 +62,7 @@ class Buffer {
     // Read into new string
     std::string& ReadString();
     // Decrease the position pointer
-    void DecreasePosition(uint n);
+    void DecreasePosition(Uint16 n);
     // Return buffer as string
     const char * AsString();
     // Write similar bytes to buffer

@@ -1,0 +1,40 @@
+{
+  "base_list": [
+    {
+      "team": "blue",
+      "x": 710,
+      "y": 790
+    },
+    {
+      "team": "blue",
+      "x": 1010,
+      "y": 790
+    },
+    {
+      "team": "red",
+      "x": 130,
+      "y": 790
+    },
+    {
+      "team": "red",
+      "x": 300,
+      "y": 600
+    },
+    {
+      "team": "neutral",
+      "x": 360,
+      "y": 400
+    },
+    {
+      "team": "neutral",
+      "x": 630,
+      "y": 240
+    }
+  ],
+  "author": "Raymond Jelierse",
+  "name": "The Construct",
+  "version": 1,
+  "bases": 6,
+  "collisionmap": "eagle3_collmap.bmp",
+  "image": "eagle3.png"
+}

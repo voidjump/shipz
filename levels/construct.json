@@ -1,0 +1,20 @@
+{
+  "base_list": [
+    {
+      "team": "blue",
+      "x": 208,
+      "y": 112
+    },
+    {
+      "team": "red",
+      "x": 309,
+      "y": 268
+    }
+  ],
+  "author": "Steve van Bennekom",
+  "name": "Whatevah ( Raymond Clone )",
+  "version": 1,
+  "bases": 2,
+  "collisionmap": "weetikveel.png",
+  "image": "weetikveel.bmp"
+}

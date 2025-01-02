@@ -1,0 +1,25 @@
+{
+  "base_list": [
+    {
+      "team": "blue",
+      "x": 386,
+      "y": 439
+    },
+    {
+      "team": "red",
+      "x": 259,
+      "y": 72
+    },
+    {
+      "team": "neutral",
+      "x": 446,
+      "y": 226
+    }
+  ],
+  "author": "steve van bennekom",
+  "name": "my first baby",
+  "version": 1,
+  "bases": 3,
+  "collisionmap": "level1_collision.bmp",
+  "image": "level1.png"
+}

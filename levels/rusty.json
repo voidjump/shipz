@@ -1,0 +1,50 @@
+{
+  "base_list": [
+    {
+      "team": "blue",
+      "x": 240,
+      "y": 838
+    },
+    {
+      "team": "blue",
+      "x": 160,
+      "y": 582
+    },
+    {
+      "team": "red",
+      "x": 830,
+      "y": 900
+    },
+    {
+      "team": "red",
+      "x": 1020,
+      "y": 900
+    },
+    {
+      "team": "neutral",
+      "x": 400,
+      "y": 482
+    },
+    {
+      "team": "neutral",
+      "x": 1000,
+      "y": 326
+    },
+    {
+      "team": "neutral",
+      "x": 400,
+      "y": 680
+    },
+    {
+      "team": "neutral",
+      "x": 100,
+      "y": 292
+    }
+  ],
+  "author": "Steve van Bennekom",
+  "name": "Rusty",
+  "version": 1,
+  "bases": 8,
+  "collisionmap": "rusty-col.bmp",
+  "image": "rusty.png"
+}

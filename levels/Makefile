@@ -2,7 +2,7 @@ include ../shipz.inc
 all : 
 
 install : 
-	$(CP) *.info $(SHAREPATH)/levels/
+	$(CP) *.json $(SHAREPATH)/levels/
 
 clean : 
 

@@ -1,0 +1,50 @@
+{
+  "base_list": [
+    {
+      "team": "blue",
+      "x": 1068,
+      "y": 230
+    },
+    {
+      "team": "blue",
+      "x": 428,
+      "y": 238
+    },
+    {
+      "team": "blue",
+      "x": 1078,
+      "y": 430
+    },
+    {
+      "team": "red",
+      "x": 232,
+      "y": 930
+    },
+    {
+      "team": "red",
+      "x": 172,
+      "y": 730
+    },
+    {
+      "team": "red",
+      "x": 444,
+      "y": 922
+    },
+    {
+      "team": "neutral",
+      "x": 624,
+      "y": 558
+    },
+    {
+      "team": "neutral",
+      "x": 1118,
+      "y": 708
+    }
+  ],
+  "author": "Raymond Jelierse",
+  "name": "The Blue Lagoon",
+  "version": 1,
+  "bases": 8,
+  "collisionmap": "eagle2_collmap.bmp",
+  "image": "eagle2.png"
+}

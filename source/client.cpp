@@ -16,6 +16,8 @@
 #include "event.h"
 #include "team.h"
 #include "base.h"
+#include "assets.h"
+#include "level.h"
 
 // TODO:
 // Candidates for bitwise state flags
@@ -103,12 +105,9 @@ void Client::Connect(const char *connect_address) {
 					if( in->buf[2] < in->buf[3] )
 					{
 						this->number_of_players = in->buf[2];
-						lvl.levelversion = in->buf[5];
+						lvl.m_levelversion = in->buf[4];
 						// TODO: This should be a safe copy..
-						strcpy( lvl.name, (const char*)&in->buf[6] );
-						lvl.filename = lvl.name;
-						char * firstocc = strstr( lvl.name, ".info" );
-						*(firstocc+5) = '\0';
+						lvl.SetFile((const char*)&in->buf[5]);
 						// proceed with joining
 						this->notreadytocontinue = 0;	
 						this->attempts = 0; // make sure we don't confuse stuff
@@ -668,14 +667,10 @@ void Client::GameLoop() {
 		UpdateBullets( players );
 		ClearOldExplosions();
 				
-		if( ((SDL_GetTicks() - lastsendtime) > SENDDELAY /*
-		&& input_given*/)
-				|| SDL_GetTicks() - lastsendtime > MAXIDLETIME )
+		if( (SDL_GetTicks() - lastsendtime) > SEND_DELAY )
 		{
 			SendUpdate();
-	
 		}
-
 		Draw();
 	}
 	Leave();
@@ -836,51 +831,19 @@ void Client::Leave() {
 }
 
 void Client::Load() {
-	// we've joined! now enter the game!
-	// TODO: server should internally give a player status 'joining' so it knows the clients isn't just
-	// being idle
-	if( !LoadLevelFile() ) // load everything into the lvl struct
+	if( !lvl.Load() ) 
 	{	
+		std::cout << "failed to load level!" << std::endl;
 		error = 5;
 		SDLNet_DestroyDatagramSocket(udpsock);
 		SDLNet_Quit();
 		// return error;
+		exit(1);
 	}
 
-	// Init the sound
-	// Weird place for this§
 	InitSound();
-	
-	// Init the font-engine
-	// Weird place for this§
 	InitFont();
-	
-	std::cout << "@ loading data" << std::endl;
-	
-	shipred = LoadIMG( "red.png" );
-	shipblue = LoadIMG( "blue.png" );
-	chatpixmap = LoadIMG( "chatting.png" );
-	level = LoadIMG( lvl.image );
-	crosshairred = LoadIMG( "crosshairred.png" );
-	crosshairblue = LoadIMG( "crosshairblue.png" );
-	bulletpixmap = LoadIMG( "bullet.png" );
-	rocketpixmap = LoadIMG( "rocket.png" );
-	minepixmap = LoadIMG( "mines.png" );
-	basesimg = LoadIMG( "bases.png" );
-	explosionpixmap = LoadIMG( "explosions.png" );
-	rocket_icon = LoadIMG( "rocket_icon.png" );
-	bullet_icon = LoadIMG( "bullet_icon.png" );
-	mine_icon = LoadIMG( "mine_icon.png" );
-	scores = LoadIMG( "scores.png" );
-
-	
-	explodesound = LoadSound( "boom.wav" );
-	rocketsound = LoadSound( "rocket.wav" );
-	weaponswitch = LoadSound( "weapon_switch.wav" );
-
-	sansbold = LoadFont( "sansbold.ttf", 12 );
-	sansboldbig = LoadFont( "Beware.ttf", 16 );
-
+	LoadAssets();	
 	CreateGonLookup();
 	
 	self->self_sustaining = 0;

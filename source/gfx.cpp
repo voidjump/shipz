@@ -8,6 +8,8 @@
 #include "player.h"
 #include "team.h"
 #include "base.h"
+#include "assets.h"
+#include "level.h"
 
 // shipz drawing functions
 
@@ -123,7 +125,7 @@ void DrawPlayer( SDL_Surface * src, Player * play )
 void DrawBases( SDL_Surface * basesimg )
 {
 	int i;
-	for( i = 0; i < lvl.bases; i++ )
+	for( i = 0; i < lvl.m_num_bases; i++ )
 	{
 		if( bases[i].used ) // should remove, not neccesary
 		{

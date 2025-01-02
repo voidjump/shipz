@@ -1,0 +1,25 @@
+{
+  "base_list": [
+    {
+      "team": "red",
+      "x": 20,
+      "y": 4092
+    },
+    {
+      "team": "blue",
+      "x": 60,
+      "y": 4092
+    },
+    {
+      "team": "neutral",
+      "x": 100,
+      "y": 4092
+    }
+  ],
+  "author": "Killafish",
+  "name": "The Speedway",
+  "version": 1,
+  "bases": 3,
+  "collisionmap": "speedcol.bmp",
+  "image": "speed.png"
+}

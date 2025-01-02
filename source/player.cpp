@@ -11,6 +11,8 @@
 #include "player.h"
 #include "team.h"
 #include "base.h"
+#include "assets.h"
+#include "level.h"
 
 const char * GetStatusString(int status) {
 	switch(status) {
@@ -212,11 +214,11 @@ void GetCollisionMaps( bool ** levelcolmap )
 	SDL_Surface *level_collision;
 
 	ship_collision = LoadBMP("ship_collision.bmp");
-	level_collision = LoadBMP(lvl.colmap);
+	level_collision = LoadBMP(lvl.m_colmap_filename.c_str());
 	
-	for( int a = 0; a < lvl.width; a++ )
+	for( int a = 0; a < lvl.m_width; a++ )
 	{
-		for( int b = 0; b < lvl.height; b++ )
+		for( int b = 0; b < lvl.m_height; b++ )
 		{
 			levelcolmap[a][b] = GetPixel(level_collision, a, b);
 		}
@@ -243,7 +245,7 @@ bool PlayerCollideWithLevel( Player * play, bool ** levelcolmap )
 	// this function checks whether a players has crossed the level borders, or crashed with the level.
 	// in both cases it returns 1.
 	
-	if( play->x > ( lvl.width - 14 ))
+	if( play->x > ( lvl.m_width - 14 ))
 	{
 		return true;
 	}
@@ -251,7 +253,7 @@ bool PlayerCollideWithLevel( Player * play, bool ** levelcolmap )
 	{
 		return true;
 	}
-	if( play->y > ( lvl.height - 14 ))
+	if( play->y > ( lvl.m_height - 14 ))
 	{
 		return true;
 	}
@@ -354,7 +356,7 @@ int PlayerCollideWithBase( Player * play )
 {
 	// returns the number of the Base that is touching, if no Base is touching, returns -1
 	int i;
-	for( i = 0; i < lvl.bases; i++ )
+	for( i = 0; i < lvl.m_num_bases; i++ )
 	{
 		if( int( play->y ) < bases[i].y-33 ||
 		    int( play->y ) > bases[i].y+17 ||
@@ -395,8 +397,8 @@ void AdjustViewport( Player * play )
 	viewporty = tempy - 240;
 	if( viewportx < 0 ) { viewportx = 0; }
 	if( viewporty < 0 ) { viewporty = 0; }
-	if( viewportx > ( lvl.width - XRES - 1 )) { viewportx = lvl.width - XRES - 1; }
-	if( viewporty > ( lvl.height - YRES - 1 )) { viewporty = lvl.height - YRES - 1; }
+	if( viewportx > ( lvl.m_width - XRES - 1 )) { viewportx = lvl.m_width - XRES - 1; }
+	if( viewporty > ( lvl.m_height - YRES - 1 )) { viewporty = lvl.m_height - YRES - 1; }
 }
 
 void PlayerRot( Player * play, bool clockwise )
@@ -588,12 +590,12 @@ void CheckBulletCollides( bool ** colmap )
 		{
 			if( bullets[i].type == BULLET || bullets[i].type == ROCKET )
 			{
-				if( bullets[i].x > (lvl.width - 1) || bullets[i].x < 0 )
+				if( bullets[i].x > (lvl.m_width - 1) || bullets[i].x < 0 )
 				{
 					bullets[i].collide = 1;
 					continue;
 				}
-				if( bullets[i].y > (lvl.height - 1) || bullets[i]. y < 0 )
+				if( bullets[i].y > (lvl.m_height - 1) || bullets[i]. y < 0 )
 				{
 					bullets[i].collide = 1;
 					continue;

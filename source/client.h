@@ -18,10 +18,6 @@ class Client {
         SDLNet_Address * ipaddr;
         SDLNet_DatagramSocket * udpsock;
         
-        SDL_Surface * shipred;
-        SDL_Surface * shipblue;
-        SDL_Surface * level;
-        SDL_Surface * basesimg;
 
         int error = 0;
         int attempts = 0;
@@ -37,7 +33,7 @@ class Client {
         Player * self;
         Player players[MAXPLAYERS];
 
-        char chat1[80], chat2[80], chat3[80];
+        char chat1[MAXCHATCHARS], chat2[MAXCHATCHARS], chat3[MAXCHATCHARS];
     
     public:
         Client(const char *, const char * );

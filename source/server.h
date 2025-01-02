@@ -11,6 +11,8 @@
 #define SERVER_RUNSTATE_FAIL 2
 #define SERVER_RUNSTATE_QUIT 3
 
+#define IDLETIMEBEFOREDROP 2000
+
 int RunServer();
 
 class Server {

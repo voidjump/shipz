@@ -1,0 +1,50 @@
+{
+  "base_list": [
+    {
+      "team": "blue",
+      "x": 166,
+      "y": 390
+    },
+    {
+      "team": "blue",
+      "x": 226,
+      "y": 134
+    },
+    {
+      "team": "red",
+      "x": 1075,
+      "y": 207
+    },
+    {
+      "team": "red",
+      "x": 876,
+      "y": 492
+    },
+    {
+      "team": "neutral",
+      "x": 528,
+      "y": 447
+    },
+    {
+      "team": "neutral",
+      "x": 956,
+      "y": 717
+    },
+    {
+      "team": "neutral",
+      "x": 404,
+      "y": 949
+    },
+    {
+      "team": "neutral",
+      "x": 579,
+      "y": 206
+    }
+  ],
+  "author": "steve van bennekom",
+  "name": "The Baby Redone",
+  "version": 1,
+  "bases": 8,
+  "collisionmap": "level2_collision.bmp",
+  "image": "level4.png"
+}

@@ -1,0 +1,70 @@
+{
+  "base_list": [
+    {
+      "team": "blue",
+      "x": 900,
+      "y": 1005
+    },
+    {
+      "team": "blue",
+      "x": 700,
+      "y": 1005
+    },
+    {
+      "team": "blue",
+      "x": 200,
+      "y": 1005
+    },
+    {
+      "team": "blue",
+      "x": 550,
+      "y": 845
+    },
+    {
+      "team": "red",
+      "x": 1125,
+      "y": 1005
+    },
+    {
+      "team": "red",
+      "x": 1250,
+      "y": 1005
+    },
+    {
+      "team": "red",
+      "x": 1370,
+      "y": 1005
+    },
+    {
+      "team": "red",
+      "x": 1500,
+      "y": 875
+    },
+    {
+      "team": "neutral",
+      "x": 480,
+      "y": 495
+    },
+    {
+      "team": "neutral",
+      "x": 740,
+      "y": 305
+    },
+    {
+      "team": "neutral",
+      "x": 890,
+      "y": 305
+    },
+    {
+      "team": "neutral",
+      "x": 1295,
+      "y": 695
+    }
+  ],
+  "author": "Raymond Jelierse",
+  "name": "The Big Lebovski",
+  "version": 1,
+  "bases": 12,
+  "collisionmap": "eagle5_collmap.bmp",
+  "image": "eagle5.png"
+}

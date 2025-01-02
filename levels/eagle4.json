@@ -1,0 +1,20 @@
+{
+  "base_list": [
+    {
+      "team": "blue",
+      "x": 200,
+      "y": 375
+    },
+    {
+      "team": "red",
+      "x": 600,
+      "y": 375
+    }
+  ],
+  "author": "Raymond Jelierse",
+  "name": "KillaFish is bliss",
+  "version": 1,
+  "bases": 2,
+  "collisionmap": "eagle4_collmap.bmp",
+  "image": "eagle4.png"
+}

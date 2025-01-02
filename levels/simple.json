@@ -1,0 +1,20 @@
+{
+  "base_list": [
+    {
+      "team": "blue",
+      "x": 380,
+      "y": 480
+    },
+    {
+      "team": "red",
+      "x": 580,
+      "y": 480
+    }
+  ],
+  "author": "steve van bennekom",
+  "name": "simple testlevel",
+  "version": 1,
+  "bases": 2,
+  "collisionmap": "simple_colmap.bmp",
+  "image": "simple.png"
+}

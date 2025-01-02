@@ -12,8 +12,6 @@ void CreateGonLookup();
 
 void InitSDL();
 
-bool LoadLevelFile();
-
 int GetNearestBase( int x, int y );
 
 bool CheckForQuitSignal();

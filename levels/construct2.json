@@ -1,0 +1,70 @@
+{
+  "base_list": [
+    {
+      "team": "blue",
+      "x": 84,
+      "y": 987
+    },
+    {
+      "team": "blue",
+      "x": 562,
+      "y": 1002
+    },
+    {
+      "team": "blue",
+      "x": 209,
+      "y": 817
+    },
+    {
+      "team": "blue",
+      "x": 160,
+      "y": 178
+    },
+    {
+      "team": "red",
+      "x": 1183,
+      "y": 988
+    },
+    {
+      "team": "red",
+      "x": 737,
+      "y": 989
+    },
+    {
+      "team": "red",
+      "x": 1053,
+      "y": 796
+    },
+    {
+      "team": "red",
+      "x": 1113,
+      "y": 177
+    },
+    {
+      "team": "neutral",
+      "x": 495,
+      "y": 603
+    },
+    {
+      "team": "neutral",
+      "x": 781,
+      "y": 586
+    },
+    {
+      "team": "neutral",
+      "x": 321,
+      "y": 398
+    },
+    {
+      "team": "neutral",
+      "x": 962,
+      "y": 394
+    }
+  ],
+  "author": "Steve van Bennekom",
+  "name": "Try To be Techy Again",
+  "version": 1,
+  "bases": 12,
+  "collisionmap": "construct2_col.bmp",
+  "image": "construct2.png"
+}

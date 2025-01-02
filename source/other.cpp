@@ -14,6 +14,8 @@
 #include "net.h"
 #include "team.h"
 #include "base.h"
+#include "assets.h"
+#include "level.h"
 
 std::map<unsigned int, char> upper_case_keys = {
 	{SDLK_PERIOD, '>'},
@@ -58,6 +60,7 @@ std::map<unsigned int, char> lower_case_keys = {
 // TODO: Handle load failure?
 SDL_Surface * LoadIMG( const char * filename )
 {
+	std::cout << "@ loading asset " << filename << std::endl;
 	// Append filename to path
 	char tmppath[256];
 	memset( tmppath, '\0', sizeof( tmppath ));
@@ -81,6 +84,10 @@ SDL_Surface * LoadBMP( const char * filename ) {
 	snprintf( tmpfilename, 100, "%s./gfx/%s", SHAREPATH, filename );
 	
 	surface = SDL_LoadBMP(tmpfilename);
+	if( surface == NULL ) {
+		std::cout << "Could not load image " << filename << std::endl;
+		SDL_Quit();
+	}
 	converted_map = SDL_ConvertSurface(surface, SDL_PIXELFORMAT_RGBA8888);
 
 	// SDL_DestroySurface(surface);
@@ -92,7 +99,7 @@ void CreateGonLookup() // create lookup tables for sin and cos
 	int i = 0;
 	for( i = 0; i <= 359; i++ )
 	{
-		double theta = double(i * ( PI / 180 )); // convert the values
+		double theta = double(i * ( M_PI / 180 )); // convert the values
 		look_sin[i] = float( sin( theta ));
 		look_cos[i] = float( cos( theta ));
 	}
@@ -112,148 +119,6 @@ void InitSDL()
 	atexit( SDL_Quit );
 }
 
-bool LoadLevelFile()
-{
-	// searches the levelcodes file for a match. if found
-	// proceeds to check the levellist file for level availability
-	// then loads the levelname & dimensions into the LevelData lvl structure.
-	// if found, returns 1, if not, returns 0
-	bool READFLAG = 1, succes = 0;
-	int i = 0;
-	char * tmppoint, tempread[80], trash;
-	char tmpfilename[100];
-	int mypos;
-	int bascur; // the current basetag we're dealing with
-	int basenr = 0;
-	
-
-	memset( tmpfilename, '\0', sizeof(tmpfilename) );
-
-	snprintf( tmpfilename, 100, "%s./levels/%s", SHAREPATH, lvl.filename );
-	
-	std::ifstream invoer( tmpfilename );
-	if( invoer )
-	{
-		succes = 1;
-		
-		std::cout << std::endl << "@ reading levelfile: " << lvl.filename << std::endl;
-		
-		while( READFLAG )
-		{
-			invoer.getline( tempread, 100 );
-			tmppoint = tempread;
-			
-			if( strstr( tempread, "end" ))
-			{
-				tmppoint+=4;
-				break;
-			}
-			if( strstr( tempread, "author=" ))
-			{
-				tmppoint+=7;
-				std::cout << "  author: " << tmppoint << std::endl;
-				strcpy( lvl.author, tmppoint );
-				continue;
-			}
-			if( strstr( tempread, "name=" ))
-			{
-				tmppoint+=5;
-				std::cout << "  name: " << tmppoint << std::endl;
-				strcpy( lvl.name, tmppoint );
-				continue;
-			}
-			if( strstr( tempread, "version=" ))
-			{
-				tmppoint+=8;
-				std::cout << "  version: " << tmppoint << std::endl;
-				lvl.levelversion = atoi( tmppoint );
-				continue;
-			}
-			if( strstr( tempread, "bases=" ))
-			{
-				tmppoint+=6;
-				std::cout << "  bases: " << tmppoint << std::endl;
-				lvl.bases = atoi( tmppoint );
-				continue;
-			}
-			if( strstr( tempread, "collisionmap=" ))
-			{
-				tmppoint+=13;
-				std::cout << "  collisionmap: " << tmppoint << std::endl;
-				strcpy( lvl.colmap, tmppoint );
-				continue;
-			}
-			if( strstr( tempread, "image=" ))
-			{
-				tmppoint+=6;
-				std::cout << "  image: " << tmppoint << std::endl;
-				strcpy( lvl.image, tmppoint );
-				continue;
-			}
-			if( strstr( tempread, "basesblue=" ))
-			{
-				tmppoint+=10;
-				std::cout << "  blue bases: " << tmppoint << std::endl;
-				bascur = SHIPZ_TEAM::BLUE;
-				continue;
-			}
-			if( strstr( tempread, "basesred=" ))
-			{
-				tmppoint+=9;
-				std::cout << "  red bases: " << tmppoint << std::endl;
-				bascur = SHIPZ_TEAM::RED;
-				continue;
-			}
-			if( strstr( tempread, "basesneutral=" ))
-			{
-				tmppoint+=13;
-				std::cout << "  neutral bases: " << tmppoint << std::endl;
-				bascur = SHIPZ_TEAM::NEUTRAL;
-				continue;
-			}
-			if( strstr( tempread, "basex=" ))
-			{
-				tmppoint+=6;
-				bases[basenr].x = atoi( tmppoint );
-				continue;
-			}
-			if( strstr( tempread, "basey=" ))
-			{
-				tmppoint+=6;
-				if( bascur == SHIPZ_TEAM::RED )
-				{
-					red_team.bases++;
-				}
-				if( bascur == SHIPZ_TEAM::BLUE )
-				{
-					blue_team.bases++;
-				}
-				bases[basenr].used = 1;
-				bases[basenr].owner = bascur;
-				bases[basenr].y = atoi( tmppoint );
-				basenr++;
-				continue;
-			}
-
-			if( invoer.eof() )
-			{
-				READFLAG = 1;
-			}
-		}
-		SDL_Surface *level = LoadIMG( lvl.image );
-		lvl.width = level->w;
-		lvl.height = level->h;
-		SDL_DestroySurface(level);
-		std::cout << "  size: " << lvl.width << " x " << lvl.height << std::endl;
-		std::cout << "@ done reading." << std::endl;
-	}
-	invoer.close();
-	if ( !succes )
-	{
-		std::cout << tmpfilename << std::endl;
-	}
-	return succes;
-}
 
 int GetNearestBase( int x, int y )
 {
@@ -263,7 +128,7 @@ int GetNearestBase( int x, int y )
 	float dist, tdist; // the dist of the nearest Base so far, temp value for calc of dist.
 	int Base; // the nearest Base so far
 
-	for( i = 0; i < lvl.bases; i++ )
+	for( i = 0; i < lvl.m_num_bases; i++ )
 	{
 		tdx = x - bases[i].x;
 		tdy = y - bases[i].y;

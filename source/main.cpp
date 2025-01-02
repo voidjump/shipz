@@ -20,33 +20,8 @@ SDL_Renderer *sdlRenderer;
 
 // Holds the entire screen
 SDL_Texture * sdlScreenTexture;
-
-// gfx
 SDL_Surface * temp;
 SDL_Surface * screen;
-SDL_Surface * crosshairred;
-SDL_Surface * crosshairblue;
-SDL_Surface * bulletpixmap;
-SDL_Surface * rocketpixmap;
-SDL_Surface * minepixmap;
-SDL_Surface * chatpixmap;
-SDL_Surface * explosionpixmap;
-SDL_Surface * rocket_icon;
-SDL_Surface * bullet_icon;
-SDL_Surface * mine_icon;
-SDL_Surface * scores;
-
-
-// sounds:
-Mix_Chunk * explodesound;
-Mix_Chunk * rocketsound;
-Mix_Chunk * weaponswitch;
-
-// font
-TTF_Font * sansbold;
-TTF_Font * sansboldbig;
-
-bool iamserver = 0; // is this the server or a client?
 
 int viewportx=0;
 int viewporty=0;
@@ -59,7 +34,6 @@ float look_sin[360],
        deltatime = 0,
        lastsendtime = 0;
  
-LevelData lvl;
 
 Bullet bullets[NUMBEROFBULLETS];
  
@@ -70,11 +44,13 @@ Explosion explosions[NUMBEROFEXPLOSIONS];
 
 int main( int argc, char *argv[] )
 {
-	bool cli_init = 0;
+	bool run_server = false; // is this the server or a client?
+	bool cli_init = false;
 	int error = 0, menu_result;
 
 	char client_ip[16];
 	char client_nick[13];
+	char * level_filename;
 	
 	if( argc > 1 )
 	{
@@ -86,9 +62,9 @@ int main( int argc, char *argv[] )
 			}
 			else
 			{
-				cli_init = 1;
-				iamserver = 1;
-				lvl.filename = argv[2];
+				cli_init = true;
+				run_server = true;
+				level_filename = argv[2];
 			}
 		}
 		if( strstr( argv[1], "client" ))
@@ -99,8 +75,8 @@ int main( int argc, char *argv[] )
 			}
 			else
 			{
-				cli_init = 1;
-				iamserver = 0;
+				cli_init = true;
+				run_server = false;
 				strcpy( client_ip, argv[2] );
 				strcpy( client_nick, argv[3] );
 			}
@@ -110,9 +86,9 @@ int main( int argc, char *argv[] )
 	if( cli_init && error == 0 )
 	{
 		InitSDL();
-		if( iamserver )
+		if( run_server )
 		{
-			Server server(lvl.filename);
+			Server server(level_filename);
 			server.Run();
 		}
 		else
