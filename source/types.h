@@ -40,11 +40,6 @@
 #define EXPLOSIONLIFE 500
 #define EXPLOSIONFRAMETIME 50
 
-// weapons:
-#define BULLET 11
-#define ROCKET 22
-#define MINE 33
-
 // player:
 #define LIFTOFFSHOOTDELAY 3000
 

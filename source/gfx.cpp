@@ -155,18 +155,18 @@ void DrawBullets( SDL_Surface * bulpixmap )
 	{
 		if( bullets[i].active == 1 )
 		{
-			if( bullets[i].type == BULLET )
+			if( bullets[i].type == WEAPON_BULLET )
 			{
 				DrawIMG(bulpixmap, int(bullets[i].x - viewportx), int(bullets[i].y - viewporty));
 			}
-			if( bullets[i].type == ROCKET )
+			if( bullets[i].type == WEAPON_ROCKET )
 			{
 				int ta = int( bullets[i].angle ) / 10;
 				int x = (ta * 14) + ta +1;
 				DrawIMG(rocketpixmap, int(bullets[i].x - 7 - viewportx),
 					int(bullets[i].y -7 - viewporty), 14, 14, x, 1);
 			}
-			if( bullets[i].type == MINE )
+			if( bullets[i].type == WEAPON_MINE )
 			{
 				int flick2 = int(SDL_GetTicks() - bullets[i].minelaidtime);
 				int flick = flick2;

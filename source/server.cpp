@@ -268,21 +268,21 @@ void Server::HandleUpdate() {
 		players[playerread].bulletshotnr = Uint16(tn);
 		players[playerread].lastshottime = SDL_GetTicks();
 
-		if( tbultyp == BULLET )
+		if( tbultyp == WEAPON_BULLET )
 		{
 			bullets[tn].x = (float)tx;
 			bullets[tn].y = (float)ty;
 			bullets[tn].vx = (float)tvx;
 			bullets[tn].vy = (float)tvy;
 		}
-		if( tbultyp == ROCKET )
+		if( tbultyp == WEAPON_ROCKET )
 		{
 			// this may look wrong, but it's correct, trust me
 			bullets[tn].x = (float)tvx;
 			bullets[tn].y = (float)tvy;
 			bullets[tn].angle = (float)ty;
 		}
-		if( tbultyp == MINE )
+		if( tbultyp == WEAPON_MINE )
 		{
 			bullets[tn].x = (float)tx;
 			bullets[tn].y = (float)ty;
@@ -542,7 +542,7 @@ void Server::UpdatePlayers() {
 				// update etc.
 				if( bullets[bulletresult].owner == SHIPZ_TEAM::RED )
 				{
-					if( bullets[bulletresult].type == MINE &&
+					if( bullets[bulletresult].type == WEAPON_MINE &&
 						players[up].Team == SHIPZ_TEAM::RED )
 					{
 						red_team.frags--;
@@ -554,7 +554,7 @@ void Server::UpdatePlayers() {
 				}
 				else
 				{
-					if( bullets[bulletresult].type == MINE &&
+					if( bullets[bulletresult].type == WEAPON_MINE &&
 						players[up].Team == SHIPZ_TEAM::BLUE )
 					{
 						blue_team.frags--;
@@ -609,15 +609,15 @@ void Server::SendUpdates() {
 		{
 			sendbuf.Write16( Sint16( players[wp].bulletshotnr ));
 			sendbuf.Write16( Sint16( bullets[players[wp].bulletshotnr].type ));
-			if( bullets[players[wp].bulletshotnr].type == BULLET ||
-				bullets[players[wp].bulletshotnr].type == MINE )
+			if( bullets[players[wp].bulletshotnr].type == WEAPON_BULLET ||
+				bullets[players[wp].bulletshotnr].type == WEAPON_MINE )
 			{
 				sendbuf.Write16( Sint16( bullets[players[wp].bulletshotnr].x ));
 				sendbuf.Write16( Sint16( bullets[players[wp].bulletshotnr].y ));
 				sendbuf.Write16( Sint16( bullets[players[wp].bulletshotnr].vx ));
 				sendbuf.Write16( Sint16( bullets[players[wp].bulletshotnr].vy ));
 			}
-			if( bullets[players[wp].bulletshotnr].type == ROCKET )
+			if( bullets[players[wp].bulletshotnr].type == WEAPON_ROCKET )
 			{
 				sendbuf.Write16( 0);
 				sendbuf.Write16( Sint16( bullets[players[wp].bulletshotnr].angle ));

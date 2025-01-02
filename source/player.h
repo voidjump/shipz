@@ -17,6 +17,12 @@ enum PLAYER_STATUS {
  LANDEDRESPAWN,
 };
 
+enum PLAYER_WEAPON {
+	WEAPON_BULLET,
+	WEAPON_ROCKET,
+ 	WEAPON_MINE
+};
+
 struct Player
 {
 	bool playing; 

@@ -57,7 +57,7 @@ void EmptyPlayer( Player * play )
 	strcpy( play->name , "            " );
 	play->flamestate = 0;
 	play->shipframe = 0;
-	play->weapon = BULLET;
+	play->weapon = WEAPON_BULLET;
 	play->x = 0;
 	play->y = 0;
 	play->vx = 0;
@@ -107,7 +107,7 @@ void InitPlayer( Player * play )
 	play->crossx = 0;
 	play->crossy = -CROSSHAIRDIST;
 	play->status = PLAYER_STATUS::DEAD;
-	play->weapon = BULLET;
+	play->weapon = WEAPON_BULLET;
 	play->typing = 0;
 }
 
@@ -176,7 +176,7 @@ void ResetPlayer( Player * play )
 	play->fy = 0;
 	play->crossx = 0;
 	play->crossy = -CROSSHAIRDIST;
-	play->weapon = BULLET;
+	play->weapon = WEAPON_BULLET;
 }
 
 void TestColmaps() {
@@ -291,7 +291,7 @@ int PlayerCollideWithBullet( Player * play, int playernum, Player * players )
 	{
 		if( players[ bullets[cb].owner - 1 ].Team != players[ playernum - 1 ].Team )
 		{
-			if( bullets[cb].type == ROCKET || bullets[cb].type == BULLET)
+			if( bullets[cb].type == WEAPON_ROCKET || bullets[cb].type == WEAPON_BULLET)
 			{
 				// first check if the bullet even is in the ships clipping rectangle, this saves time.
 				if( bullets[cb].x > ( play->x - 1 ) && bullets[cb].x < ( play->x + 29 ) 
@@ -336,7 +336,7 @@ int PlayerCollideWithBullet( Player * play, int playernum, Player * players )
 				}
 			}
 		}
-		if( bullets[cb].type == MINE )
+		if( bullets[cb].type == WEAPON_MINE )
 		{
 			int dx = int( bullets[cb].x - play->x );
 			int dy = int( bullets[cb].y - play->y );
@@ -450,20 +450,20 @@ Uint16 ShootBullet( Player * play, int owner )
 			bullets[search].x = play->x;
 			bullets[search].y = play->y;
 			bullets[search].type = play->weapon;
-			if( play->weapon == BULLET )
+			if( play->weapon == WEAPON_BULLET )
 			{
 				bullets[search].vx = look_cos[ConvertAngle( play->angle )] * BULLETSPEED;
 				bullets[search].vy = look_sin[ConvertAngle( play->angle )] * BULLETSPEED;
 
 			}
-			if( play->weapon == ROCKET )
+			if( play->weapon == WEAPON_ROCKET )
 			{
 				bullets[search].vx = look_cos[ConvertAngle( play->angle )] * BULLETSPEED;
 				bullets[search].vy = look_sin[ConvertAngle( play->angle )] * BULLETSPEED;
 				bullets[search].angle = play->angle;
 				PlaySound( rocketsound );
 			}
-			if( play->weapon == MINE )
+			if( play->weapon == WEAPON_MINE )
 			{
 				bullets[search].minelaidtime = SDL_GetTicks();
 			}
@@ -512,13 +512,13 @@ void UpdateBullets( Player * plyrs)
 	{
 		if( bullets[upd].active == 1 )
 		{
-			if( bullets[upd].type == BULLET )
+			if( bullets[upd].type == WEAPON_BULLET )
 			{
 				bullets[upd].x -= bullets[upd].vx * (deltatime/1000);
 				bullets[upd].y -= bullets[upd].vy * (deltatime/1000);
 				continue;
 			}
-			if( bullets[upd].type == ROCKET )
+			if( bullets[upd].type == WEAPON_ROCKET )
 			{
 				int nearest = 0;
 				nearest = GetNearestEnemyPlayer( plyrs, int(bullets[upd].x),
@@ -588,7 +588,7 @@ void CheckBulletCollides( bool ** colmap )
 	{
 		if( bullets[i].active == 1 )
 		{
-			if( bullets[i].type == BULLET || bullets[i].type == ROCKET )
+			if( bullets[i].type == WEAPON_BULLET || bullets[i].type == WEAPON_ROCKET )
 			{
 				if( bullets[i].x > (lvl.m_width - 1) || bullets[i].x < 0 )
 				{
@@ -621,7 +621,7 @@ void CheckBulletCollides( bool ** colmap )
 					continue;
 				}
 			}
-			if( bullets[i].type == MINE )
+			if( bullets[i].type == WEAPON_MINE )
 			{
 				if( SDL_GetTicks() - bullets[i].minelaidtime > MINELIFETIME )
 				{

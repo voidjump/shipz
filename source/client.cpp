@@ -177,14 +177,14 @@ void Client::HandleInputs() {
 			if ( event.key.key == SDLK_TAB && !self->typing ) {
 				switch( self->weapon )
 				{
-					case BULLET:
-						self->weapon = ROCKET;
+					case WEAPON_BULLET:
+						self->weapon = WEAPON_ROCKET;
 						break;
-					case ROCKET:
-						self->weapon = MINE;
+					case WEAPON_ROCKET:
+						self->weapon = WEAPON_MINE;
 						break;
-					case MINE:
-						self->weapon = BULLET;
+					case WEAPON_MINE:
+						self->weapon = WEAPON_BULLET;
 						break;
 				}
 				PlaySound( weaponswitch );
@@ -235,7 +235,7 @@ void Client::HandleInputs() {
 		{
 			if( (SDL_GetTicks() - self->lastliftofftime) > LIFTOFFSHOOTDELAY )
 			{
-				if( self->weapon == BULLET )
+				if( self->weapon == WEAPON_BULLET )
 				{
 					if( (SDL_GetTicks() - self->lastshottime) > BULLETDELAY )
 					{
@@ -251,7 +251,7 @@ void Client::HandleInputs() {
 						}
 					}
 				}
-				if( self->weapon == ROCKET )
+				if( self->weapon == WEAPON_ROCKET )
 				{
 					if( (SDL_GetTicks() - self->lastshottime) > ROCKETDELAY )
 					{
@@ -267,7 +267,7 @@ void Client::HandleInputs() {
 						}
 					}
 				}
-				if( self->weapon == MINE )
+				if( self->weapon == WEAPON_MINE )
 				{
 					if( (SDL_GetTicks() - self->lastshottime) > MINEDELAY )
 					{
@@ -421,20 +421,20 @@ void Client::HandleUpdate() {
 			}
 			else
 			{
-				if( tbultyp == MINE )
+				if( tbultyp == WEAPON_MINE )
 				{
 					bullets[tn].x = (float)tx;
 					bullets[tn].y = (float)ty;
 					bullets[tn].minelaidtime = SDL_GetTicks();
 				}
-				if( tbultyp == BULLET )
+				if( tbultyp == WEAPON_BULLET )
 				{
 					bullets[tn].x = (float)tx;
 					bullets[tn].y = (float)ty;
 					bullets[tn].vx = (float)tvx;
 					bullets[tn].vy = (float)tvy;
 				}
-				if( tbultyp == ROCKET )
+				if( tbultyp == WEAPON_ROCKET )
 				{
 					bullets[tn].x = (float)tvx;
 					bullets[tn].y = (float)tvy;
@@ -531,7 +531,7 @@ void Client::HandleUpdate() {
 		for( int gcb = 0; gcb < tmpval; gcb++ )
 		{
 			Sint16 num = (Sint16)receive_buffer.Read16();
-			if( bullets[num].type == MINE || bullets[num].type == ROCKET )
+			if( bullets[num].type == WEAPON_MINE || bullets[num].type == WEAPON_ROCKET )
 			{
 				NewExplosion( int(bullets[num].x), int(bullets[num].y));
 			}
@@ -696,15 +696,15 @@ void Client::SendUpdate() {
 	{
 		this->send_buffer.Write16( Sint16(self->bulletshotnr));
 		this->send_buffer.Write16( Sint16( bullets[self->bulletshotnr].type));
-		if( bullets[self->bulletshotnr].type == BULLET ||
-			bullets[self->bulletshotnr].type == MINE )
+		if( bullets[self->bulletshotnr].type == WEAPON_BULLET ||
+			bullets[self->bulletshotnr].type == WEAPON_MINE )
 		{
 			this->send_buffer.Write16( Sint16( bullets[self->bulletshotnr].x));
 			this->send_buffer.Write16( Sint16( bullets[self->bulletshotnr].y));
 			this->send_buffer.Write16( Sint16( bullets[self->bulletshotnr].vx));
 			this->send_buffer.Write16( Sint16( bullets[self->bulletshotnr].vy));
 		}
-		if( bullets[self->bulletshotnr].type == ROCKET)
+		if( bullets[self->bulletshotnr].type == WEAPON_ROCKET)
 		{
 			// Why is this here?
 			this->send_buffer.Write16( 0 );
@@ -930,13 +930,13 @@ void Client::Draw() {
 
 	switch( self->weapon )
 	{
-		case BULLET:
+		case WEAPON_BULLET:
 			DrawIMG( bullet_icon, 110, YRES-18 );
 			break;
-		case ROCKET:
+		case WEAPON_ROCKET:
 			DrawIMG( rocket_icon, 110, YRES-18 );
 			break;
-		case MINE:
+		case WEAPON_MINE:
 			DrawIMG( mine_icon, 110, YRES-18 );
 			break;
 	}
