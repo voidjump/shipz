@@ -152,7 +152,7 @@ void Client::Connect(const char *connect_address) {
 void Client::Init() {
 	for( int ip = 0; ip < MAXPLAYERS; ip++ )
 	{
-		EmptyPlayer( &players[ ip ] );
+		players[ip].Empty();
 	}
 	
 	//initiate SDL_NET
@@ -569,7 +569,7 @@ void Client::HandlePlayerJoins() {
 	players[new_player_id].self_sustaining = 1;
 	players[new_player_id].Team = new_player_team;
 	receive_buffer.ReadStringCopyInto(players[new_player_id].name, 12);
-	InitPlayer( &players[new_player_id] );
+	players[new_player_id].Init();
 }
 
 void Client::HandlePlayerLeaves() {
@@ -580,9 +580,7 @@ void Client::HandlePlayerLeaves() {
 	Uint8 player_leave_id = receive_buffer.Read8() - 1;
 	// a player leaves
 	number_of_players--;
-	players[player_leave_id].playing = 0;
-	players[player_leave_id].self_sustaining = 0;
-	InitPlayer( &players[player_leave_id] );
+	players[player_leave_id].Empty();
 }
 
 void Client::HandleEvent() {
@@ -780,18 +778,18 @@ bool Client::Join() {
 				int tmpteam = (int) Read16( tmpptr );
 				if( tmpteam != 0 )
 				{
-					players[player_index].playing = 1;
+					players[player_index].playing = true;
 					players[player_index].Team = tmpteam;
 				}
 				else
 				{
-					players[player_index].playing = 0;
+					players[player_index].playing = false;
 				}
 
-				if( players[player_index].playing == 1 )
+				if( players[player_index].playing == true )
 				{
-					players[player_index].self_sustaining = 1;
-					InitPlayer( &players[player_index] );
+					players[player_index].self_sustaining = true;
+					players[player_index].Init();
 				}
 				tmpptr+=2;
 				strncpy( players[player_index].name, (const char*)tmpptr, 12 );
@@ -846,10 +844,8 @@ void Client::Load() {
 	LoadAssets();	
 	CreateGonLookup();
 	
-	self->self_sustaining = 0;
-	self->playing = 1;
-	self->x = 320;
-	self->y = 300;
+	self->self_sustaining = false;
+	self->playing = true;
 	self->status = PLAYER_STATUS::DEAD; 
 	
 	memset ( chat1, '\0', sizeof( chat1 ));

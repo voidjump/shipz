@@ -42,39 +42,46 @@ const char * GetStatusString(int status) {
 	return "UNDEFINED";
 }
 
-void EmptyPlayer( Player * play )
+// For legacy reasons, currently a separate function from `Empty`
+void Player::Init()
 {
-	// empties a player array slot, so it's ready to accept a new player without problems.
-	play->lastliftofftime = -3000;
-	play->lastshottime = 0;
-	play->bullet_shot = 0;
-	play->bulletshotnr = 0;
-	play->status = PLAYER_STATUS::DEAD;
-	play->playing = 0;
-	play->kills = 0;
-	play->deaths = 0;
-	play->Team = 0;
-	strcpy( play->name , "            " );
-	play->flamestate = 0;
-	play->shipframe = 0;
-	play->weapon = WEAPON_BULLET;
-	play->x = 0;
-	play->y = 0;
-	play->vx = 0;
-	play->vy = 0;
-	play->fx = 0;
-	play->fy = 0;
-	play->angle = 0;
-	play->engine_on = 0;
-	play->y_bmp = 0;
-	play->x_bmp = 0;
-	play->crossx = 0;
-	play->crossy = 0;
-	play->self_sustaining = 0;
-	play->playaddr = NULL;
-	play->typing = 0;
+	this->shipframe = 0;
+	this->flamestate = 0;	
+	this->angle = 0;
+	this->kills = 0;
+	this->deaths = 0;
+	this->engine_on = 0;
+	this->x = 320;
+	this->y = 240;
+	this->vx = 0;
+	this->vy = 0;
+	this->fx = 0;
+	this->fy = 0;
+	this->crossx = 0;
+	this->crossy = -CROSSHAIRDIST;
+	this->status = PLAYER_STATUS::DEAD;
+	this->weapon = WEAPON_BULLET;
+	this->typing = 0;
 }
 
+// Fully clear all fields on a player instance
+void Player::Empty()
+{
+	// empties a player array slot, so it's ready to accept a new player without problems.
+	this->lastliftofftime = -LIFTOFFSHOOTDELAY;
+	this->lastshottime = 0;
+	this->bullet_shot = 0;
+	this->bulletshotnr = 0;
+	this->playing = 0;
+	this->Team = 0;
+	memset( this->name, '\0', sizeof(this->name));
+	this->y_bmp = 0;
+	this->x_bmp = 0;
+	this->self_sustaining = 0;
+	this->playaddr = NULL;
+
+	this->Init();
+}
 
 
 inline int ConvertAngle( float angle )
@@ -89,27 +96,6 @@ inline int ConvertAngle( float angle )
 
 
 
-void InitPlayer( Player * play )
-{
-	// function is a little bit obsolete, should use emptyplayer instead. do this later!
-	play->shipframe = 0;
-	play->flamestate = 0;	
-	play->x = 320;
-	play->y = 290;
-	play->angle = 0;
-	play->kills = 0;
-	play->deaths = 0;
-	play->engine_on = 0;
-	play->vx = 0;
-	play->vy = 0;
-	play->fx = 0;
-	play->fy = 0;
-	play->crossx = 0;
-	play->crossy = -CROSSHAIRDIST;
-	play->status = PLAYER_STATUS::DEAD;
-	play->weapon = WEAPON_BULLET;
-	play->typing = 0;
-}
 
 void UpdatePlayer( Player * play )
 {

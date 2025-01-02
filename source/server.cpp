@@ -106,7 +106,7 @@ void Server::Init() {
 	
 	for(int ep = 0; ep < MAXPLAYERS; ep++ )
 	{
-		EmptyPlayer( &players[ep] );
+		players[ep].Empty();
 	}
 	
 	CreateGonLookup();
@@ -155,7 +155,7 @@ void Server::HandleLeave() {
 						
 	// dereference player address
 	SDLNet_UnrefAddress(leaving_player->playaddr);
-	InitPlayer( leaving_player );
+	leaving_player->Empty();
 	// player has been removed
 	// now notify all the other players
 	for( int playerleaves = 0; playerleaves < MAXPLAYERS; playerleaves++ )
@@ -331,7 +331,7 @@ void Server::HandleJoin() {
 		SDLNet_RefAddress(in->addr);
 		players[ newnum - 1 ].playing = 1;
 		players[ newnum - 1 ].self_sustaining = 1;
-		InitPlayer( &players[ newnum - 1 ] );
+		players[ newnum - 1 ].Init();
 		players[ newnum - 1 ].Team = newteam;
 
 		std::cout << "Player " << players[newnum-1].name
@@ -455,7 +455,7 @@ void Server::CheckIdlePlayers() {
 			players[ ci ].playing = 0;
 			// Dereference address
 			SDLNet_UnrefAddress(players[ci].playaddr);
-			InitPlayer( &players[ ci ] );
+			players[ ci ].Init();
 			// player has been removed / kicked
 			// now notify all the other players
 			for( int playerleaves = 0; playerleaves < MAXPLAYERS; playerleaves++ )

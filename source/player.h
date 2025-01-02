@@ -23,36 +23,56 @@ enum PLAYER_WEAPON {
  	WEAPON_MINE
 };
 
-struct Player
+class Player
 {
-	bool playing; 
-	int kills, deaths, Team;
-	char name[13];
-	int flamestate, shipframe;
-	int weapon; // weapon player is 'carrying'
-	int status;
-	float x, y, vx, vy, fx, fy, angle;
-	bool engine_on;
-	int y_bmp, x_bmp;
-	float crossx, crossy; // x and y of the crosshair
-	bool self_sustaining; // is the player local or remote?
-	SDLNet_Address * playaddr;
-	float lastsendtime;
+	public:
+		// is this player slot being used
+		// TODO: this could be a bitflag in the player state
+		bool playing; 
 
-	bool typing; // is the player typing a message?
+		// the player name
+		char name[13];
 
-	float lastliftofftime;
-	bool bullet_shot;
-	Uint16 bulletshotnr;
-	float lastshottime;
+		int kills, deaths, Team;
+
+		int flamestate, shipframe;
+		// weapon player is currently using
+		int weapon; 
+		// status
+		int status;
+		// position, speed, forces, angle
+		float x, y, vx, vy, fx, fy, angle;
+		// whether the player is currently thrusting
+		bool engine_on;
+
+		int y_bmp, x_bmp;
+		// x and y of the crosshair
+		float crossx, crossy; 
+		// is the player local or remote?
+		bool self_sustaining; 
+		SDLNet_Address * playaddr;
+
+		// is the player typing a message?
+		// TODO: this could be a bitflag in the player state
+		bool typing; 
+
+		bool bullet_shot;
+		Uint16 bulletshotnr;
+
+		// Last time player sent an update
+		float lastsendtime;
+		// last time player lifted off
+		float lastliftofftime;
+		// last time player shot a bullet
+		float lastshottime;
+
+	void Init();
+	void Empty();
 };
-
 
 void TestColmaps();
 const char * GetStatusString(int status);
-void EmptyPlayer( Player * play );
 inline int ConvertAngle( float angle );
-void InitPlayer( Player * play );
 void UpdatePlayer( Player * play );
 void ResetPlayer( Player * play );
 void GetCollisionMaps( bool ** levelcolmap );
