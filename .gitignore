@@ -1,5 +1,6 @@
 shipz
 source/*.o
+test/*.o
 ss*.bmp
 .DS_Store
 .vscode/

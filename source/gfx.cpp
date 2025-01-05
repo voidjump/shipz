@@ -153,7 +153,7 @@ void DrawBullets( SDL_Surface * bulpixmap )
 	int i;
 	for( i = 0; i < NUMBEROFBULLETS; i++ )
 	{
-		if( bullets[i].active == 1 )
+		if( bullets[i].active == true )
 		{
 			if( bullets[i].type == WEAPON_BULLET )
 			{

@@ -25,7 +25,7 @@ enum SHIPZ_MESSAGE {
 };
 
 class Buffer {
-    private:
+    protected:
         Uint8 * position;
     public:
         Uint16 length; // amount of data currently in the buffer
@@ -40,10 +40,13 @@ class Buffer {
     bool Seek(Uint16);
     // Write a byte
     bool Write8(Uint8);
+    bool Write8(Uint8, const char *);
     // Write 2 bytes
     bool Write16(Uint16);
+    bool Write16(Uint16, const char *);
     // Write 4 bytes
     bool Write32(Uint32);
+    bool Write32(Uint32, const char *);
     // Write a null terminated string
     bool WriteOctets(const char *, size_t);
     bool WriteString(const char *);
@@ -53,10 +56,13 @@ class Buffer {
 
     // Read 8 bytes
     Uint8 Read8();
+    Uint8 Read8(const char *);
     // Read 16 bytes
     Uint16 Read16();
+    Uint16 Read16(const char *);
     // Read 32 bytes
     Uint32 Read32();
+    Uint32 Read32(const char *);
     // Read string into destination buffer
     void ReadStringCopyInto(void *, size_t);
     // Read into new string

@@ -177,6 +177,9 @@ void Server::HandleLeave() {
 
 // Send the sendbuffer to a client
 void Server::SendBuffer(SDLNet_Address * client_address) {
+	std::cout << "Sending buffer: ";
+	PrintRawBytes(this->sendbuf.AsString(), this->sendbuf.length);
+	std::cout << std::endl;;
 	// TODO: Check for return value
 	SDLNet_SendDatagram(udpsock,
 						client_address,
@@ -291,8 +294,8 @@ void Server::HandleUpdate() {
 		
 		bullets[tn].type = tbultyp;
 		bullets[tn].owner = playerread + 1;
-		bullets[tn].active = 1;
-		bullets[tn].collide = 0;
+		bullets[tn].active = true;
+		bullets[tn].collide = false;
 	}
 	
 	players[ playerread ].lastsendtime = SDL_GetTicks();
@@ -480,7 +483,7 @@ void Server::UpdatePlayers() {
 	{
 		if( players[up].playing && players[up].status == PLAYER_STATUS::FLYING )
 		{
-			UpdatePlayer( &players[up] );
+			players[up].Update();
 			
 			int baseresult;
 			baseresult = PlayerCollideWithBase( &players[up] );
@@ -507,6 +510,7 @@ void Server::UpdatePlayers() {
 					{
 						blue_team.frags--;
 					}
+					std::cout << "player " << players[up].name << " collided with base at " << players[up].x << "," << players[up].y << std::endl;
 					players[up].status = PLAYER_STATUS::JUSTCOLLIDEDBASE;
 				}
 			}
@@ -529,13 +533,14 @@ void Server::UpdatePlayers() {
 					{
 						blue_team.frags--;
 					}
-					std::cout << "player " << players[up].name << "collided with rock at" << players[up].x << "," << players[up].y << std::endl;
+					std::cout << "player " << players[up].name << " collided with rock at " << players[up].x << "," << players[up].y << std::endl;
 					players[up].status = PLAYER_STATUS::JUSTCOLLIDEDROCK;
 				}
 			}
 			int bulletresult = PlayerCollideWithBullet( &players[up], up+1, players );
 			if( bulletresult != -1 )
 			{
+				std::cout << "player " << players[up].name << " collided with bullet at " << players[up].x << "," << players[up].y << std::endl;
 				// the function returns -1 when a player didn't collide, so he must've collided
 				// note down the bullet for removal and change the player status
 				// NOTE: in a later stage we should report which player shot him and
@@ -565,7 +570,7 @@ void Server::UpdatePlayers() {
 					}
 				}
 
-				bullets[bulletresult].collide = 1;
+				bullets[bulletresult].collide = true;
 				
 				players[up].status = PLAYER_STATUS::JUSTSHOT;
 			}
@@ -577,9 +582,13 @@ void Server::UpdatePlayers() {
 void Server::SendUpdates() {
 	// send all the stuff to all the players
 	// S: 040 PLAYER BASESTATES TEAMSTATES (PSTAT PFRAME PX PY PVX PVY BULX BULY BULVX BULVY) x8
+	if(number_of_players == 0) {
+		return;
+	}
+	std::cout << "BEGIN UPDATE" << std::endl;
 	sendbuf.Clear();
-	sendbuf.Write8(SHIPZ_MESSAGE::UPDATE);
-	sendbuf.Write8(0);
+	sendbuf.Write8(SHIPZ_MESSAGE::UPDATE, "UPDATE");
+	sendbuf.Write8(0, "plyr_placeholder");
 
 	Uint32 basestates = 0;
 	for( int bidx = 0; bidx < MAXBASES; bidx++ ) {
@@ -590,50 +599,41 @@ void Server::SendUpdates() {
 			basestates |= (1 << (bidx *2 +1));
 		}
 	}
-	sendbuf.Write32( basestates);
+	sendbuf.Write32( basestates, "basestates");
 	
-	sendbuf.Write16( Sint16( red_team.bases ));
-	sendbuf.Write16( Sint16( blue_team.bases ));
+	sendbuf.Write16( Sint16( red_team.bases ), "red_team.bases");
+	sendbuf.Write16( Sint16( blue_team.bases ), "blue_team.bases");
 	
 	for( int wp = 0; wp < MAXPLAYERS; wp++ )
 	{
-		sendbuf.Write16( Sint16( players[wp].status ));
-		sendbuf.Write16( Sint16( players[wp].shipframe ));
-		sendbuf.Write16( Sint16( players[wp].typing ));
-		sendbuf.Write16( Sint16( players[wp].x ));
-		sendbuf.Write16( Sint16( players[wp].y ));
-		sendbuf.Write16( Sint16( players[wp].vx ));
-		sendbuf.Write16( Sint16( players[wp].vy ));
+		sendbuf.Write16( Sint16( players[wp].status ), "status");
+		sendbuf.Write16( Sint16( players[wp].shipframe ), "frame");
+		sendbuf.Write16( Sint16( players[wp].typing ), "typing");
+		sendbuf.Write16( Sint16( players[wp].x ), "x");
+		sendbuf.Write16( Sint16( players[wp].y ), "y");
+		sendbuf.Write16( Sint16( players[wp].vx ), "vx");
+		sendbuf.Write16( Sint16( players[wp].vy ), "vy");
+		sendbuf.Write8(Uint8(players[wp].bullet_shot), "bullet_shot");
 	
 		if( players[wp].bullet_shot )
 		{
-			sendbuf.Write16( Sint16( players[wp].bulletshotnr ));
-			sendbuf.Write16( Sint16( bullets[players[wp].bulletshotnr].type ));
+			sendbuf.Write16( Sint16( players[wp].bulletshotnr ), "bullet_shot_nr");
+			sendbuf.Write16( Sint16( bullets[players[wp].bulletshotnr].type ), "type");
 			if( bullets[players[wp].bulletshotnr].type == WEAPON_BULLET ||
 				bullets[players[wp].bulletshotnr].type == WEAPON_MINE )
 			{
-				sendbuf.Write16( Sint16( bullets[players[wp].bulletshotnr].x ));
-				sendbuf.Write16( Sint16( bullets[players[wp].bulletshotnr].y ));
-				sendbuf.Write16( Sint16( bullets[players[wp].bulletshotnr].vx ));
-				sendbuf.Write16( Sint16( bullets[players[wp].bulletshotnr].vy ));
+				sendbuf.Write16( Sint16( bullets[players[wp].bulletshotnr].x ), "x");
+				sendbuf.Write16( Sint16( bullets[players[wp].bulletshotnr].y ), "y");
+				sendbuf.Write16( Sint16( bullets[players[wp].bulletshotnr].vx ), "vx");
+				sendbuf.Write16( Sint16( bullets[players[wp].bulletshotnr].vy ), "vy");
 			}
 			if( bullets[players[wp].bulletshotnr].type == WEAPON_ROCKET )
 			{
 				sendbuf.Write16( 0);
-				sendbuf.Write16( Sint16( bullets[players[wp].bulletshotnr].angle ));
-				sendbuf.Write16( Sint16( bullets[players[wp].bulletshotnr].x ));
-				sendbuf.Write16( Sint16( bullets[players[wp].bulletshotnr].y ));
+				sendbuf.Write16( Sint16( bullets[players[wp].bulletshotnr].angle ), "angle");
+				sendbuf.Write16( Sint16( bullets[players[wp].bulletshotnr].x ), "x");
+				sendbuf.Write16( Sint16( bullets[players[wp].bulletshotnr].y ), "y");
 			}
-			players[wp].bullet_shot = 0;
-		}
-		else
-		{
-			sendbuf.Write16( 0 );
-			sendbuf.Write16( 0 );
-			sendbuf.Write16( 0 );
-			sendbuf.Write16( 0 );
-			sendbuf.Write16( 0 );
-			sendbuf.Write16( 0 );
 			players[wp].bullet_shot = 0;
 		}
 	}
@@ -641,23 +641,25 @@ void Server::SendUpdates() {
 	Sint16 bulcount = 0;
 	for( int cnt = 0; cnt < NUMBEROFBULLETS; cnt++ )
 	{
-		if( bullets[cnt].active == 1 && bullets[cnt].collide == 1 )
+		if( bullets[cnt].active == true && bullets[cnt].collide == true )
 		{
 			bulcount++;
 		}
 	}
 
-	sendbuf.Write16( Sint16( bulcount ));
+	sendbuf.Write16( Sint16( bulcount ), "bulcount");
 
 	for( Sint16 wrb = 0; wrb < NUMBEROFBULLETS; wrb++ )
 	{
-		if( bullets[wrb].active == 1 && bullets[wrb].collide == 1 )
+		if( bullets[wrb].active == true && bullets[wrb].collide == true )
 		{
-			sendbuf.Write16( (Sint16)wrb);
+			sendbuf.Write16( (Sint16)wrb, "wrb");
 			CleanBullet( int( wrb ));
 		}
 	}
 
+
+	std::cout << "END UPDATE" << std::endl << std::endl;;
 	
 	for( int sp = 0; sp < MAXPLAYERS; sp++ )
 	{

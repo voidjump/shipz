@@ -10,6 +10,7 @@
 #include "net.h"
 
 // TODO rewrite this using c++ streams?
+// TODO write unit tests
 
 Uint16 Read16(void *area) {
     // 'area' is a pointer to the data buffer
@@ -93,7 +94,6 @@ bool Buffer::ImportBytes(void * source_buffer, size_t n_bytes) {
 }
 
 // Clear the buffer and reset position pointer to the first byte
-// TODO: Strictly not necessary
 void Buffer::Clear() {
 	memset( this->data, '\0', sizeof(this->data) );
     this->position = this->data;
@@ -109,6 +109,19 @@ bool Buffer::Seek(Uint16 index) {
     return true;
 }
 
+bool Buffer::Write8(Uint8 byte, const char *debug_msg) { 
+    std::cout << "W_8:" << debug_msg << ":" << std::hex << byte << std::dec << std::endl;
+    return this->Write8(byte);
+}
+bool Buffer::Write16(Uint16 byte, const char *debug_msg) { 
+    std::cout << "W16:" << debug_msg << ":" << std::hex << byte << std::dec << std::endl;
+    return this->Write16(byte);
+}
+bool Buffer::Write32(Uint32 byte, const char *debug_msg) { 
+    std::cout << "W32:" << debug_msg << ":" << std::hex << byte << std::dec << std::endl;
+    return this->Write32(byte);
+}
+    
 // Write a byte to the buffer. Returns false if write fails
 bool Buffer::Write8(Uint8 byte) {
     if ((MAXBUFSIZE - this->length) <= 0) {
@@ -190,6 +203,23 @@ Uint16 Buffer::AvailableWrite() {
 // Return how many bytes are available left to read
 Uint16 Buffer::AvailableRead() {
     return this->length - (this->position - this->data);
+}
+
+
+Uint8 Buffer::Read8(const char *debug_msg) {
+    Uint8 retval = this->Read8();
+    std::cout << "R_8:" << debug_msg << ":" << std::hex << retval << std::dec << std::endl;
+    return retval;
+}
+Uint16 Buffer::Read16(const char *debug_msg) {
+    Uint16 retval = this->Read16();
+    std::cout << "R16:" << debug_msg << ":" << std::hex << retval << std::dec << std::endl;
+    return retval;
+}
+Uint32 Buffer::Read32(const char *debug_msg) {
+    Uint32 retval = this->Read32();
+    std::cout << "R32:" << debug_msg << ":" << std::hex << retval << std::dec << std::endl;
+    return retval;
 }
 
 // Read 8 and increment buffer

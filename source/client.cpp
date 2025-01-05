@@ -217,21 +217,21 @@ void Client::HandleInputs() {
 		if( keys[SDL_SCANCODE_RIGHT] )
 		{
 			//rotate player clockwise
-			PlayerRot( self, 1 );
+			self->Rotate(true);
 			input_given = 1;
 		}
 		if( keys[SDL_SCANCODE_LEFT] )
 		{
 			//rotate player counterclockwise
-			PlayerRot( self, 0 );
+			self->Rotate(false);
 			input_given = 1;
 		}
 		if( keys[SDL_SCANCODE_UP] )
 		{
-			PlayerThrust( self );
+			self->Thrust();
 			input_given = 1;
 		}
-		if( keys[SDL_SCANCODE_RCTRL] || keys[SDL_SCANCODE_LCTRL] )
+		if( keys[SDL_SCANCODE_SPACE] && !self->typing )
 		{
 			if( (SDL_GetTicks() - self->lastliftofftime) > LIFTOFFSHOOTDELAY )
 			{
@@ -311,9 +311,7 @@ void Client::HandleInputs() {
 		{
 			// respawn
 			input_given = 1;
-			//ResetPlayer( self );
 			self->status = PLAYER_STATUS::RESPAWN;
-			//UpdatePlayer(self);
 		}
 	}
 
@@ -356,6 +354,10 @@ bool Client::ReceivedPacket() {
 
 	return_result:
 	SDLNet_DestroyDatagram(in);
+
+	std::cout << "Received buffer: ";
+	PrintRawBytes(this->receive_buffer.AsString(), this->receive_buffer.length);
+	std::cout << std::endl;;
 	return result;
 }
 
@@ -366,11 +368,11 @@ void Client::HandleKicked() {
 
 void Client::HandleUpdate() {
 	// Legacy check
-	if( my_player_nr != receive_buffer.Read8()) {
+	if( my_player_nr != receive_buffer.Read8("my_player_no")) {
 		return;
 	}
 
-	Uint32 basestates = receive_buffer.Read32();
+	Uint32 basestates = receive_buffer.Read32("basestates");
 	for( int bidx = 0; bidx < MAXBASES; bidx++ ) {
 		if( basestates & (1 << (bidx *2))) {
 			bases[bidx].owner = SHIPZ_TEAM::RED;
@@ -379,21 +381,21 @@ void Client::HandleUpdate() {
 			bases[bidx].owner = SHIPZ_TEAM::BLUE;
 		}
 	}
-	red_team.bases = (Sint16)receive_buffer.Read16();
-	blue_team.bases = (Sint16)receive_buffer.Read16();
+	red_team.bases = (Sint16)receive_buffer.Read16("red_team.bases");
+	blue_team.bases = (Sint16)receive_buffer.Read16("blue_team.bases");
 
 	for( int rp=0; rp < MAXPLAYERS; rp++ )
 	{
 		if( rp != (my_player_nr -1 ))
 		{
-			int tempstat = (Sint16) receive_buffer.Read16();
+			int tempstat = (Sint16) receive_buffer.Read16("status");
 
-			players[rp].shipframe = (Sint16) receive_buffer.Read16();
-			players[rp].typing = (Sint16) receive_buffer.Read16();
-			players[rp].x = (Sint16) receive_buffer.Read16();
-			players[rp].y = (Sint16) receive_buffer.Read16();
-			players[rp].vx = (Sint16) receive_buffer.Read16();
-			players[rp].vy = (Sint16) receive_buffer.Read16();
+			players[rp].shipframe = (Sint16) receive_buffer.Read16("frame");
+			players[rp].typing = (Sint16) receive_buffer.Read16("typing");
+			players[rp].x = (Sint16) receive_buffer.Read16("x");
+			players[rp].y = (Sint16) receive_buffer.Read16("y");
+			players[rp].vx = (Sint16) receive_buffer.Read16("vx");
+			players[rp].vy = (Sint16) receive_buffer.Read16("vy");
 		
 			if( tempstat == PLAYER_STATUS::FLYING && (players[rp].status == PLAYER_STATUS::LANDED ||
 				players[rp].status == PLAYER_STATUS::LANDEDBASE))
@@ -406,14 +408,18 @@ void Client::HandleUpdate() {
 			}
 			players[rp].status = tempstat;
 
+			Uint8 bullet_shot = (bool) receive_buffer.Read8("bullet_shot");
+			if(!bullet_shot) {
+				continue;
+			}
 		
 			Sint16 tx, ty, tvx, tvy, tn, tbultyp;
-			tn = (Sint16) receive_buffer.Read16();
-			tbultyp = (Sint16) receive_buffer.Read16();
-			tx = (Sint16) receive_buffer.Read16();
-			ty = (Sint16) receive_buffer.Read16();
-			tvx = (Sint16) receive_buffer.Read16();
-			tvy = (Sint16) receive_buffer.Read16();
+			tn = (Sint16) receive_buffer.Read16("number");
+			tbultyp = (Sint16) receive_buffer.Read16("type");
+			tx = (Sint16) receive_buffer.Read16("tx");
+			ty = (Sint16) receive_buffer.Read16("ty");
+			tvx = (Sint16) receive_buffer.Read16("tvx");
+			tvy = (Sint16) receive_buffer.Read16("tvy");
 			if( tx == 0 && ty == 0 && tvx == 0 && tvy == 0 && tn == 0 &&
 				tbultyp == 0 )
 			{
@@ -442,17 +448,24 @@ void Client::HandleUpdate() {
 					PlaySound( rocketsound );
 				}
 				bullets[tn].type = tbultyp;
-				bullets[tn].active = 1;
-				bullets[tn].collide = 0;
+				bullets[tn].active = true;
+				bullets[tn].collide = false;
 				bullets[tn].owner = rp+1;
 			}
 		}
 		else
 		{
-			int tempstatus = (Sint16) receive_buffer.Read16();
+			int tempstatus = (Sint16) receive_buffer.Read16("status");
+			receive_buffer.Read16("(frame)");
+			receive_buffer.Read16("(typing)");
+
 			Sint16 tx, ty;
-			tx = (Sint16)receive_buffer.Read16();
-			ty = (Sint16)receive_buffer.Read16();
+			tx = (Sint16)receive_buffer.Read16("x");
+			ty = (Sint16)receive_buffer.Read16("y");
+			receive_buffer.Read16("(vx)");
+			receive_buffer.Read16("(vy)");
+			receive_buffer.Read8("(bullet_shot)");
+
 		
 			if( tempstatus == PLAYER_STATUS::DEAD && self->status == PLAYER_STATUS::SUICIDE )
 			{
@@ -484,8 +497,8 @@ void Client::HandleUpdate() {
 				int tmpbs = FindRespawnBase( self->Team );
 
 				// Base found, reset the player's speed etc.
-				ResetPlayer( self );
-				UpdatePlayer( self );
+				self->Respawn();
+				self->Update();
 				// mount /dev/player /mnt/Base 
 				self->x = bases[ tmpbs ].x;
 				self->y = bases[ tmpbs ].y - 26;
@@ -494,7 +507,7 @@ void Client::HandleUpdate() {
 			}
 			if( tempstatus == PLAYER_STATUS::FLYING && self->status == PLAYER_STATUS::LIFTOFF )
 			{
-				std::cout << "we are flyig!" << std::endl;
+				std::cout << "we are flying!" << std::endl;
 				self->status = PLAYER_STATUS::FLYING;
 			}
 			if( tempstatus == PLAYER_STATUS::LANDED && self->status == PLAYER_STATUS::FLYING ) 
@@ -519,20 +532,22 @@ void Client::HandleUpdate() {
 				self->vy = 0;
 				self->engine_on = 0;
 				self->flamestate = 0;
-				UpdatePlayer(self);
+				self->Update();
 			}
 		}
 	}
 	
-	Sint16 tmpval = 0;
-	tmpval = (Sint16)receive_buffer.Read16();
-	if( tmpval != 0 )
+	Sint16 bullet_count = 0;
+	bullet_count = (Sint16)receive_buffer.Read16("bullet_count");
+	if( bullet_count != 0 )
 	{
-		for( int gcb = 0; gcb < tmpval; gcb++ )
+		std::cout << "bullet update count: " << bullet_count << std::endl;
+		for( int gcb = 0; gcb < bullet_count; gcb++ )
 		{
-			Sint16 num = (Sint16)receive_buffer.Read16();
+			Sint16 num = (Sint16)receive_buffer.Read16("number");
 			if( bullets[num].type == WEAPON_MINE || bullets[num].type == WEAPON_ROCKET )
 			{
+				std::cout << "New explosion for bullet " << num << std::endl;
 				NewExplosion( int(bullets[num].x), int(bullets[num].y));
 			}
 			CleanBullet( int( num ) );
@@ -609,7 +624,7 @@ void Client::UpdatePlayers() {
 		{
 			if( players[up].status == PLAYER_STATUS::FLYING )
 			{
-				UpdatePlayer( &players[up] );
+				players[up].Update();
 			}
 		}
 	}
@@ -629,7 +644,7 @@ void Client::GameLoop() {
 		Tick();
 
 		if(ReceivedPacket()) {
-			Uint8 protocol_header = receive_buffer.Read8();
+			Uint8 protocol_header = receive_buffer.Read8("header");
 			switch(protocol_header) {
 				case SHIPZ_MESSAGE::KICK:
 					std::cout << "received kick notice" << std::endl;
@@ -770,7 +785,7 @@ bool Client::Join() {
 		if( in->buf[0] == SHIPZ_MESSAGE::JOIN )
 		{
 			my_player_nr = in->buf[1];
-			std::cout << "Joined as player " << this->name << std::endl;
+			std::cout << "Joined as player " << this->name << " (#" << my_player_nr << ")" << std::endl;
 			self = &players[my_player_nr-1];
 			Uint8 * tmpptr = &in->buf[2];	
 			for( int player_index = 0; player_index < MAXPLAYERS; player_index++ )

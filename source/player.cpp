@@ -95,74 +95,69 @@ inline int ConvertAngle( float angle )
 }
 
 
-
-
-void UpdatePlayer( Player * play )
+void Player::Update()
 {
 	// updates both local and non-local players. updates positions, stati, etc.
 	// NOTE: this would be the perfect place for a recharge, like the laser battery ( ammo ) recharging
-	if( !play->self_sustaining )
+	if( !this->self_sustaining )
 	{
 		// this is the client himself ( a local player )
-		if( play->status != PLAYER_STATUS::LANDED )
+		if( this->status != PLAYER_STATUS::LANDED )
 		{
-			play->shipframe = ( int(play->angle) / 10 );
-			if( play->shipframe > 35 ) 
+			this->shipframe = ( int(this->angle) / 10 );
+			if( this->shipframe > 35 ) 
 			{
-				play->shipframe = 35;
+				this->shipframe = 35;
 			}
-			play->fy += float( GRAVITY * SHIPMASS );
-			play->vy += float( play->fy ) * REALITYSCALE;
-			play->vx += float( play->fx ) * REALITYSCALE;
-			play->x += play->vx * ( deltatime / 1000 );
-			play->y += play->vy * ( deltatime / 1000 );
+			this->fy += float( GRAVITY * SHIPMASS );
+			this->vy += float( this->fy ) * REALITYSCALE;
+			this->vx += float( this->fx ) * REALITYSCALE;
+			this->x += this->vx * ( deltatime / 1000 );
+			this->y += this->vy * ( deltatime / 1000 );
 		}
 	}
 	else
 	{
 		// this is a remote player
-		play->x += play->vx * ( deltatime / 1000 );
-		play->y += play->vy * ( deltatime / 1000 );
+		this->x += this->vx * ( deltatime / 1000 );
+		this->y += this->vy * ( deltatime / 1000 );
 		
-		play->crossy = look_sin[ConvertAngle( play->shipframe*10 )] * -CROSSHAIRDIST;
-		play->crossx = look_cos[ConvertAngle( play->shipframe*10 )] * -CROSSHAIRDIST;	
+		this->crossy = look_sin[ConvertAngle( this->shipframe*10 )] * -CROSSHAIRDIST;
+		this->crossx = look_cos[ConvertAngle( this->shipframe*10 )] * -CROSSHAIRDIST;	
 	}
-	if( play->engine_on )
+	if( this->engine_on )
 	{
-		if( play->flamestate == 1 ) { play->y_bmp = 30; }
-		if( play->flamestate == 2 ) { play->y_bmp = 59; }
-		if( play->flamestate == 3 ) { play->y_bmp = 88; }
-		if( play->flamestate == 4 ) { play->y_bmp = 59; }
-		if( play->flamestate == 5 ) { play->y_bmp = 30; }
+		if( this->flamestate == 1 ) { this->y_bmp = 30; }
+		if( this->flamestate == 2 ) { this->y_bmp = 59; }
+		if( this->flamestate == 3 ) { this->y_bmp = 88; }
+		if( this->flamestate == 4 ) { this->y_bmp = 59; }
+		if( this->flamestate == 5 ) { this->y_bmp = 30; }
 	}
 	else
 	{
-		play->y_bmp = 1;
+		this->y_bmp = 1;
 	}
-	play->x_bmp = 1 + (( play->shipframe) * ( 29 ));
+	this->x_bmp = 1 + (( this->shipframe) * ( 29 ));
 
-	play->engine_on = 0;
-	play->fx = 0;
-	play->fy = 0;
+	this->engine_on = 0;
+	this->fx = 0;
+	this->fy = 0;
 }
 
-void ResetPlayer( Player * play )
+void Player::Respawn()
 {
-	// actually used for respawing a player
-	// NOTE: should rename this function to the more appropriate 'RespawnPlayer'
-	
-	play->shipframe = 0;
-	play->flamestate = 0;	
-	play->x = 320;
-	play->y = 290;
-	play->angle = 0;
-	play->vx = 0;
-	play->vy = 0;
-	play->fx = 0;
-	play->fy = 0;
-	play->crossx = 0;
-	play->crossy = -CROSSHAIRDIST;
-	play->weapon = WEAPON_BULLET;
+	this->shipframe = 0;
+	this->flamestate = 0;	
+	this->x = 320;
+	this->y = 290;
+	this->angle = 0;
+	this->vx = 0;
+	this->vy = 0;
+	this->fx = 0;
+	this->fy = 0;
+	this->crossx = 0;
+	this->crossy = -CROSSHAIRDIST;
+	this->weapon = WEAPON_BULLET;
 }
 
 void TestColmaps() {
@@ -387,42 +382,41 @@ void AdjustViewport( Player * play )
 	if( viewporty > ( lvl.m_height - YRES - 1 )) { viewporty = lvl.m_height - YRES - 1; }
 }
 
-void PlayerRot( Player * play, bool clockwise )
-{	
-	// rotates a player, scaled by the deltatime interval.
-	// the use of clockwise is pretty obvious i think..
+// rotates a player, scaled by the deltatime interval.
+// clockwise flag determines direction of rotation
+void Player::Rotate( bool clockwise ) {	
 	if( clockwise )
 	{
-		play->angle += float( ROTATIONSPEED * ( deltatime / 1000 ));
-		if( play->angle > 359 )
+		this->angle += float( ROTATIONSPEED * ( deltatime / 1000 ));
+		if( this->angle > 359 )
 		{
-			play->angle -= 360;
+			this->angle -= 360;
 		}
-		play->crossy = look_sin[ConvertAngle( play->angle )] * -CROSSHAIRDIST;
-		play->crossx = look_cos[ConvertAngle( play->angle )] * -CROSSHAIRDIST;	
+		this->crossy = look_sin[ConvertAngle( this->angle )] * -CROSSHAIRDIST;
+		this->crossx = look_cos[ConvertAngle( this->angle )] * -CROSSHAIRDIST;	
 	}
 	else
 	{
-		play->angle -= float( ROTATIONSPEED * ( deltatime / 1000 ));
-		if( play->angle < 0 )
+		this->angle -= float( ROTATIONSPEED * ( deltatime / 1000 ));
+		if( this->angle < 0 )
 		{
-			play->angle += 360;
+			this->angle += 360;
 		}
-		play->crossy = look_sin[ConvertAngle( play->angle )] * -CROSSHAIRDIST;
-		play->crossx = look_cos[ConvertAngle( play->angle )] * -CROSSHAIRDIST;
+		this->crossy = look_sin[ConvertAngle( this->angle )] * -CROSSHAIRDIST;
+		this->crossx = look_cos[ConvertAngle( this->angle )] * -CROSSHAIRDIST;
 	}
 }
-void PlayerThrust( Player * play )
-{
-	// thrusts a player forward, scaled by deltatime interval
-	play->engine_on = 1;
-	play->flamestate++;
-	if( play->flamestate > 6 )
-	{ play->flamestate = 1; }
-	play->fy -= look_sin[ConvertAngle( play->angle )] * THRUST;
-	play->fx -= look_cos[ConvertAngle( play->angle )] * THRUST;
 
+// thrusts a player forward
+void Player::Thrust() {
+	this->engine_on = 1;
+	this->flamestate++;
+	if( this->flamestate > 6 )
+	{ this->flamestate = 1; }
+	this->fy -= look_sin[ConvertAngle( this->angle )] * THRUST;
+	this->fx -= look_cos[ConvertAngle( this->angle )] * THRUST;
 }
+
 Uint16 ShootBullet( Player * play, int owner )
 {
 	// searches for an empty spot in the bullets array and adds a bullet there, then returns the array index.
@@ -430,9 +424,9 @@ Uint16 ShootBullet( Player * play, int owner )
 	// slot.
 	for( Uint16 search = (owner-1)*(NUMBEROFBULLETS/8); search < owner*(NUMBEROFBULLETS/8); search++ )
 	{
-		if( bullets[search].active == 0 )
+		if( bullets[search].active == false )
 		{
-			bullets[search].active = 1;
+			bullets[search].active = true;
 			bullets[search].x = play->x;
 			bullets[search].y = play->y;
 			bullets[search].type = play->weapon;
@@ -454,7 +448,7 @@ Uint16 ShootBullet( Player * play, int owner )
 				bullets[search].minelaidtime = SDL_GetTicks();
 			}
 			bullets[search].owner = owner;
-			bullets[search].collide = 0;
+			bullets[search].collide = false;
 			return search;
 		}
 	}
@@ -496,7 +490,7 @@ void UpdateBullets( Player * plyrs)
 
 	for( int upd = 0; upd < NUMBEROFBULLETS; upd++ )
 	{
-		if( bullets[upd].active == 1 )
+		if( bullets[upd].active == true )
 		{
 			if( bullets[upd].type == WEAPON_BULLET )
 			{
@@ -572,38 +566,46 @@ void CheckBulletCollides( bool ** colmap )
 	int i;
 	for( i = 0; i < NUMBEROFBULLETS; i++ )
 	{
-		if( bullets[i].active == 1 )
+		if( bullets[i].active == true )
 		{
 			if( bullets[i].type == WEAPON_BULLET || bullets[i].type == WEAPON_ROCKET )
 			{
 				if( bullets[i].x > (lvl.m_width - 1) || bullets[i].x < 0 )
 				{
-					bullets[i].collide = 1;
+					// std::cout << "bullet collided x" << std::endl;
+					bullets[i].collide = true;
 					continue;
 				}
 				if( bullets[i].y > (lvl.m_height - 1) || bullets[i]. y < 0 )
 				{
-					bullets[i].collide = 1;
+					// std::cout << "bullet collided y" << std::endl;
+					bullets[i].collide = true;
 					continue;
 				}
-				if( colmap[ int( bullets[i].x ) ][ int( bullets[i].y ) ] == 1 )
+				if( colmap[ int( bullets[i].x ) ][ int( bullets[i].y ) ] == true )
 				{
-					bullets[i].collide = 1;
+					// std::cout << "bullet " << i << " collided colmap" << std::endl;
+					// std::cout << bullets[i].x << " " << bullets[i].y << std::endl;
+					// std::cout << int(bullets[i].x) << " " << int(bullets[i].y) << std::endl;
+					bullets[i].collide = true;
 					continue;
 				}
-				if( colmap[ int( bullets[i].x ) + 1 ][ int( bullets[i].y ) ] == 1 )
+				if( colmap[ int( bullets[i].x ) + 1 ][ int( bullets[i].y ) ] == true )
 				{
-					bullets[i].collide = 1;
+					// std::cout << "bullet collided colmap 2" << std::endl;
+					bullets[i].collide = true;
 					continue;
 				}
-				if( colmap[ int( bullets[i].x ) ][ int( bullets[i].y ) + 1 ] == 1 )
+				if( colmap[ int( bullets[i].x ) ][ int( bullets[i].y ) + 1 ] == true )
 				{
-					bullets[i].collide = 1;
+					// std::cout << "bullet collided colmap 3" << std::endl;
+					bullets[i].collide = true;
 					continue;
 				}
-				if( colmap[ int( bullets[i].x ) + 1 ][ int( bullets[i].y ) + 1 ] == 1 )
+				if( colmap[ int( bullets[i].x ) + 1 ][ int( bullets[i].y ) + 1 ] == true )
 				{
-					bullets[i].collide = 1;
+					// std::cout << "bullet collided colmap 4" << std::endl;
+					bullets[i].collide = true;
 					continue;
 				}
 			}
@@ -611,7 +613,7 @@ void CheckBulletCollides( bool ** colmap )
 			{
 				if( SDL_GetTicks() - bullets[i].minelaidtime > MINELIFETIME )
 				{
-					bullets[i].collide = 1;
+					bullets[i].collide = true;
 				}
 			}
 		}
@@ -666,9 +668,9 @@ int FindRespawnBase( int rspwnteam )
 void CleanBullet( int num )
 {
 	// cleans up a bullet, so it can be used again
-	bullets[num].active = 0;
+	bullets[num].active = false;
 	bullets[num].owner = 0;
-	bullets[num].collide = 0;
+	bullets[num].collide = false;
 	bullets[num].type = 0;
 	bullets[num].x = 0;
 	bullets[num].y = 0;
