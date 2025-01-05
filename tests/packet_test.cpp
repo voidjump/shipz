@@ -13,7 +13,7 @@ TEST(Simple, TestPacketEncryptionRoundTrip) {
     mypacket.WriteString(test_string);
     
     // Expect the string to be read into the packet
-    EXPECT_EQ(mypacket.length, strlen(test_string));
+    EXPECT_EQ(mypacket.length, strlen(test_string)+1);
     // Expect packet contents to be equal to the string
     ASSERT_STREQ((char *)mypacket.data, test_string);
 
@@ -37,7 +37,7 @@ TEST(Simple, TestBlockSizeLengthPayloadDoesNotAddPadding) {
     ASSERT_EQ(strlen(test_string), AES_BLOCKSIZE);
 
     // Expect the string to be read into the packet
-    EXPECT_EQ(mypacket.length, strlen(test_string));
+    EXPECT_EQ(mypacket.length, strlen(test_string)+1);
     // Expect packet contents to be equal to the string
     ASSERT_STREQ((char *)mypacket.data, test_string);
 
@@ -54,7 +54,7 @@ TEST(Simple, TestBlockSizeLengthPayloadDoesNotAddPadding) {
 TEST(Simple, TestPaddingAmountAsExpected) {
     // Create a random string of length 1-(AES_BLOCKSIZE-1)
     std::random_device rand_dev;
-    unsigned char length = AES_BLOCKSIZE + static_cast<unsigned char>(rand_dev() % (AES_BLOCKSIZE-2)) + 1;
+    unsigned char length = AES_BLOCKSIZE + static_cast<unsigned char>(rand_dev() % (AES_BLOCKSIZE-3)) + 1;
     unsigned char expected_pad_byte = AES_BLOCKSIZE - length;
     std::string test_string;
     for(int i; i<length; i++){
@@ -67,7 +67,7 @@ TEST(Simple, TestPaddingAmountAsExpected) {
     mypacket.WriteString(test_string.c_str());
 
     // Expect the string to be read into the packet
-    EXPECT_EQ(mypacket.length, strlen(test_string.c_str()));
+    EXPECT_EQ(mypacket.length, strlen(test_string.c_str())+1);
 
     // Expect packet contents to be equal to the string
     ASSERT_STREQ((char *)mypacket.data, test_string.c_str());

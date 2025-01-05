@@ -568,7 +568,8 @@ void Client::HandleChat() {
 	strcpy( chat2, chat3 );
 
 	memset( chat3, '\0', sizeof( chat3 ));
-	receive_buffer.ReadStringCopyInto(chat3, sizeof(chat3));
+	auto mystring = receive_buffer.ReadString();
+	strncpy(chat3, mystring.c_str(), sizeof(chat3) -1);
 }
 
 void Client::HandlePlayerJoins() {
@@ -583,7 +584,8 @@ void Client::HandlePlayerJoins() {
 	players[new_player_id].playing = 1;
 	players[new_player_id].self_sustaining = 1;
 	players[new_player_id].Team = new_player_team;
-	receive_buffer.ReadStringCopyInto(players[new_player_id].name, 12);
+	auto mystring = receive_buffer.ReadString();
+	strncpy(players[new_player_id].name, mystring.c_str(), 11);
 	players[new_player_id].Init();
 }
 
@@ -607,7 +609,7 @@ void Client::HandleEvent() {
 		std::cout << "event = null?" << std::endl;
 		return;
 	}
-	switch( event->event_type ) {
+	switch( event->GetMessageSubType() ) {
 		case TEAM_WINS:
 			std::cout << "Team " << static_cast<EventTeamWins*>(event)->team << " wins!" << std::endl;
 			done = true;

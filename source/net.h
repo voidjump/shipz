@@ -56,15 +56,15 @@ class Buffer {
 
     // Read 8 bytes
     Uint8 Read8();
+    Uint8 Peek8();
     Uint8 Read8(const char *);
     // Read 16 bytes
     Uint16 Read16();
+    Uint16 Peek16();
     Uint16 Read16(const char *);
     // Read 32 bytes
     Uint32 Read32();
     Uint32 Read32(const char *);
-    // Read string into destination buffer
-    void ReadStringCopyInto(void *, size_t);
     // Read into new string
     std::string& ReadString();
     // Decrease the position pointer
@@ -75,6 +75,8 @@ class Buffer {
     void WriteBytes(size_t number, Uint8 value);
     // Set a byte at a Position
     void SetPosByte(Uint16 pos, Uint8 value);
+    // Output buffer for debugging
+    void OutputDebug();
 };
 
 #endif

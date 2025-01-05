@@ -1,7 +1,8 @@
 shipz
 source/*.o
-test/*.o
+tests/*.o
 ss*.bmp
 .DS_Store
 .vscode/
 build.sh
+test_program

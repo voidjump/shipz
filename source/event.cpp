@@ -8,7 +8,7 @@ Event::~Event() {
 }
 
 bool Event::Serialize(Buffer * buffer) {
-    switch(event_type) {
+    switch(this->GetMessageSubType()) {
         case PLAYER_JOINS:
             return static_cast<EventPlayerJoins*>(this)->Serialize(buffer);
             break;
@@ -24,6 +24,8 @@ bool Event::Serialize(Buffer * buffer) {
         case SERVER_QUIT:
             return static_cast<EventServerQuit*>(this)->Deserialize(buffer);
             break;
+        default:
+        return false;
     }
     return false;
 }
@@ -32,13 +34,9 @@ bool Event::Serialize(Buffer * buffer) {
 // Returns an event type based on the type 
 // of event deserialized
 Event* Event::Deserialize(Buffer *buffer) {
-    Event *event;
-    // if( buffer->Read8() != SHIPZ_MESSAGE::EVENT ) {
-    //     return NULL;
-    // }
-    std::cout << "team wins?" << std::endl;
+    Event *event = NULL;
 
-    switch(buffer->Read8()) {
+    switch(GetSubMessageTypeFromHeader(buffer->Peek8())) {
         case PLAYER_JOINS:
             event = EventPlayerJoins::Deserialize(buffer);
             break;
@@ -62,17 +60,19 @@ Event* Event::Deserialize(Buffer *buffer) {
 }
 
 EventPlayerJoins::EventPlayerJoins(Uint8 player_number, const char * player_name) {
-    this->event_type = PLAYER_JOINS;
+    this->SetMessageType(MessageType::EVENT);
+    this->SetMessageSubType(PLAYER_JOINS);
     this->player_number = player_number;
     this->player_name = player_name;
 }
 
 // Try to deserialize an EventPlayerJoins event
 Event * EventPlayerJoins::Deserialize(Buffer *buffer) {
-    // Try to read a player number
-    if(!(buffer->AvailableRead() >= 2)) {
+    if(!(buffer->AvailableRead() >= 3)) {
         return NULL;
     }
+    // Consume event type header:
+    buffer->Read8();
     Uint8 player_number = buffer->Read8(); 
     std::string player_name = buffer->ReadString();
     return new EventPlayerJoins(player_number, player_name.c_str());
@@ -83,23 +83,26 @@ bool EventPlayerJoins::Serialize(Buffer * buffer) {
     if(!(buffer->AvailableWrite() >= (this->player_name.length() + 3))) {
         return false;
     }
-    buffer->Write8(this->event_type);
+    buffer->Write8(this->header);
     buffer->Write8(this->player_number);
     buffer->WriteString(this->player_name.c_str());
     return true;
 }
 
 EventPlayerLeaves::EventPlayerLeaves(Uint8 player_number, Uint8 reason) {
-    this->event_type = PLAYER_LEAVES;
+    this->SetMessageType(MessageType::EVENT);
+    this->SetMessageSubType(PLAYER_LEAVES);
     this->player_number = player_number;
     this->reason = reason;
 }
 
 // Try to deserialize an EventPlayerLeaves event
 Event * EventPlayerLeaves::Deserialize(Buffer *buffer) {
-    if(!(buffer->AvailableRead() >= 1)) {
+    if(!(buffer->AvailableRead() >= 2)) {
         return NULL;
     }
+    // Consume event type header:
+    buffer->Read8();
     Uint8 player_number = buffer->Read8(); 
     if(!(buffer->AvailableRead() >= 1)) {
         return NULL;
@@ -113,21 +116,24 @@ bool EventPlayerLeaves::Serialize(Buffer * buffer) {
     if(!(buffer->AvailableWrite() >= 2)) {
         return false;
     }
-    buffer->Write8(this->event_type);
+    buffer->Write8(this->header);
     buffer->Write8(this->player_number);
     return true;
 }
 
 EventTeamWins::EventTeamWins(Uint8 team) {
-    this->event_type = TEAM_WINS;
+    this->SetMessageType(MessageType::EVENT);
+    this->SetMessageSubType(TEAM_WINS);
     this->team = team;
 }
 
 // Try to deserialize an EventTeamWins event
 Event * EventTeamWins::Deserialize(Buffer *buffer) {
-    if(!(buffer->AvailableRead() >= 1)) {
+    if(!(buffer->AvailableRead() >= 2)) {
         return NULL;
     }
+    // Consume event type header:
+    buffer->Read8();
     return new EventTeamWins(buffer->Read8());
 }
 
@@ -136,22 +142,25 @@ bool EventTeamWins::Serialize(Buffer * buffer) {
     if(!(buffer->AvailableWrite() >= 2)) {
         return false;
     }
-    buffer->Write8(this->event_type);
+    buffer->Write8(this->header);
     buffer->Write8(this->team);
     return true;
 }
 
 EventLevelChange::EventLevelChange(const char * level_name, const char *message) {
-    this->event_type = LEVEL_CHANGE;
+    this->SetMessageType(MessageType::EVENT);
+    this->SetMessageSubType(LEVEL_CHANGE);
     this->level = level_name;
     this->message = message;
 }
 
 // Try to deserialize an EventLevelChange event
 Event * EventLevelChange::Deserialize(Buffer *buffer) {
-    if(!(buffer->AvailableRead() >= 1)) {
+    if(!(buffer->AvailableRead() >= 2)) {
         return NULL;
     }
+    // Consume event type header:
+    buffer->Read8();
     std::string level_name = buffer->ReadString();
     if(!(buffer->AvailableRead() >= 1)) {
         return NULL;
@@ -165,22 +174,25 @@ bool EventLevelChange::Serialize(Buffer * buffer) {
                                      + this->message.length() + 2))) {
         return false;
     }
-    buffer->Write8(this->event_type);
+    buffer->Write8(this->header);
     buffer->WriteString(this->level.c_str());
     buffer->WriteString(this->message.c_str());
     return true;
 }
 
 EventServerQuit::EventServerQuit(const char *message) {
-    this->event_type = SERVER_QUIT;
+    this->SetMessageType(MessageType::EVENT);
+    this->SetMessageSubType(SERVER_QUIT);
     this->message = message;
 }
 
 // Try to deserialize an EventServerQuit event
 Event * EventServerQuit::Deserialize(Buffer *buffer ) {
-    if(!(buffer->AvailableRead() >= 1)) {
+    if(!(buffer->AvailableRead() >= 2)) {
         return NULL;
     }
+    // Consume event type header:
+    buffer->Read8();
     std::string message = buffer->ReadString();
     return new EventServerQuit(message.c_str());
 }
@@ -190,7 +202,7 @@ bool EventServerQuit::Serialize(Buffer * buffer) {
     if(!(buffer->AvailableWrite() >= ( this->message.length() + 2 ))) {
         return false;
     }
-    buffer->Write8(this->event_type);
+    buffer->Write8(this->header);
     buffer->WriteString(this->message.c_str());
     return true;
 }

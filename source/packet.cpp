@@ -5,10 +5,9 @@
 AES aes_g(AESKeyLength::AES_256); 
 std::random_device rand_dev_g;
 
-// Append a message to a packet, writing it's contents to its buffer
+// Append a message to a packet, serializing it's contents to its buffer
 void Packet::Append(Message &msg) {
-    this->Write16(msg.header.raw);
-    this->WriteOctets((const char *)msg.data, msg.header.size);
+    msg.Serialize(static_cast<Buffer&>(*this));
 }
 
 
@@ -17,9 +16,13 @@ std::list<Message> Packet::Read() {
     std::list<Message> messages;
     this->Seek(0);
     while(true) {
-        Uint16 message_header = this->Read16();
-        messages.push_back(Message{MessageHeader{message_header}, (void *)this->position});
+        Message * msg = Message::Deserialize(static_cast<Buffer&>(*this));
+        if( msg == NULL) {
+            break;
+        }
+        messages.push_back(*msg);
     }
+    return messages;
 }
 
 // Randomize the initial vector

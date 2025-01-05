@@ -192,6 +192,9 @@ bool Buffer::WriteString(const char* source) {
     this->position += string_length;
     this->length += string_length;
 
+    // Write null terminator
+    this->Write8('\0');
+
     return true;
 }
 
@@ -240,6 +243,22 @@ Uint16 Buffer::Read16() {
     return SDL_Swap16(value);  // SDL_Swap16 converts to host byte order
 }
 
+// Read 8 without increasing position
+Uint8 Buffer::Peek8() {
+    Uint8 retval = (Uint8)*this->position;
+    return retval;
+}
+
+// Read a 16 bit value from the buffer without increasing position counter
+Uint16 Buffer::Peek16() {
+    // Read the 16-bit value in network byte order (big-endian)
+    // Network byte order is typically big-endian, so we need to handle that
+    Uint16 value = (this->position[0] << 8) | this->position[1];
+
+    // Convert the value from network byte order (big-endian) to host byte order
+    return SDL_Swap16(value);  // SDL_Swap16 converts to host byte order
+}
+
 // Read a 32 bit value from the buffer
 Uint32 Buffer::Read32() {
     Uint32 value = (this->position[0] << 24) | (this->position[1] << 16) | (this->position[2] << 8) | this->position[3];
@@ -247,12 +266,6 @@ Uint32 Buffer::Read32() {
 
     // Convert the value from network byte order (big-endian) to host byte order
     return SDL_Swap32(value);  // SDL_Swap32 converts to host byte order
-}
-
-// Read a string from the buffer and copy it into the destination buffer.
-// TODO: Safety
-void Buffer::ReadStringCopyInto(void * destination_buffer, size_t max_read) {
-	strncpy( (char *)destination_buffer, (char *)&this->position, max_read); 
 }
 
 // Read into new string
@@ -292,4 +305,8 @@ void Buffer::WriteBytes(size_t number, Uint8 value) {
 // TODO: Fix this
 void Buffer::SetPosByte(Uint16 pos, Uint8 value) {
     data[pos] = value;
+}
+
+void Buffer::OutputDebug() {
+    PrintRawBytes((const char *)this->data, this->length);
 }
