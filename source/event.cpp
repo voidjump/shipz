@@ -1,0 +1,3 @@
+#include "event.h"
+
+MESSAGE_FACTORY_IMPLEMENTATION
