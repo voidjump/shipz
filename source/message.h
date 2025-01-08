@@ -12,7 +12,7 @@ constexpr Uint8 RELIABLE_MASK =        0b10000000;         // 1 bit for reliable
 enum class MessageType {
     REQUEST,    // Request for data 
     RESPONSE,   // Response to data request 
-    UPDATE,     // An update that synchronizes game state
+    SYNC,       // An update that synchronizes game state
     EVENT,      // An event
 };
 

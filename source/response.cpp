@@ -1,0 +1,3 @@
+#include "response.h"
+
+MESSAGE_FACTORY_IMPLEMENTATION
