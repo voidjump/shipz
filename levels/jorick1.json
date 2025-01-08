@@ -1,0 +1,50 @@
+{
+  "base_list": [
+    {
+      "team": "blue",
+      "x": 190,
+      "y": 208
+    },
+    {
+      "team": "blue",
+      "x": 190,
+      "y": 846
+    },
+    {
+      "team": "red",
+      "x": 1090,
+      "y": 208
+    },
+    {
+      "team": "red",
+      "x": 1090,
+      "y": 846
+    },
+    {
+      "team": "neutral",
+      "x": 640,
+      "y": 824
+    },
+    {
+      "team": "neutral",
+      "x": 640,
+      "y": 245
+    },
+    {
+      "team": "neutral",
+      "x": 442,
+      "y": 467
+    },
+    {
+      "team": "neutral",
+      "x": 838,
+      "y": 467
+    }
+  ],
+  "author": "Jorick",
+  "name": "The Pit",
+  "version": 1,
+  "bases": 8,
+  "collisionmap": "jorick1_colmap.bmp",
+  "image": "jorick1_image.png"
+}

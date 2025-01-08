@@ -45,6 +45,6 @@
   "name": "Rusty",
   "version": 1,
   "bases": 8,
-  "collisionmap": "rusty-col.bmp",
-  "image": "rusty.png"
+  "collisionmap": "rusty_colmap.bmp",
+  "image": "rusty_image.png"
 }

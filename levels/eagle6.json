@@ -1,0 +1,60 @@
+{
+  "base_list": [
+    {
+      "team": "blue",
+      "x": 1430,
+      "y": 290
+    },
+    {
+      "team": "blue",
+      "x": 1430,
+      "y": 590
+    },
+    {
+      "team": "blue",
+      "x": 1430,
+      "y": 940
+    },
+    {
+      "team": "red",
+      "x": 110,
+      "y": 290
+    },
+    {
+      "team": "red",
+      "x": 110,
+      "y": 590
+    },
+    {
+      "team": "red",
+      "x": 110,
+      "y": 940
+    },
+    {
+      "team": "neutral",
+      "x": 700,
+      "y": 935
+    },
+    {
+      "team": "neutral",
+      "x": 840,
+      "y": 935
+    },
+    {
+      "team": "neutral",
+      "x": 700,
+      "y": 140
+    },
+    {
+      "team": "neutral",
+      "x": 840,
+      "y": 140
+    }
+  ],
+  "author": "Raymond Jelierse",
+  "name": "The Green",
+  "version": 1,
+  "bases": 10,
+  "collisionmap": "eagle6-colmap.bmp",
+  "image": "eagle6-image.png"
+}
