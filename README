@@ -1,95 +1,12 @@
-***********************************************************
-Shipz v2 Build 1.15
-***********************************************************
+# Shipz v2 Resurrection 
+
+Hi there! This is an effort to ressurect an old project that I and an old
+school buddy worked on. It is currently in rough shape as I am rewriting it
+to work with SDL3 and get the code in a little bit better shape than I left it.
+
+If you want to try to build it, there is a stable branch that I suggest you
+check out.
 
 Shipz is licensed under the GNU Public License version 2
 or newer. For more details, see the LICENSE file that comes
 with this distribution.
-
-***********************************************************
-
-NOTE: this package only contains the Shipz-core and media
-needed to run Shipz. Levels are not supplied in this 
-package. They can be downloaded at our site:
-	http://shipz.sourceforge.net/
-
-Levels will have to be installed in the PREFIX/share/shipz/
-directory. Make sure you have the right permissions.
-
-***********************************************************
-
-Requirements:
-
-	* A computer =)
-	* An internet-connection.
-	* Glib version 2.2 or newer.
-	* libSDL version 1.2 or newer.
-	* SDL_image
-	* SDL_net
-	* SDL_ttf
-	* SDL_mixer
-
-Optionally you may build a frontend, which requires:
-	* GTK+ version 2.2 or newer.
-
-Shipz has been running on:
-	* x86 with Linux 2.4.20
-	* x86 with Linux 2.6.0
-	* x86 with MicroSoft Windows
-
-If you have got Shipz running on an other architecture,
-please be so kind to let us know.
-
-Known issues:
-
-	* Fullscreen not working in Windows
-	* Sound not working in Windows
-	* Bugs in the scoring system.
-	* Homing missles only working with the first players of
-	  both teams. Other players will chased by their own
-	  missles.
-
-Future features:
-
-Shipz v2-development is discontued as of summer 2003.
-Await the coming of Shipz v3, scheduled somewhere in
-winter 2004.
-See our webiste for further details.
-
-***********************************************************
-
-To play Shipz, you will have to connect to a Shipz-server.
-Currently this server cannot be run on the same machine as
-the client. If you are lucky, the server running on a 
-machine at Steve's is online, so you can join the heat.
-
-If this is not the case, one could start it's own server
-in the following way:
-	
-	$ shipz server <levelinfo-file>
-	NOTE: only the name of the levelinfo-file is needed,
-	there is no need to supply the path.
-
-To start the client, type:
-	
-	$ shipz client <server> <nickname>
-
-This will start Shipz in windowed mode, and with sound
-disabled. If you have compiled with the frontend however,
-you may just issue:
-
-	$ shipz
-
-Which will popup a frontend to Shipz, allowing you to
-choose between server and client mode, and also enabling
-you the choice between windowed/fullscreen mode and sound.
-
-***********************************************************
-
-Have fun playing Shipz.
-
-	Greetz,
-	The KillaFish team.
-
-***********************************************************
-Shipz v2 Build 1.15
