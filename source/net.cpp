@@ -275,6 +275,14 @@ std::string& Buffer::ReadString() {
     return *string;
 }
 
+// Read into newly allocated buffer
+void* Buffer::ReadOctetsMalloc(size_t size) {
+    void * new_buf = malloc(size);
+    memcpy(new_buf, this->data, size);
+    this->position += size;
+    return new_buf;
+}
+
 // Decrease the position by n. Will not increase beyond position 0
 void Buffer::DecreasePosition(Uint16 n) {
     if( n >= this->length ) {

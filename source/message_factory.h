@@ -16,26 +16,31 @@
 #define FIELD_UINT16_TYPE Uint16
 #define FIELD_UINT32_TYPE Uint32
 #define FIELD_STRING_TYPE std::string
+#define FIELD_OCTETS_TYPE void* 
 // Expand field into serialization size
 #define FIELD_UINT8_SIZE(value) 1
 #define FIELD_UINT16_SIZE(value) 2
 #define FIELD_UINT32_SIZE(value) 4
 #define FIELD_STRING_SIZE(value) value.length() + 1
+#define FIELD_OCTETS_SIZE(value) size 
 // Expand field into minimum deserializatino size 
 #define FIELD_UINT8_MINSIZE 1
 #define FIELD_UINT16_MINSIZE 2
 #define FIELD_UINT32_MINSIZE 4
 #define FIELD_STRING_MINSIZE 1
+#define FIELD_OCTETS_MINSIZE size 
 // Expand field into serialization instruction
 #define FIELD_UINT8_SERIALIZE(value) Write8(value)
 #define FIELD_UINT16_SERIALIZE(value) Write16(value)
 #define FIELD_UINT32_SERIALIZE(value) Write32(value)
 #define FIELD_STRING_SERIALIZE(value) WriteString(value.c_str())
+#define FIELD_OCTETS_SERIALIZE(value) WriteOctets((const char *)value, size)
 // Expand field into deserialization instruction
 #define FIELD_UINT8_DESERIALIZE Read8()
 #define FIELD_UINT16_DESERIALIZE Read16()
 #define FIELD_UINT32_DESERIALIZE Read32()
 #define FIELD_STRING_DESERIALIZE ReadString()
+#define FIELD_OCTETS_DESERIALIZE ReadOctetsMalloc((size_t)size)
 
 // Indirection macro's
 #define CONCAT(a, b) a##b

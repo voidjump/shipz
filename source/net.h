@@ -71,6 +71,8 @@ class Buffer {
     void DecreasePosition(Uint16 n);
     // Return buffer as string
     const char * AsString();
+    // Return octets as new object
+    void* ReadOctetsMalloc(size_t size);
     // Write similar bytes to buffer
     void WriteBytes(size_t number, Uint8 value);
     // Set a byte at a Position
