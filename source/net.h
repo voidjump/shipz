@@ -1,9 +1,22 @@
 #ifndef SHIPZ_NET_H
 #define SHIPZ_NET_H
 
+#include <SDL3/SDL.h>
 #include <SDL3_net/SDL_net.h>
 #include <string>
 #define MAXBUFSIZE 1024
+
+// Utilities for converting floating point precision to 16 bits:
+
+// Convert Unsigned Float value to 16 bit value
+inline Uint16 UnsignedFloatToNet(float value);
+// Convert Signed Float value to 16 bit value
+inline Uint16 SignedFloatToNet(float value);
+
+// Convert Uint16 value to Unsigned Float
+inline float NetToUnsignedFloat(Uint16 value);
+// Convert Uint16 value to Signed Float
+inline float NetToSignedFloat(Uint16 value);
 
 Uint16 Read16(void *area);
 Uint32 Read32(void *area);
@@ -24,6 +37,7 @@ enum SHIPZ_MESSAGE {
     EVENT,
 };
 
+// TODO: Move to buffer.h, use underlying stringtream
 class Buffer {
     protected:
         Uint8 * position;
@@ -79,6 +93,8 @@ class Buffer {
     void SetPosByte(Uint16 pos, Uint8 value);
     // Output buffer for debugging
     void OutputDebug();
+    // return buffer as raw bytes 
+    std::string AsHexString();
 };
 
 #endif

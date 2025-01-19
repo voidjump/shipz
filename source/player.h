@@ -26,14 +26,12 @@ enum PLAYER_WEAPON {
 class Player
 {
 	public:
-		// is this player slot being used
-		// TODO: this could be a bitflag in the player state
-		bool playing; 
+		Uint16 client_id;
 
 		// the player name
-		char name[13];
+		std::string name;
 
-		int kills, deaths, Team;
+		int kills, deaths, team;
 
 		int flamestate, shipframe;
 		// weapon player is currently using
@@ -82,6 +80,7 @@ bool PlayerCollideWithLevel( Player * play, bool ** levelcolmap );
 int PlayerCollideWithBullet( Player * play, int playernum, Player * players );
 int PlayerCollideWithBase( Player * play );
 void AdjustViewport( Player * play );
+Player* GetNearestEnemyPlayer( int x, int y ,int team );
 int GetNearestEnemyPlayer( Player * plyrs, int x, int y, int pteam );
 Uint16 ShootBullet( Player * play, int owner );
 int FindRespawnBase( int rspwnteam );

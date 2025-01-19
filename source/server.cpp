@@ -144,11 +144,11 @@ void Server::HandleLeave() {
 	number_of_players--;
 
 	leaving_player->playing = 0;
-	if( leaving_player->Team == SHIPZ_TEAM::BLUE )
+	if( leaving_player->team == SHIPZ_TEAM::BLUE )
 	{
 		blue_team.players--;
 	}
-	if( leaving_player->Team == SHIPZ_TEAM::RED )
+	if( leaving_player->team == SHIPZ_TEAM::RED )
 	{
 		red_team.players--;
 	}
@@ -335,7 +335,7 @@ void Server::HandleJoin() {
 		players[ newnum - 1 ].playing = 1;
 		players[ newnum - 1 ].self_sustaining = 1;
 		players[ newnum - 1 ].Init();
-		players[ newnum - 1 ].Team = newteam;
+		players[ newnum - 1 ].team = newteam;
 
 		std::cout << "Player " << players[newnum-1].name
 			<< " joined into slot " << newnum << std::endl;
@@ -367,7 +367,7 @@ void Server::HandleJoin() {
 		{
 			if( players[ gn ].playing )
 			{
-				sendbuf.Write16( (Uint16) players[ gn ].Team);
+				sendbuf.Write16( (Uint16) players[ gn ].team);
 			}
 			else
 			{
@@ -446,11 +446,11 @@ void Server::CheckIdlePlayers() {
 			SendBuffer(players[ci].playaddr);
 			
 			number_of_players--;
-			if( players[ci].Team == SHIPZ_TEAM::BLUE )
+			if( players[ci].team == SHIPZ_TEAM::BLUE )
 			{
 				blue_team.players--;
 			}
-			if( players[ci].Team == SHIPZ_TEAM::RED )
+			if( players[ci].team == SHIPZ_TEAM::RED )
 			{
 				red_team.players--;
 			}
@@ -493,16 +493,16 @@ void Server::UpdatePlayers() {
 					players[up].vy < 60 && players[up].vy > 0 )
 				{
 					players[up].status = PLAYER_STATUS::LANDEDBASE;
-					if( bases[ baseresult ].owner != players[up].Team )
+					if( bases[ baseresult ].owner != players[up].team )
 					{
-						std::cout << "team " << players[up].Team << " has captured base #" << baseresult << std::endl;
-						bases[ baseresult ].owner = players[up].Team;
+						std::cout << "team " << players[up].team << " has captured base #" << baseresult << std::endl;
+						bases[ baseresult ].owner = players[up].team;
 						UpdateBases();
 					}
 				}
 				else
 				{
-					if( players[up].Team == SHIPZ_TEAM::RED )
+					if( players[up].team == SHIPZ_TEAM::RED )
 					{
 						red_team.frags--;
 					}
@@ -525,7 +525,7 @@ void Server::UpdatePlayers() {
 				else
 				{
 					// send a chat pkg! :P
-					if( players[up].Team == SHIPZ_TEAM::RED )
+					if( players[up].team == SHIPZ_TEAM::RED )
 					{
 						red_team.frags--;
 					}
@@ -548,7 +548,7 @@ void Server::UpdatePlayers() {
 				if( bullets[bulletresult].owner == SHIPZ_TEAM::RED )
 				{
 					if( bullets[bulletresult].type == WEAPON_MINE &&
-						players[up].Team == SHIPZ_TEAM::RED )
+						players[up].team == SHIPZ_TEAM::RED )
 					{
 						red_team.frags--;
 					}
@@ -560,7 +560,7 @@ void Server::UpdatePlayers() {
 				else
 				{
 					if( bullets[bulletresult].type == WEAPON_MINE &&
-						players[up].Team == SHIPZ_TEAM::BLUE )
+						players[up].team == SHIPZ_TEAM::BLUE )
 					{
 						blue_team.frags--;
 					}

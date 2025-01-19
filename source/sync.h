@@ -3,6 +3,13 @@
 
 #include "message_factory.h"
 
+/* 
+ * Sync messages: Updates on game state
+ *
+ * Sync messages are generally unreliable
+ * Mostly server -> clients
+ */
+
 #define BASE_CLASS_NAME Sync 
 #define BASE_CLASS_HEADER SYNC
 
@@ -12,7 +19,6 @@
     class_handler(ObjectUpdate,          OBJECT_UPDATE) \
     class_handler(ObjectDestroy,         OBJECT_DESTROY) \
     class_handler(TeamStates,            TEAM_STATES) \
-    class_handler(BaseStates,            BASE_STATES)
 
 // This is player state shared from server to player
 #define FIELDS_PlayerState(field_handler) \
@@ -37,13 +43,10 @@
 #define FIELDS_ObjectDestroy(field_handler) \
     field_handler(FIELD_UINT16,         id)
 
-// This is player state shared from server to player
 #define FIELDS_TeamStates(field_handler) \
+    field_handler(FIELD_UINT32,   base_states) \
     field_handler(FIELD_UINT8,   red_kills) \
-    field_handler(FIELD_UINT8,   blue_kills)
-
-#define FIELDS_BaseStates(field_handler) \
-    field_handler(FIELD_UINT32,   client_id)
+    field_handler(FIELD_UINT8,   blue_kills) 
 
 MESSAGE_FACTORY_HEADER
 

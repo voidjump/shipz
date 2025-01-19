@@ -1,112 +1,100 @@
 #ifndef SHIPZCLIENT_H
 #define SHIPZCLIENT_H
-#include "types.h"
+#include <sstream>
 #include "net.h"
+#include "packet.h"
 #include "player.h"
+#include "socket.h"
+#include "types.h"
+#include "chat.h"
 
 class Client {
-    private:
-        Buffer send_buffer; // transmission buffer
-        Buffer receive_buffer;
-        Buffer type_buffer;
-        const bool* keys;
+   private:
+    // initialized values
+    std::string name;             // The player's name
+    std::string server_hostname;  // The hostname we want to connect to
+    Uint16 server_port;           // The port to connect to
 
-        const char* server_address; // The address we want to connect to
-        const char* name; // The player's name
+    // networking state
+    SDLNet_Address* server_address;  // The server
+    Socket socket;
+    MessageHandler handler;
 
-        SDLNet_Datagram * in;
-        SDLNet_Address * ipaddr;
-        SDLNet_DatagramSocket * udpsock;
-        
+    // Game related
+    Player* self;
+    std::vector<Player*> players;
+    Uint16 client_id;
+    bool done;
+    ChatConsole console;
 
-        int error = 0;
-        int attempts = 0;
-        int done = 0;
-        int my_player_nr;
-        int number_of_players = 1;
-        int screenshotcounter = 0;
-        int charstyped = 0;
-        
-        bool notreadytocontinue = 1;	
-        bool input_given = 0;  // used to decide whether to send a package to the server or not
+    // UI
+    const bool* keys;
+    std::string current_typing;
 
-        Player * self;
-        Player players[MAXPLAYERS];
+   public:
+    Client(const char* server_address, const char* player_name, Uint16 listen_port, Uint16 server_port);
+    ~Client();  // Destructor
 
-        char chat1[MAXCHATCHARS], chat2[MAXCHATCHARS], chat3[MAXCHATCHARS];
-    
-    public:
-        Client(const char *, const char * );
-        ~Client(); // Destructor
+    // Run the game
+    void Run();
 
-        // Run the game
-        void Run(); 
+    // Initialize client
+    void Init();
 
-        // Initialize some state
-        void Init(); 
+    // Connect to a server
+    // This should probably return some levelinfo
+    bool Connect();
 
-        // Resolve a hostname
-        void ResolveHostname(const char *);
+    // Leave the game
+    void Leave();
 
-        // Create a socket
-        void CreateUDPSocket();
+    // Load levelinfo
+    bool Load();
 
-        // Send buffer to server
-        void SendBuffer();
+    // Draw game
+    void Draw();
 
-        // Connect to a server
-        // This should probably return some levelinfo
-        void Connect(const char *);
+    // Run the game loop
+    void GameLoop();
 
-        // Leave the game
-        void Leave();
+    // Join a server
+    bool Join();
 
-        // Load levelinfo
-        void Load();
+    // Handle keyboard inputs
+    void HandleInputs();
 
-        // Draw game
-        void Draw();
+    // Send a chatline
+    void SendChatLine();
 
-        // Run the game loop
-        void GameLoop();
+    // Send an periodic update to the server
+    void SendUpdate();
 
-        // Join a server
-        bool Join();
+    // Update timers
+    void Tick();
 
-        // Handle keyboard inputs
-        void HandleInputs();
+    // Update other players
+    void UpdatePlayers();
 
-        // Take a screeshot
-        void TakeScreenShot();
+    // Remove a player from the game
+    void RemovePlayer(Uint16 id, std::string reason);
 
-        // Send a chatline
-        void SendChatLine();
+    // Add a player to the game
+    void AddPlayer(Uint16 id, std::string player_name, Uint8 team);
 
-        // Send an periodic update to the server
-        void SendUpdate();
+    // Set up message handling callbacks
+    void SetupCallbacks();
 
-        // Fail with an error
-        void FailErr(const char *);
-
-        // Wait for a packet for a while
-        bool WaitForPacket(SDLNet_DatagramSocket * sock, SDLNet_Datagram ** dgram);
-
-        // Wait for a packet without blocking
-        bool ReceivedPacket();
-
-        // Update timers
-        void Tick();
-
-        // Update other players
-        void UpdatePlayers();
-
-        // Packet handlers:
-        void HandleKicked();
-        void HandleUpdate();
-        void HandleChat();
-        void HandlePlayerJoins();
-        void HandlePlayerLeaves();
-        void HandleEvent();
+    // Packet handlers
+    void HandleKicked(Message& msg);
+    void HandleChat(Message& msg);
+    void HandlePlayerJoins(Message& msg);
+    void HandlePlayerLeaves(Message& msg);
+    void HandleUnknownMessage(Message& msg);
+    void HandleObjectSpawn(Message& msg);
+    void HandleObjectUpdate(Message& msg);
+    void HandleObjectDestroy(Message& msg);
+    void HandlePlayerState(Message& msg);
+    void HandleTeamStates(Message& msg);
 };
 
 #endif

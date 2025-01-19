@@ -2,10 +2,9 @@
 #define SHIPZ_BASE_H
 
 #include "types.h"
+#include "object.h"
 
-struct Base
-{
-	bool used; // is this Base used or not used?
+struct Base : public Object {
 	int owner; // RED, BLUE or NEUTRAL
 	int x;
 	int y;

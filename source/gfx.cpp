@@ -102,12 +102,12 @@ void DrawPlayer( SDL_Surface * src, Player * play )
 	DrawIMG(src, int(play->x - 14 - viewportx), int(play->y -14 - viewporty), 28, 28, play->x_bmp, play->y_bmp);
 	if( play->status == PLAYER_STATUS::FLYING && (SDL_GetTicks() - play->lastliftofftime) > LIFTOFFSHOOTDELAY  )
 	{
-		if( play->Team == SHIPZ_TEAM::RED )
+		if( play->team == SHIPZ_TEAM::RED )
 		{
 			DrawIMG(crosshairred, (int(play->x + play->crossx - 4 -viewportx)),
 				(int(play->y + play->crossy - 4 - viewporty)));
 		}
-		if( play->Team == SHIPZ_TEAM::BLUE )
+		if( play->team == SHIPZ_TEAM::BLUE )
 		{
 			DrawIMG(crosshairblue, (int(play->x + play->crossx - 4 -viewportx)),
 				(int(play->y + play->crossy - 4 - viewporty)));

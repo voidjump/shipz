@@ -5,11 +5,48 @@
 AES aes_g(AESKeyLength::AES_256); 
 std::random_device rand_dev_g;
 
-// Append a message to a packet, serializing it's contents to its buffer
-void Packet::Append(Message &msg) {
-    msg.Serialize(static_cast<Buffer&>(*this));
+
+// Register a callback function
+void MessageHandler::RegisterHandler(std::function<void(Message&)> callback, Uint16 msg_sub_type) {
+    this->registry[msg_sub_type] = callback;
 }
 
+// Register a default callback function
+void MessageHandler::RegisterDefault(std::function<void(Message&)> callback) {
+    this->default_callback = callback;
+}
+
+// Delete a packet handler
+void MessageHandler::DeleteHandler(Uint16 msg_sub_type) {
+    this->registry.erase(msg_sub_type);
+}
+
+// Clear all callbacks
+void MessageHandler::Clear() {
+    this->registry.clear();
+}
+
+// Handle all messages in a packet
+void MessageHandler::HandlePacket(Packet &pack) {
+    auto messages = pack.Read();
+    for (Message &msg : messages) {
+        Uint16 msg_type = msg.GetMessageSubType();
+        // Check if the registry contains a handler for this message type
+        if(this->registry.count(msg_type) == 0) {
+            // Call default handler
+            this->default_callback(msg);
+            continue;
+        }
+        // Call registered callback
+        this->registry[msg_type](msg);
+    }
+}
+
+template <typename T>
+void Packet::Append(T &message) {
+    static_assert(std::is_base_of<Message, T>::value, "T must derive from Message");
+    message.Serialize(*this);
+}
 
 // Return a list of messages
 std::list<Message> Packet::Read() {

@@ -3,6 +3,11 @@
 
 #include "message_factory.h"
 
+/*
+ * Response message: An answer to a Request
+ *
+*/
+
 #define BASE_CLASS_NAME Response 
 #define BASE_CLASS_HEADER RESPONSE
 
@@ -22,11 +27,13 @@
 
 // Server responds to a client's 'JOIN_GAME' request
 #define FIELDS_AcceptJoin(field_handler) \
-    field_handler(FIELD_STRING, client_id)
+    field_handler(FIELD_UINT16, client_id) \
+    field_handler(FIELD_UINT8, team) 
 
 // Notice about which players are in the game
 // Could add some kind of status package here
 #define FIELDS_PlayerInformation(field_handler) \
+    field_handler(FIELD_UINT16, client_id) \
     field_handler(FIELD_STRING, player_name) \
     field_handler(FIELD_UINT8, team) 
 

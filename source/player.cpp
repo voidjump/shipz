@@ -73,7 +73,7 @@ void Player::Empty()
 	this->bullet_shot = 0;
 	this->bulletshotnr = 0;
 	this->playing = 0;
-	this->Team = 0;
+	this->team = 0;
 	memset( this->name, '\0', sizeof(this->name));
 	this->y_bmp = 0;
 	this->x_bmp = 0;
@@ -270,7 +270,7 @@ int PlayerCollideWithBullet( Player * play, int playernum, Player * players )
 	int cb = 0;
 	for( cb = 0; cb < NUMBEROFBULLETS; cb++ )
 	{
-		if( players[ bullets[cb].owner - 1 ].Team != players[ playernum - 1 ].Team )
+		if( players[ bullets[cb].owner - 1 ].team != players[ playernum - 1 ].team )
 		{
 			if( bullets[cb].type == WEAPON_ROCKET || bullets[cb].type == WEAPON_BULLET)
 			{
@@ -455,6 +455,10 @@ Uint16 ShootBullet( Player * play, int owner )
 	return 6666;
 }
 
+Player* GetNearestEnemyPlayer( int x, int y ,int team ) {
+	return NULL;
+}
+
 int GetNearestEnemyPlayer( Player * plyrs, int x, int y, int pteam )
 {
 	// returns a number to the enemy player nearest to x,y
@@ -472,7 +476,7 @@ int GetNearestEnemyPlayer( Player * plyrs, int x, int y, int pteam )
 			tdy = int(y - plyrs[i].y);
 			
 			tdist = sqrt(( tdx * tdx ) + ( tdy * tdy ));
-			if( tdist < dist && plyrs[i].Team != pteam )
+			if( tdist < dist && plyrs[i].team != pteam )
 			{
 				dist = tdist;
 				plr = i;
@@ -484,81 +488,6 @@ int GetNearestEnemyPlayer( Player * plyrs, int x, int y, int pteam )
 
 }
 
-void UpdateBullets( Player * plyrs)
-{
-	// updates the positions of all active bullets, scaled by deltatime interval
-
-	for( int upd = 0; upd < NUMBEROFBULLETS; upd++ )
-	{
-		if( bullets[upd].active == true )
-		{
-			if( bullets[upd].type == WEAPON_BULLET )
-			{
-				bullets[upd].x -= bullets[upd].vx * (deltatime/1000);
-				bullets[upd].y -= bullets[upd].vy * (deltatime/1000);
-				continue;
-			}
-			if( bullets[upd].type == WEAPON_ROCKET )
-			{
-				int nearest = 0;
-				nearest = GetNearestEnemyPlayer( plyrs, int(bullets[upd].x),
-						int(bullets[upd].y), bullets[upd].owner );
-				if ( nearest != -1 )	// if no enemyplayer is found don't steer
-				{
-					int xd = int(bullets[upd].x - plyrs[nearest-1].x);
-					int yd = int(bullets[upd].y - plyrs[nearest-1].y);
-					float dis, dirz, Tx, Ty, Rx, Ry, CrossProd;
-						
-					dis = (float) sqrt(xd * xd + yd * yd);
-					if( !( dis > ROCKETRADARRADIUS )) // can the rocket see the player??
-					{
-						// target vector
-						Tx = xd/dis;
-						Ty = yd/dis;
-						// rocket direction vector
-						Rx = look_cos[ConvertAngle( bullets[upd].angle )];
-						Ry = look_sin[ConvertAngle( bullets[upd].angle )];
-						// calculate the cross product
-						CrossProd = ( Tx * Ry - Rx * Ty );
-						if( CrossProd == 0 )
-						{
-							// the rocket is turned 180 degrees away from target
-							// should really do a random turn here but what the heck:
-							bullets[upd].angle += MAXROCKETTURN * (deltatime/1000);
-							if( bullets[upd].angle > 359 )
-							{
-								bullets[upd].angle -= 360;
-							}
-						}
-						if( CrossProd > 0 )
-						{
-							// rotate counterclockwise
-							bullets[upd].angle -= MAXROCKETTURN * (deltatime/1000);
-							if( bullets[upd].angle < 0 )
-							{
-								bullets[upd].angle += 359;
-							}
-						}
-						if( CrossProd < 0 )
-						{
-							// rotate clockwise
-							bullets[upd].angle += MAXROCKETTURN * (deltatime/1000);
-							if( bullets[upd].angle > 360 )
-							{
-								bullets[upd].angle -= 359;
-							}
-						}
-					}
-				}
-				// update rocket coordinates
-				bullets[upd].x -=
-					look_cos[ConvertAngle( bullets[upd].angle )] * ROCKETSPEED * (deltatime/1000);
-				bullets[upd].y -= 
-					look_sin[ConvertAngle( bullets[upd].angle )] * ROCKETSPEED * (deltatime/1000);
-			}
-		}
-	}
-}
 
 void CheckBulletCollides( bool ** colmap )
 {

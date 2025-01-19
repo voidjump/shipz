@@ -30,13 +30,10 @@
 #define BULLETSPEED 100
 #define BULLETDELAY 200
 #define ROCKETDELAY 500
-#define ROCKETSPEED 95
-#define ROCKETRADARRADIUS 300
 #define MINEDELAY 2000
 #define MINEDETONATERADIUS 50
 #define MINELIFETIME 30000
 #define MINEACTIVATIONTIME 2000
-#define MAXROCKETTURN 50
 #define EXPLOSIONLIFE 500
 #define EXPLOSIONFRAMETIME 50
 
@@ -67,15 +64,6 @@ extern float look_sin[360],
 
 
 
-struct Bullet
-{
-	bool active; // does the bullet exist?
-	float x, y, vx, vy, angle; // coordinates & speed
-	int owner; // number of player who shot the bullet
-	int type; // type of bullet
-	bool collide; // collided flag
-	float minelaidtime;
-};
 
 struct Explosion
 {

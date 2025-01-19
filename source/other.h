@@ -16,7 +16,7 @@ int GetNearestBase( int x, int y );
 
 bool CheckForQuitSignal();
 
-void GetTyping( Buffer * buffer, uint key, uint mod);
+void GetTyping(std::string &buffer, uint key, uint mod);
 
 void NewExplosion( int x, int y );
 
