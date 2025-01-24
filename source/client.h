@@ -23,13 +23,14 @@ class Client {
     // Game related
     Player* self;
     std::vector<Player*> players;
+    std::vector<SyncObjectSpawn*> bullets_shot;
     Uint16 client_id;
     bool done;
     ChatConsole console;
 
     // UI
     const bool* keys;
-    std::string current_typing;
+    std::string type_buffer;
 
    public:
     Client(const char* server_address, const char* player_name, Uint16 listen_port, Uint16 server_port);
@@ -65,6 +66,9 @@ class Client {
 
     // Send a chatline
     void SendChatLine();
+
+    // Shoot a bullet
+    void Shoot();
 
     // Send an periodic update to the server
     void SendUpdate();

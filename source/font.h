@@ -1,6 +1,8 @@
 #ifndef SHIPZFONT_H
 #define SHIPZFONT_H
 
+#include <SDL3_ttf/SDL_ttf.h>
+
 enum FONT_COLOR {
     BLACK,
     WHITE,

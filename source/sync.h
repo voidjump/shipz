@@ -10,6 +10,9 @@
  * Mostly server -> clients
  */
 
+#undef BASE_CLASS_NAME
+#undef BASE_CLASS_HEADER
+#undef MESSAGE_CLASS_LIST
 #define BASE_CLASS_NAME Sync 
 #define BASE_CLASS_HEADER SYNC
 
@@ -22,7 +25,9 @@
 
 // This is player state shared from server to player
 #define FIELDS_PlayerState(field_handler) \
+    field_handler(FIELD_UINT16,   client_id) \
     field_handler(FIELD_UINT16,   status_bits) \
+    field_handler(FIELD_UINT8,    typing) \
     field_handler(FIELD_UINT16,   angle) \
     field_handler(FIELD_UINT16,   x) \
     field_handler(FIELD_UINT16,   y) \

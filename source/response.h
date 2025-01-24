@@ -8,6 +8,9 @@
  *
 */
 
+#undef BASE_CLASS_NAME
+#undef BASE_CLASS_HEADER
+#undef MESSAGE_CLASS_LIST
 #define BASE_CLASS_NAME Response 
 #define BASE_CLASS_HEADER RESPONSE
 

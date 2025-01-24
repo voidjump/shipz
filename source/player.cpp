@@ -13,6 +13,105 @@
 #include "base.h"
 #include "assets.h"
 #include "level.h"
+#include "log.h"
+
+Player::Player(uint16_t id) {
+	this->client_id = id;
+	instances[this->client_id] = this;
+}
+
+Player::~Player() {
+	instances.erase(this->client_id);
+}
+
+// Retrieve a player instance by their ID
+Player * Player::GetByID(uint16_t search_id) {
+	if(instances.find(search_id) != instances.end()) {
+		return instances[search_id];
+	}
+	return nullptr;
+}
+
+void Player::HandleUpdate(SyncPlayerState *sync) {
+
+	uint16_t temp_status = sync->status_bits;
+	if( this->self_sustaining ) {
+		this->typing = sync->typing;
+		this->x = sync->x;
+		this->y = sync->y;
+		this->vx = sync->vx;
+		this->vy = sync->vy;
+
+		if (temp_status == PLAYER_STATUS::FLYING &&
+			(this->status == PLAYER_STATUS::LANDED || this->status == PLAYER_STATUS::LANDEDBASE)) {
+			this->lastliftofftime = SDL_GetTicks();
+		}
+		if (temp_status == PLAYER_STATUS::DEAD && this->status != PLAYER_STATUS::DEAD) {
+			NewExplosion(int(this->x), int(this->y));
+		}
+		this->status = temp_status;
+	} else {
+		if (temp_status == PLAYER_STATUS::DEAD && this->status == PLAYER_STATUS::SUICIDE) {
+			log::debug("we have just suicided!");
+			NewExplosion(int(this->x), int(this->y));
+			this->status = PLAYER_STATUS::DEAD;
+		}
+		if (temp_status == PLAYER_STATUS::JUSTCOLLIDEDROCK && this->status == PLAYER_STATUS::FLYING) {
+			log::debug("we just collided with a rock!");
+			NewExplosion(int(this->x), int(this->y));
+			this->status = PLAYER_STATUS::DEAD;
+		}
+		if (temp_status == PLAYER_STATUS::JUSTCOLLIDEDBASE && this->status == PLAYER_STATUS::FLYING) {
+			log::debug("we just collided with base!");
+			NewExplosion(int(this->x), int(this->y));
+			this->status = PLAYER_STATUS::DEAD;
+		}
+		if (temp_status == PLAYER_STATUS::JUSTSHOT && this->status == PLAYER_STATUS::FLYING) {
+			log::debug("we were just shot!");
+			NewExplosion(int(this->x), int(this->y));
+			this->status = PLAYER_STATUS::DEAD;
+		}
+		if (temp_status == PLAYER_STATUS::LANDEDRESPAWN && this->status == PLAYER_STATUS::RESPAWN) {
+			log::debug("server said we could respawn!");
+			int tmpbs = FindRespawnBase(this->team);
+
+			// Base found, reset the player's speed etc.
+			this->Respawn();
+			this->Update();
+			// mount /dev/player /mnt/Base
+			this->x = bases[tmpbs].x;
+			this->y = bases[tmpbs].y - 26;
+
+			this->status = PLAYER_STATUS::LANDEDRESPAWN;
+		}
+		if (temp_status == PLAYER_STATUS::FLYING && this->status == PLAYER_STATUS::LIFTOFF) {
+			log::debug("we are flying!");
+			this->status = PLAYER_STATUS::FLYING;
+		}
+		if (temp_status == PLAYER_STATUS::LANDED && this->status == PLAYER_STATUS::FLYING) {
+			log::debug("we have landed!");
+			this->status = PLAYER_STATUS::LANDED;
+			this->vx = 0;
+			this->vy = 0;
+			this->engine_on = 0;
+			this->flamestate = 0;
+		}
+		if (temp_status == PLAYER_STATUS::LANDEDBASE && this->status == PLAYER_STATUS::FLYING) {
+			log::debug("we have landed on a base!");
+			int tmpbase = GetNearestBase(int(this->x), int(this->y));
+
+			this->y = bases[tmpbase].y - 26;
+			this->angle = 0;
+			this->shipframe = 0;
+			this->status = PLAYER_STATUS::LANDEDBASE;
+			this->vx = 0;
+			this->vy = 0;
+			this->engine_on = 0;
+			this->flamestate = 0;
+			this->Update();
+		}
+	}
+}
 
 const char * GetStatusString(int status) {
 	switch(status) {
@@ -70,11 +169,8 @@ void Player::Empty()
 	// empties a player array slot, so it's ready to accept a new player without problems.
 	this->lastliftofftime = -LIFTOFFSHOOTDELAY;
 	this->lastshottime = 0;
-	this->bullet_shot = 0;
-	this->bulletshotnr = 0;
-	this->playing = 0;
 	this->team = 0;
-	memset( this->name, '\0', sizeof(this->name));
+	this->name.clear();
 	this->y_bmp = 0;
 	this->x_bmp = 0;
 	this->self_sustaining = 0;
@@ -84,15 +180,6 @@ void Player::Empty()
 }
 
 
-inline int ConvertAngle( float angle )
-{
-	//converts an angle from float/game position ( 0 up ) to integer standard position ( 0 right )
-	int temp_angle;
-	temp_angle = int( angle ) + 90; // 0 degrees is right normall, we'll make it up.
-	if( temp_angle > 359 )
-		temp_angle -= 360;
-	return temp_angle;
-}
 
 
 void Player::Update()
@@ -417,43 +504,6 @@ void Player::Thrust() {
 	this->fx -= look_cos[ConvertAngle( this->angle )] * THRUST;
 }
 
-Uint16 ShootBullet( Player * play, int owner )
-{
-	// searches for an empty spot in the bullets array and adds a bullet there, then returns the array index.
-	// note that each player has an own section in an array, so two players will never 'allocate' the same bullet
-	// slot.
-	for( Uint16 search = (owner-1)*(NUMBEROFBULLETS/8); search < owner*(NUMBEROFBULLETS/8); search++ )
-	{
-		if( bullets[search].active == false )
-		{
-			bullets[search].active = true;
-			bullets[search].x = play->x;
-			bullets[search].y = play->y;
-			bullets[search].type = play->weapon;
-			if( play->weapon == WEAPON_BULLET )
-			{
-				bullets[search].vx = look_cos[ConvertAngle( play->angle )] * BULLETSPEED;
-				bullets[search].vy = look_sin[ConvertAngle( play->angle )] * BULLETSPEED;
-
-			}
-			if( play->weapon == WEAPON_ROCKET )
-			{
-				bullets[search].vx = look_cos[ConvertAngle( play->angle )] * BULLETSPEED;
-				bullets[search].vy = look_sin[ConvertAngle( play->angle )] * BULLETSPEED;
-				bullets[search].angle = play->angle;
-				PlaySound( rocketsound );
-			}
-			if( play->weapon == WEAPON_MINE )
-			{
-				bullets[search].minelaidtime = SDL_GetTicks();
-			}
-			bullets[search].owner = owner;
-			bullets[search].collide = false;
-			return search;
-		}
-	}
-	return 6666;
-}
 
 Player* GetNearestEnemyPlayer( int x, int y ,int team ) {
 	return NULL;
@@ -607,4 +657,18 @@ void CleanBullet( int num )
 	bullets[num].vy = 0;
 	bullets[num].angle = 0;
 	bullets[num].minelaidtime = 0;
+}
+
+// Draw a player
+void Player::Draw() {
+	if (this->status != PLAYER_STATUS::DEAD &&
+		this->status != PLAYER_STATUS::RESPAWN) {
+		// Move to player
+		if (this->team == SHIPZ_TEAM::RED) {
+			DrawPlayer(shipred, this);
+		}
+		if (this->team == SHIPZ_TEAM::BLUE) {
+			DrawPlayer(shipblue, this);
+		}
+	}
 }

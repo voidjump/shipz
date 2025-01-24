@@ -1,15 +1,24 @@
+#include <memory>
 #include "object.h"
 #include "log.h"
 #include "bullet.h"
+#include "renderable.h"
 
-Object::Object(Uint16 id, Uint8 type) {
+// Construct object with fixed id
+Object::Object(ObjectID id, ObjectType type) {
     this->id = id;
+    this->type = type;
+}
+
+// Construct an object and auto assign an id
+Object::Object(ObjectType type) {
+    this->id = Object::GetFreeID();
     this->type = type;
 }
  
  // Handle spawn message
 void Object::HandleSpawn(SyncObjectSpawn *sync) {
-    auto it = instances.find(this->id);
+    auto it = instances.find(sync->id);
     if (it != instances.end()) {
         log::error("Refusing to spawn object with id ", sync->id, " as it alreayd exists;");
         return;
@@ -65,7 +74,7 @@ void Object::Destroy() {
 }
 
 // Retrieve an object instance by ID
-std::shared_ptr<Object> Object::GetByID(Uint16 search_id) {
+std::shared_ptr<Object> Object::GetByID(ObjectID search_id) {
     auto it = instances.find(search_id);
     if (it != instances.end()) {
         return it->second;
@@ -77,5 +86,14 @@ std::shared_ptr<Object> Object::GetByID(Uint16 search_id) {
 void Object::Update(float delta) {
     if( this->update_callback) {
         update_callback(delta);
+    }
+}
+
+// Draw all renderable objects
+void Object::DrawAll() {
+    for (const auto& [key, obj] : instances) { // Structured bindings for clarity
+        if (auto render = std::dynamic_pointer_cast<Renderable>(obj)) { 
+            render->Draw(); // Call Draw if the cast succeeds
+        }
     }
 }

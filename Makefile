@@ -2,7 +2,7 @@
 
 # Compiler and flags
 CXX = g++
-CXXFLAGS = -std=c++14 -I/usr/local/include -DSHAREPATH="\"./\"" -I./include/ -I/opt/homebrew/Cellar/googletest/1.15.2/include -I./source/
+CXXFLAGS = -std=c++17 -I/usr/local/include -DSHAREPATH="\"./\"" -I./include/ -I/opt/homebrew/Cellar/googletest/1.15.2/include -I./source/
 LDFLAGS = -L/usr/local/lib -lSDL3 -lSDL3_image -lSDL3_mixer -lSDL3_net -lSDL3_ttf -rpath /usr/local/lib -L/opt/homebrew/Cellar/googletest/1.15.2/lib/
 RPATH = /usr/local/lib
 DEBUG_FLAGS = -g -O0

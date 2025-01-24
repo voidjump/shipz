@@ -33,8 +33,7 @@ bool LevelData::Load() {
         std::string(SHAREPATH) + std::string("./levels/") + m_filename;
     std::ifstream file_handle(filepath);
 
-    std::cout << std::endl
-              << "@ reading levelfile: " << m_filename << std::endl;
+    log::info("@ reading levelfile: ", m_filename);
 
     try {
         nlohmann::json data = nlohmann::json::parse(file_handle);
@@ -53,47 +52,28 @@ bool LevelData::Load() {
         }
 
     } catch (const nlohmann::json::exception &e) {
-        std::cout << "failed to open level file: " << e.what() << std::endl;
+        log::error("failed to open level file: ", e.what());
         return false;
     }
 
     // Get level dimensions
     SDL_Surface *level = LoadIMG(m_image_filename.c_str());
     if (!level) {
-        std::cout << "failed to load level image" << std::endl;
+        log::error("failed to load level image");
         return false;
     }
     m_width = level->w;
     m_height = level->h;
     SDL_DestroySurface(level);
 
-    // Legacy stuff here, TODO: remove
-    std::cout << "  author: " << m_author << std::endl;
-    std::cout << "  name: " << m_name << std::endl;
-    std::cout << "  version: " << (int)m_levelversion << std::endl;
-    std::cout << "  bases: " << (int)m_num_bases << std::endl;
-    std::cout << "  collisionmap: " << m_colmap_filename << std::endl;
-    std::cout << "  image: " << m_image_filename << std::endl;
+    log::info(" . author:", m_author);
+    log::info(" . name:", m_name);
+    log::info(" . version:", m_levelversion);
+    log::info(" . bases:", m_num_bases);
+    log::info(" . collisionmap:", m_colmap_filename);
+    log::info(" . image:", m_image_filename);
 
-    uint base_index = 0;
-    for (auto &base_iter : m_bases) {
-        if (base_iter.owner == SHIPZ_TEAM::RED) {
-            red_team.bases++;
-        }
-        if (base_iter.owner == SHIPZ_TEAM::BLUE) {
-            blue_team.bases++;
-        }
-        Base *baseptr = &bases[base_index];
-        baseptr->used = 1;
-        baseptr->owner = base_iter.owner;
-        std::cout << "  base team " << baseptr->owner << " :";
-        baseptr->x = base_iter.x;
-        baseptr->y = base_iter.y;
-        std::cout << baseptr->x << ", " << baseptr->y << std::endl;
-        base_index++;
-    }
-
-    std::cout << "  size: " << m_width << " x " << m_height << std::endl;
-    std::cout << "@ done reading." << std::endl;
+    log::info(" # size:", m_width, " x ", m_height);
+    log::info("@ done reading.");
     return true;
 }

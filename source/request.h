@@ -9,6 +9,9 @@
  * Requests are reliable messages that expect a single Response
  */
 
+#undef BASE_CLASS_NAME
+#undef BASE_CLASS_HEADER
+#undef MESSAGE_CLASS_LIST
 #define BASE_CLASS_NAME Request 
 #define BASE_CLASS_HEADER REQUEST
 

@@ -5,14 +5,18 @@
 #include "types.h"
 #include "player.h"
 #include "log.h"
+#include "assets.h"
+#include "gfx.h"
 
-// TODO Add constructor for local creation
+///////////////////////////////////////////////////////////////////////////////
+// BULLET
+///////////////////////////////////////////////////////////////////////////////
+
 // Construct a bullet from a spawn message
 Bullet::Bullet(SyncObjectSpawn *sync) : Object(sync->id, OBJECT_TYPE::BULLET) {
-	Uint16 *values = (Uint16*)sync->data;
-	x = NetToUnsignedFloat(values[0]);
-	y = NetToUnsignedFloat(values[1]);
-	angle = NetToUnsignedFloat(values[2]);
+	x = NetToUnsignedFloat(pop_uint16(sync->data));
+	y = NetToUnsignedFloat(pop_uint16(sync->data));
+	angle = NetToUnsignedFloat(pop_uint16(sync->data));
 
     this->sync_callback = nullptr;
     this->destroy_callback = nullptr;
@@ -25,12 +29,48 @@ void Bullet::Update(float delta) {
 	y -= look_sin[ConvertAngle( angle )] * BULLETSPEED * (delta/1000);
 }
 
+
+// Shoot a bullet
+SyncObjectSpawn * Bullet::Shoot(Player *self) {
+	std::vector<Uint8> data;
+	append_to_object(data, self->angle);
+	append_to_object(data, self->x);
+	append_to_object(data, self->y);
+
+	SyncObjectSpawn *sync = new SyncObjectSpawn(SERVER_SHOULD_DEFINE_ID,
+												OBJECT_TYPE::BULLET,
+												6,
+												data);
+	return sync;
+}
+
+void Bullet::Draw() {
+	DrawIMG(bulletpixmap, int(this->x - viewportx), int(this->y - viewporty));
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Rocket
+///////////////////////////////////////////////////////////////////////////////
+
+// Shoot a rocket
+SyncObjectSpawn * Rocket::Shoot(Player *self) {
+	std::vector<Uint8> data;
+	append_to_object(data, self->angle);
+	append_to_object(data, self->x);
+	append_to_object(data, self->y);
+
+	SyncObjectSpawn *sync = new SyncObjectSpawn(SERVER_SHOULD_DEFINE_ID,
+												OBJECT_TYPE::ROCKET,
+												6,
+												data);
+	return sync;
+}
+
 // Construct a rocket from a spawn message
 Rocket::Rocket(SyncObjectSpawn *sync) : Object(sync->id, OBJECT_TYPE::ROCKET) {
-	Uint16 *values = (Uint16*)sync->data;
-	x = NetToUnsignedFloat(values[0]);
-	y = NetToUnsignedFloat(values[1]);
-	angle = NetToUnsignedFloat(values[2]);
+	x = NetToUnsignedFloat(pop_uint16(sync->data));
+	y = NetToUnsignedFloat(pop_uint16(sync->data));
+	angle = NetToUnsignedFloat(pop_uint16(sync->data));
 
     this->destroy_callback = nullptr;
     this->update_callback = std::bind(&Rocket::Update, this, std::placeholders::_1);
@@ -39,10 +79,22 @@ Rocket::Rocket(SyncObjectSpawn *sync) : Object(sync->id, OBJECT_TYPE::ROCKET) {
 
 // Synchronize rocket status with server
 void Rocket::Sync(SyncObjectUpdate *sync) {
-	Uint16 *values = (Uint16*)sync->data;
-	x = NetToUnsignedFloat(values[0]);
-	y = NetToUnsignedFloat(values[1]);
-	angle = NetToUnsignedFloat(values[2]);
+	x = NetToUnsignedFloat(pop_uint16(sync->data));
+	y = NetToUnsignedFloat(pop_uint16(sync->data));
+	angle = NetToUnsignedFloat(pop_uint16(sync->data));
+}
+
+// Rockets always move to the nearest enemy player
+void Rocket::Update(float delta) {
+	Player * nearest = GetNearestEnemyPlayer( int(x),
+			int(y), owner );
+	if ( nearest != NULL )	// if no enemyplayer is found don't steer
+	{
+		TurnToNearest(nearest, delta);
+	}
+	// update rocket coordinates
+	x -= look_cos[ConvertAngle( angle )] * ROCKETSPEED * (delta/1000);
+	y -= look_sin[ConvertAngle( angle )] * ROCKETSPEED * (delta/1000);
 }
 
 void Rocket::TurnToNearest(Player *nearest, float delta) {
@@ -82,25 +134,63 @@ void Rocket::TurnToNearest(Player *nearest, float delta) {
 	}
 }
 
-// Rockets always move to the nearest enemy player
-void Rocket::Update(float delta) {
-	Player * nearest = GetNearestEnemyPlayer( int(x),
-			int(y), owner );
-	if ( nearest != NULL )	// if no enemyplayer is found don't steer
-	{
-		TurnToNearest(nearest, delta);
-	}
-	// update rocket coordinates
-	x -= look_cos[ConvertAngle( angle )] * ROCKETSPEED * (delta/1000);
-	y -= look_sin[ConvertAngle( angle )] * ROCKETSPEED * (delta/1000);
+void Rocket::Draw() {
+	int ta = int( this->angle ) / 10;
+	int x = (ta * 14) + ta +1;
+	DrawIMG(rocketpixmap, int(this->x - 7 - viewportx),
+		int(this->y -7 - viewporty), 14, 14, x, 1);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Mine
+///////////////////////////////////////////////////////////////////////////////
+
+// Shoot a mine
+SyncObjectSpawn * Mine::Shoot(Player *self) {
+	std::vector<Uint8> data;
+	append_to_object(data, self->x);
+	append_to_object(data, self->y);
+
+	SyncObjectSpawn *sync = new SyncObjectSpawn(SERVER_SHOULD_DEFINE_ID,
+												OBJECT_TYPE::MINE,
+												4,
+												data);
+	return sync;
 }
 
 // Spawn a mine from a sync message
 Mine::Mine(SyncObjectSpawn *sync) : Object(sync->id, OBJECT_TYPE::MINE) {
-	Uint16 *values = (Uint16*)sync->data;
-	x = NetToUnsignedFloat(values[0]);
-	y = NetToUnsignedFloat(values[1]);
+	x = NetToUnsignedFloat(pop_uint16(sync->data));
+	y = NetToUnsignedFloat(pop_uint16(sync->data));
     this->sync_callback = nullptr;
     this->destroy_callback = nullptr;
     this->update_callback = nullptr;
+}
+
+void Mine::Draw() {
+	int flick2 = int(SDL_GetTicks() - this->minelaidtime);
+	int flick = flick2;
+	
+	flick = flick%1000;
+	flick2 = flick2%360;
+	int mineyoffset = int( 3 * look_sin[flick2] );
+	if( SDL_GetTicks() - this->minelaidtime > MINEACTIVATIONTIME )
+	{
+		if( flick > 500 )
+		{
+			DrawIMG(minepixmap, int(this->x - 6 - viewportx),
+				int(this->y -6 - viewporty + mineyoffset), 13, 13, 0, 0);
+		}
+		else
+		{
+			DrawIMG(minepixmap, int(this->x - 6 - viewportx),
+				int(this->y -6 - viewporty + mineyoffset), 13, 13, 13, 0);
+		}
+	}
+	else
+	{
+		DrawIMG(minepixmap, int(this->x - 6 - viewportx),
+			int(this->y -6 - viewporty ), 13, 13, 13, 0);
+
+	}
 }

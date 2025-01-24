@@ -177,15 +177,25 @@ bool Buffer::Write32(Uint32 value) {
     return true;
 }
 
-// Write a string to the buffer (Does not have to be nul terminated)
-bool Buffer::WriteOctets(const char *source, size_t string_length) {
-    if ((MAXBUFSIZE - this->length) < string_length) {
+// Write bytes
+bool Buffer::WriteOctets(std::vector<Uint8> data) {
+    if ((MAXBUFSIZE - this->length) < data.size()) {
         return false;
     }
-    strncpy((char *)&this->position, source, string_length);
-    this->position += string_length;
-    this->length += string_length;
-    return true;
+    for(uint8_t byte : data) {
+        this->position[0] = byte;
+        this->position++;
+    }
+    this->length += data.size();
+}
+
+// Read a number of bytes from buffer
+std::vector<Uint8> Buffer::ReadOctets(size_t size) {
+    std::vector<Uint8> read_data;
+    for(uint16_t idx=0; idx<size; idx++) {
+        read_data.push_back(*this->position);
+        this->position++;
+    }
 }
 
 // Write a string to the buffer, without specifying length (Null terminated
@@ -287,14 +297,6 @@ std::string &Buffer::ReadString() {
     return *string;
 }
 
-// Read into newly allocated buffer
-void *Buffer::ReadOctetsMalloc(size_t size) {
-    void *new_buf = malloc(size);
-    memcpy(new_buf, this->data, size);
-    this->position += size;
-    return new_buf;
-}
-
 // Decrease the position by n. Will not increase beyond position 0
 void Buffer::DecreasePosition(Uint16 n) {
     if (n >= this->length) {
@@ -339,31 +341,3 @@ std::string Buffer::AsHexString() {
     return ss.str();
 }
 
-
-// Convert Signed Float value to 16 bit value
-inline Uint16 SignedFloatToNet(float value) {
-    // Scale by 4 and ensure it fits into the range of an int16_t
-    int16_t scaled = static_cast<int16_t>(std::round(value * 8));
-    // Reinterpret the int16_t as a uint16_t for storage
-    return static_cast<uint16_t>(scaled);
-}
-
-// Convert Signed Float value to 16 bit value
-inline Uint16 UnSignedFloatToNet(float value) {
-    // Reverse the scaling
-    return static_cast<uint16_t>(value * 8);
-}
-
-// Convert Sint16 value to Signed Float
-inline float NetToSignedFloat(Uint16 value) {
-    // Reinterpret the uint16_t as an int16_t to recover the signed value
-    int16_t signedValue = static_cast<int16_t>(value);
-    // Divide by 4 to undo the scaling
-    return static_cast<float>(signedValue) / 8.0f;
-}
-
-// Convert Sint16 value to Signed Float
-inline float NetToUnSignedFloat(Uint16 value) {
-    // Direct scaling without clamping or normalization
-    return static_cast<uint16_t>(value) / 8.0f;
-}

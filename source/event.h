@@ -2,7 +2,10 @@
 #define SHIPZ_EVENT_H
 
 #include "message_factory.h"
-
+ 
+#undef BASE_CLASS_NAME
+#undef BASE_CLASS_HEADER
+#undef MESSAGE_CLASS_LIST
 #define BASE_CLASS_NAME Event
 #define BASE_CLASS_HEADER EVENT
 
@@ -58,5 +61,6 @@
 
 
 MESSAGE_FACTORY_HEADER
+
 
 #endif

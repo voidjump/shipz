@@ -18,10 +18,13 @@ class ChatLine {
 class ChatConsole {
     private:
         std::vector<ChatLine> lines;
+        uint8_t height;
 
     public:
+        void SetHeight(uint8_t height);
         void AddLine(std::string line, Uint8 send_id, Uint8 team_id);
         void AddFromMessage(EventChat *event);
+        void Draw();
         void Clear();
 };
 

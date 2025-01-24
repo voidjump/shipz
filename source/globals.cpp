@@ -20,7 +20,4 @@ float look_sin[360],
        deltatime = 0,
        lastsendtime = 0;
  
-
-Bullet bullets[NUMBEROFBULLETS];
- 
 Explosion explosions[NUMBEROFEXPLOSIONS];

@@ -16,8 +16,6 @@
 // net
 #define PORT_SERVER 3500 // The port the server listens on
 #define PORT_CLIENT 3501 // The port the client listens on
-#define CHATDELAY 1000
-#define MAXCHATCHARS 80
 #define SEND_DELAY 100
 #define MAXPLAYERS 8
 
@@ -62,9 +60,6 @@ extern float look_sin[360],
        deltatime,
        lastsendtime;
 
-
-
-
 struct Explosion
 {
 	bool used;
@@ -74,8 +69,6 @@ struct Explosion
 	int frame;
 };
 
-
-extern Bullet bullets[NUMBEROFBULLETS];
 
 extern Explosion explosions[NUMBEROFEXPLOSIONS];
 

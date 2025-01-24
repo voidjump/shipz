@@ -1,7 +1,9 @@
 #ifndef SHIPZPLAYER_H
 #define SHIPZPLAYER_H
 
+#include <map>
 #include "types.h"
+#include "sync.h"
 
 enum PLAYER_STATUS {
  DEAD,
@@ -26,6 +28,8 @@ enum PLAYER_WEAPON {
 class Player
 {
 	public:
+		static std::map<Uint16, Player*> instances;
+
 		Uint16 client_id;
 
 		// the player name
@@ -37,7 +41,7 @@ class Player
 		// weapon player is currently using
 		int weapon; 
 		// status
-		int status;
+		uint16_t status;
 		// position, speed, forces, angle
 		float x, y, vx, vy, fx, fy, angle;
 		// whether the player is currently thrusting
@@ -54,9 +58,6 @@ class Player
 		// TODO: this could be a bitflag in the player state
 		bool typing; 
 
-		bool bullet_shot;
-		Uint16 bulletshotnr;
-
 		// Last time player sent an update
 		float lastsendtime;
 		// last time player lifted off
@@ -64,17 +65,34 @@ class Player
 		// last time player shot a bullet
 		float lastshottime;
 
+	Player(uint16_t id);
+	~Player();
+
+	void HandleUpdate(SyncPlayerState *sync);
+
+	// Retrieve a player instance by their ID
+	static Player * GetByID(uint16_t search_id);
 	void Init();
 	void Empty();
 	void Update();
 	void Respawn();
 	void Rotate( bool clockwise );
 	void Thrust();
+	void Draw();
 };
 
+
+inline int ConvertAngle( float angle )
+{
+	//converts an angle from float/game position ( 0 up ) to integer standard position ( 0 right )
+	int temp_angle;
+	temp_angle = int( angle ) + 90; // 0 degrees is right normall, we'll make it up.
+	if( temp_angle > 359 )
+		temp_angle -= 360;
+	return temp_angle;
+}
 void TestColmaps();
 const char * GetStatusString(int status);
-inline int ConvertAngle( float angle );
 void GetCollisionMaps( bool ** levelcolmap );
 bool PlayerCollideWithLevel( Player * play, bool ** levelcolmap );
 int PlayerCollideWithBullet( Player * play, int playernum, Player * players );

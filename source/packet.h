@@ -11,6 +11,28 @@
 
 #define AES_BLOCKSIZE 16
 
+
+// A packet is a buffer containing a series of shipz messages
+// It owns the memory that the messages write to and read from
+class Packet : public Buffer {
+   private:
+    Uint8 iv[AES_BLOCKSIZE];
+    void RandomizeIV();
+
+   public:
+    // Append a message
+    template <typename T>
+    void Append(T& message);
+
+    // Read messages from buffer
+    std::list<Message> Read();
+
+    // Encrypt the underlying data using a preshared 256 bit symmetric AES key
+    void Encrypt(Uint8* key);
+    // Decrypt the underlying data using a preshared 256 bit symmetric AES key
+    void Decrypt(Uint8* key);
+};
+
 // Registry for callbacks that operate on messages
 class MessageHandler {
     private:
@@ -18,7 +40,7 @@ class MessageHandler {
         std::map<Uint16, std::function<void(Message&)>&> registry;
 
         // The default function to call
-        std::function<void(Message&)>& default_callback;
+        std::function<void(Message&)> default_callback;
 
     public:
         // Register a callback function
@@ -35,27 +57,6 @@ class MessageHandler {
 
         // Handle all messages in a packet
         void HandlePacket(Packet &pack);
-};
-
-// A packet is a buffer containing a series of shipz messages
-// It owns the memory that the messages write to and read from
-class Packet : public Buffer {
-   private:
-    Uint8 iv[AES_BLOCKSIZE];
-    void RandomizeIV();
-
-   public:
-    // Append a message
-    template <typename T>
-    void Packet::Append(T& message);
-
-    // Read messages from buffer
-    std::list<Message> Read();
-
-    // Encrypt the underlying data using a preshared 256 bit symmetric AES key
-    void Encrypt(Uint8* key);
-    // Decrypt the underlying data using a preshared 256 bit symmetric AES key
-    void Decrypt(Uint8* key);
 };
 
 #endif

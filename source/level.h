@@ -2,6 +2,10 @@
 #define SHIPZ_LEVEL_H
 
 #define LEVEL_MAX_DIMENSION 4096
+#include <string>
+#include <vector>
+#include <SDL3/SDL.h>
+
 
 struct LevelBase {
     int owner;  // RED, BLUE or NEUTRAL

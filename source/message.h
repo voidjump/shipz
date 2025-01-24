@@ -44,7 +44,8 @@ class Message {
     Uint8 header;
 
    public:
-    ~Message();
+    virtual ~Message() = default; // virtual destructor to enable RTTI
+
     // Serialize this message into a buffer
     bool Serialize(Buffer &buffer);
     // Deserialize current buffer position into a message
