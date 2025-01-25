@@ -114,4 +114,5 @@ Socket::Socket(Uint16 listen_port) {
         SDLNet_DestroyDatagramSocket(udpsock);
         throw new std::runtime_error("failed to open socket");
     }
+	log::debug("started listening on port ", listen_port);
 }

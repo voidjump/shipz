@@ -28,12 +28,19 @@ std::map<std::string, SHIPZ_TEAM> teams_from_string{
 
 void LevelData::SetFile(std::string filename) { m_filename = filename; }
 
+// Load a level
 bool LevelData::Load() {
+    // Validate inputs
+    if(m_filename.length() == 0) {
+        log::error("refusing to load empty file");
+        return false;
+    }
+
     std::string filepath =
         std::string(SHAREPATH) + std::string("./levels/") + m_filename;
     std::ifstream file_handle(filepath);
 
-    log::info("@ reading levelfile: ", m_filename);
+    log::info("reading levelfile: ", m_filename);
 
     try {
         nlohmann::json data = nlohmann::json::parse(file_handle);
@@ -73,7 +80,7 @@ bool LevelData::Load() {
     log::info(" . collisionmap:", m_colmap_filename);
     log::info(" . image:", m_image_filename);
 
-    log::info(" # size:", m_width, " x ", m_height);
+    log::info(" . size:", m_width, " x ", m_height);
     log::info("@ done reading.");
     return true;
 }

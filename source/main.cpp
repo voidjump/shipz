@@ -54,12 +54,11 @@ int main(int argc, char *argv[]) {
     if (cli_init && error == 0) {
         InitSDL();
         if (run_server) {
-            Server server(level_filename);
+            Server server(level_filename, PORT_SERVER);
             server.Run();
         } else {
             InitVid();
             Client client(server_ip, client_nick, PORT_CLIENT, PORT_SERVER);
-            client.Init();
             client.Run();
         }
     }

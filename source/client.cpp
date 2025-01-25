@@ -363,7 +363,7 @@ void Client::Leave() {
 bool Client::Load() {
 
     if (!lvl.Load()) {
-        log::error("failed to load level!");
+        log::error("failed to load level");
         return false;
     }
 

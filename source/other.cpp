@@ -39,7 +39,7 @@ std::map<unsigned int, char> lower_case_keys = {
 // Returns surface containing loaded image
 // TODO: Handle load failure?
 SDL_Surface *LoadIMG(const char *filename) {
-    std::cout << "@ loading asset " << filename << std::endl;
+    log::debug("loading asset ", filename);
     // Append filename to path
     char tmppath[256];
     memset(tmppath, '\0', sizeof(tmppath));

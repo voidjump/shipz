@@ -6,6 +6,8 @@
 #include "sync.h"
 #include "base.h"
 
+using ClientID = uint16_t;
+
 enum PLAYER_STATUS {
  DEAD,
  FLYING, 
@@ -29,9 +31,9 @@ enum PLAYER_WEAPON {
 class Player
 {
 	public:
-		static std::map<Uint16, Player*> instances;
+		static std::map<ClientID, Player*> instances;
 
-		Uint16 client_id;
+		ClientID client_id;
 
 		// the player name
 		std::string name;
