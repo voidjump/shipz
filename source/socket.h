@@ -46,7 +46,7 @@ class Socket {
 
     // Resolve a hostname
     static bool ResolveHostname(const char *connect_address,
-                                SDLNet_Address *resolve_target,
+                                SDLNet_Address **resolve_target,
                                 uint timeout = 5);
 
     // Send buffer-like obj to a remote address and port

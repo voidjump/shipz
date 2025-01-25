@@ -26,9 +26,15 @@ void MessageHandler::Clear() {
     this->registry.clear();
 }
 
+// Retrieve the current origion
+SDLNet_Address * MessageHandler::CurrentOrigin() {
+    return this->current_origin;
+}
+
 // Handle all messages in a packet
 void MessageHandler::HandlePacket(Packet &pack) {
     auto messages = pack.Read();
+    this->current_origin = pack.origin;
     for (Message &msg : messages) {
         Uint16 msg_type = msg.GetMessageSubType();
         // Check if the registry contains a handler for this message type
@@ -40,6 +46,12 @@ void MessageHandler::HandlePacket(Packet &pack) {
         // Call registered callback
         this->registry[msg_type](msg);
     }
+    this->current_origin = NULL;
+}
+
+// Delete the packet
+Packet::~Packet() {
+    SDLNet_UnrefAddress(this->origin);
 }
 
 // Return a list of messages

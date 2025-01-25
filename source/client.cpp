@@ -87,15 +87,15 @@ void Client::GameLoop() {
 
 // Connect to the Server
 bool Client::Connect() {
-    Socket::ResolveHostname(this->server_hostname.c_str(), this->server_address);
+    Socket::ResolveHostname(this->server_hostname.c_str(), &this->server_address);
     int attempts = 0;
 
     // Create a request
     Packet pack;
-    RequestGetServerInfo request(name, SHIPZ_VERSION);
+    RequestGetServerInfo request(SHIPZ_VERSION);
     pack.Append(request);
 
-    log::info("@ querying server status..");
+    log::info("querying server status..");
 
     while (true) {
         socket.Send(pack, this->server_address, PORT_SERVER);
@@ -122,6 +122,7 @@ bool Client::Connect() {
         log::info(".");
         if (attempts == 10) {
             log::error("didn't receive response from server.");
+            exit(1);
         }
     }
 }

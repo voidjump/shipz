@@ -16,7 +16,7 @@ struct LevelBase {
 class LevelData {
    public:
     Sint16 m_width, m_height;
-    Uint8 m_levelversion, m_num_bases;
+    Uint16 m_levelversion, m_num_bases;
     std::string m_filename, m_name, m_author, m_image_filename,
         m_colmap_filename;
     std::vector<LevelBase> m_bases;

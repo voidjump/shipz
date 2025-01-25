@@ -22,7 +22,6 @@
 
 // Request server information
 #define FIELDS_GetServerInfo(field_handler) \
-    field_handler(FIELD_STRING, client_id) \
     field_handler(FIELD_UINT8, version)
 
 // Request to join the game

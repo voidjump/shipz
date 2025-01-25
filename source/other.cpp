@@ -6,6 +6,10 @@
 
 #include <fstream>
 #include <iostream>
+#include <iomanip>
+#include <chrono>
+#include <ctime>
+#include <sstream>
 #include <map>
 
 #include "assets.h"
@@ -241,4 +245,21 @@ Mix_Chunk *LoadSound(const char *filename) {
         return NULL;
     }
     return loaded_chunk;
+}
+
+std::string GetCurrentTime() {
+    // Get current time as time_point
+    auto now = std::chrono::system_clock::now();
+    
+    // Convert time_point to time_t
+    std::time_t now_time_t = std::chrono::system_clock::to_time_t(now);
+    
+    // Convert to tm structure
+    std::tm now_tm = *std::localtime(&now_time_t);
+
+    // Format time as string
+    std::ostringstream oss;
+    oss << std::put_time(&now_tm, "%Y-%m-%d %H:%M:%S");
+
+    return oss.str();
 }

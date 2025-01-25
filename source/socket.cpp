@@ -10,15 +10,15 @@
 /// @param timeout max seconds to take
 /// @return whether resolved successfully
 bool Socket::ResolveHostname(const char *connect_address,
-                             SDLNet_Address *resolve_target, uint timeout) {
-    resolve_target = SDLNet_ResolveHostname(connect_address);
+                             SDLNet_Address **resolve_target, uint timeout) {
+    *resolve_target = SDLNet_ResolveHostname(connect_address);
     if (resolve_target == NULL) {
         goto fail;
     }
 
     // wait for the hostname to resolve:
     log::info("resolving hostname ", connect_address, " ...");
-    while (SDLNet_GetAddressStatus(resolve_target) == 0) {
+    while (SDLNet_GetAddressStatus(*resolve_target) == 0) {
         if (timeout == 0) {
             goto fail;
         }
@@ -26,12 +26,12 @@ bool Socket::ResolveHostname(const char *connect_address,
         SDL_Delay(1000);
         timeout--;
     }
-    if (SDLNet_GetAddressStatus(resolve_target) != 1) {
+    if (SDLNet_GetAddressStatus(*resolve_target) != 1) {
         goto fail;
     }
 
     log::info("resolved server address: ",
-              SDLNet_GetAddressString(resolve_target));
+              SDLNet_GetAddressString(*resolve_target));
     return true;
 
 fail:
@@ -89,10 +89,12 @@ bool Socket::Poll() {
 
     // import packet to new packet
     Packet pack;
-    if (pack.ImportBytes(in->buf, in->buflen)) {
+    if (!pack.ImportBytes(in->buf, in->buflen)) {
         log::error("failed to import packet to buffer");
         result = false;
     } else {
+        pack.origin = in->addr;
+        SDLNet_RefAddress(in->addr);
         result = true;
     }
     in_queue.Push(std::make_unique<Packet>(std::move(pack)));

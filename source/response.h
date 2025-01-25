@@ -25,7 +25,7 @@
     field_handler(FIELD_UINT8, shipz_version) \
     field_handler(FIELD_UINT8, number_of_players) \
     field_handler(FIELD_UINT8, max_players) \
-    field_handler(FIELD_UINT8, level_version) \
+    field_handler(FIELD_UINT16, level_version) \
     field_handler(FIELD_STRING, level_filename)
 
 // Server responds to a client's 'JOIN_GAME' request

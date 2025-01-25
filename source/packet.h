@@ -20,6 +20,7 @@ class Packet : public Buffer {
     void RandomizeIV();
 
    public:
+    SDLNet_Address * origin;
 
     // Append a message
     template <typename T>
@@ -37,6 +38,8 @@ class Packet : public Buffer {
     // Read messages from buffer
     std::list<Message> Read();
 
+    ~Packet();
+
     // Encrypt the underlying data using a preshared 256 bit symmetric AES key
     void Encrypt(Uint8* key);
     // Decrypt the underlying data using a preshared 256 bit symmetric AES key
@@ -51,6 +54,9 @@ class MessageHandler {
 
         // The default function to call
         std::function<void(Message&)> default_callback;
+
+        // Holds the origin address when handling packets
+        SDLNet_Address * current_origin;
 
     public:
         // Register a callback function
@@ -67,6 +73,9 @@ class MessageHandler {
 
         // Handle all messages in a packet
         void HandlePacket(Packet &pack);
+
+        // Get the origin address for the current packet 
+        SDLNet_Address * CurrentOrigin();
 };
 
 #endif
