@@ -29,7 +29,7 @@ class Server {
         std::vector<Event*> events;
         uint runstate;
 
-        Player players[MAXPLAYERS];
+        std::vector<Player> players;
 
     public:
         // Start server

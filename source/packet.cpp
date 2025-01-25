@@ -42,12 +42,6 @@ void MessageHandler::HandlePacket(Packet &pack) {
     }
 }
 
-template <typename T>
-void Packet::Append(T &message) {
-    static_assert(std::is_base_of<Message, T>::value, "T must derive from Message");
-    message.Serialize(*this);
-}
-
 // Return a list of messages
 std::list<Message> Packet::Read() {
     std::list<Message> messages;

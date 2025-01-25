@@ -3,6 +3,9 @@
 #include "gfx.h"
 #include "assets.h"
 
+// all instances
+std::vector<Base*> Base::all_bases;
+
 // Draw a base
 void Base::Draw() {
     auto index = 0;
@@ -23,8 +26,8 @@ void Base::Draw() {
             this->y - 17 - viewporty, 41, 18, 0, index );
 }
 
-// Construct a rocket from a spawn message
-Base::Base(uint16_t owner, uint16_t x, uint32_t y) : Object(sync->id, OBJECT_TYPE::ROCKET) {
+// Construct a base locally (use for server)
+Base::Base(uint16_t owner, uint16_t x, uint32_t y) : Object(OBJECT_TYPE::BASE) {
 	this->owner = owner;
 	this->x = x;
 	this->y = y;
@@ -32,21 +35,30 @@ Base::Base(uint16_t owner, uint16_t x, uint32_t y) : Object(sync->id, OBJECT_TYP
 
     this->destroy_callback = nullptr;
     this->update_callback = nullptr;
-    this->sync_callback = std::bind(&Rocket::Sync, this, std::placeholders::_1);
+    this->sync_callback = nullptr;
+
+    all_bases.push_back(this);
 }
 
+// Construct a base from a spawn message
+Base::Base(SyncObjectSpawn * sync) : Object(sync->id, OBJECT_TYPE::BASE) {
+	owner = pop_uint16(sync->data);
+	x = pop_uint16(sync->data);
+	y = pop_uint16(sync->data);
+	health = pop_uint16(sync->data);
+
+    this->destroy_callback = nullptr;
+    this->update_callback = nullptr;
+    this->sync_callback = std::bind(&Base::Sync, this, std::placeholders::_1);
+
+    all_bases.push_back(this);
+}
 
 // Synchronize base status with server
 void Base::Sync(SyncObjectUpdate *sync) {
-	x = NetToUnsignedFloat(pop_uint16(sync->data));
-	y = NetToUnsignedFloat(pop_uint16(sync->data));
-	owner = NetToUnsignedFloat(pop_uint16(sync->data));
-	health = NetToUnsignedFloat(pop_uint16(sync->data));
+    owner = pop_uint16(sync->data);
+	x = pop_uint16(sync->data);
+	y = pop_uint16(sync->data);
+	health = pop_uint16(sync->data);
 }
 
-void Rocket::Draw() {
-	int ta = int( this->angle ) / 10;
-	int x = (ta * 14) + ta +1;
-	DrawIMG(rocketpixmap, int(this->x - 7 - viewportx),
-		int(this->y -7 - viewporty), 14, 14, x, 1);
-}

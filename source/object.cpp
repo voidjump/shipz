@@ -4,6 +4,10 @@
 #include "bullet.h"
 #include "renderable.h"
 
+// all instances
+std::unordered_map<ObjectID, std::shared_ptr<Object>> Object::instances;
+
+
 // Construct object with fixed id
 Object::Object(ObjectID id, ObjectType type) {
     this->id = id;
@@ -96,4 +100,28 @@ void Object::DrawAll() {
             render->Draw(); // Call Draw if the cast succeeds
         }
     }
+}
+
+// Get an unused id
+ObjectID Object::GetFreeID() {
+    for(ObjectID id = 1; id < UINT16_MAX; id++) {
+        if(instances.count(id) == 0) {
+            return id;
+        }
+    }
+    return NO_OBJECT_ID_AVAILABLE;
+}
+
+uint16_t pop_uint16(std::vector<uint8_t>& data) {
+    if (data.size() < 2) {
+        throw std::runtime_error("Not enough data to pop a uint16_t");
+    }
+
+    // Combine the first two bytes into a uint16_t
+    uint16_t value = static_cast<uint16_t>(data[0]) | (static_cast<uint16_t>(data[1]) << 8);
+
+    // Erase the first two bytes from the vector
+    data.erase(data.begin(), data.begin() + 2);
+
+    return value;
 }

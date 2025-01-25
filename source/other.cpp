@@ -101,25 +101,23 @@ void InitSDL() {
     atexit(SDL_Quit);
 }
 
-int GetNearestBase(int x, int y) {
-    // returns a number to the Base nearest to x,y
-    int i;              // loop thingy
-    int tdx, tdy;       // temp dist
-    float dist, tdist;  // the dist of the nearest Base so far, temp value for
-                        // calc of dist.
-    int Base;           // the nearest Base so far
+// returns a pointer to the Base nearest to x,y, or NULL if there are none.
+Base * GetNearestBase(int x, int y) {
+    int tdx, tdy;       
+    float nearest_dist, current_dist;
+    Base *current_nearest = NULL;           
 
-    for (i = 0; i < lvl.m_num_bases; i++) {
-        tdx = x - bases[i].x;
-        tdy = y - bases[i].y;
+    for( auto & base : Base::all_bases ) {
+        tdx = x - base->x;
+        tdy = y - base->y;
 
-        tdist = sqrt((tdx * tdx) + (tdy * tdy));
-        if (tdist < dist || i == 0) {
-            dist = tdist;
-            Base = i;
+        current_dist = sqrt((tdx * tdx) + (tdy * tdy));
+        if (current_dist < nearest_dist || current_nearest == NULL) {
+            nearest_dist = current_dist;
+            current_nearest = base;
         }
     }
-    return Base;
+    return current_nearest;
 }
 
 void NewExplosion(int x, int y) {

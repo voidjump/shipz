@@ -15,16 +15,16 @@
 // TODO: add some kind of 'Broadcast' function that sends a package to all players
 
 void Server::UpdateBases() {
-	red_team.bases = 0;
-	blue_team.bases = 0;
-	for(int bidx =0; bidx < MAXBASES; bidx++ ) {
-		if (bases[bidx].owner == SHIPZ_TEAM::RED) {
-			red_team.bases++;
-		}
-		if (bases[bidx].owner == SHIPZ_TEAM::BLUE) {
-			blue_team.bases++;
-		}
-	}
+	// red_team.bases = 0;
+	// blue_team.bases = 0;
+	// for(int bidx =0; bidx < MAXBASES; bidx++ ) {
+	// 	if (bases[bidx].owner == SHIPZ_TEAM::RED) {
+	// 		red_team.bases++;
+	// 	}
+	// 	if (bases[bidx].owner == SHIPZ_TEAM::BLUE) {
+	// 		blue_team.bases++;
+	// 	}
+	// }
 }
 
 Server::Server(const char * levelname) {
@@ -112,7 +112,7 @@ void Server::Init() {
 	CreateGonLookup();
 	for( int zb = 0; zb < NUMBEROFBULLETS; zb++ ) // clean all bullets before doing anything...
 	{
-		CleanBullet( zb );
+		// CleanBullet( zb );
 	}
 }
 
@@ -143,7 +143,6 @@ void Server::HandleLeave() {
 	std::cout << "@ player " << leaving_player->name << " left" << std::endl;
 	number_of_players--;
 
-	leaving_player->playing = 0;
 	if( leaving_player->team == SHIPZ_TEAM::BLUE )
 	{
 		blue_team.players--;
@@ -160,11 +159,6 @@ void Server::HandleLeave() {
 	// now notify all the other players
 	for( int playerleaves = 0; playerleaves < MAXPLAYERS; playerleaves++ )
 	{
-		if( !players[ playerleaves ].playing )
-		{
-			continue;
-		}
-
 		sendbuf.Clear();
 		sendbuf.Write8(SHIPZ_MESSAGE::MSG_PLAYER_LEAVES);
 		sendbuf.Write8(playerleaves + 1); // Intended recipient
@@ -263,39 +257,39 @@ void Server::HandleUpdate() {
 	if( tx == 0 && ty == 0 && tvx == 0 && tvy == 0 && tn == 0 && tbultyp == 0 )
 	{
 		// no bullet shot
-		players[playerread].bullet_shot = 0;
+		// players[playerread].bullet_shot = 0;
 	}
 	else
 	{
-		players[playerread].bullet_shot = 1;
-		players[playerread].bulletshotnr = Uint16(tn);
+		// players[playerread].bullet_shot = 1;
+		// players[playerread].bulletshotnr = Uint16(tn);
 		players[playerread].lastshottime = SDL_GetTicks();
 
 		if( tbultyp == WEAPON_BULLET )
 		{
-			bullets[tn].x = (float)tx;
-			bullets[tn].y = (float)ty;
-			bullets[tn].vx = (float)tvx;
-			bullets[tn].vy = (float)tvy;
+			// bullets[tn].x = (float)tx;
+			// bullets[tn].y = (float)ty;
+			// bullets[tn].vx = (float)tvx;
+			// bullets[tn].vy = (float)tvy;
 		}
 		if( tbultyp == WEAPON_ROCKET )
 		{
 			// this may look wrong, but it's correct, trust me
-			bullets[tn].x = (float)tvx;
-			bullets[tn].y = (float)tvy;
-			bullets[tn].angle = (float)ty;
+			// bullets[tn].x = (float)tvx;
+			// bullets[tn].y = (float)tvy;
+			// bullets[tn].angle = (float)ty;
 		}
 		if( tbultyp == WEAPON_MINE )
 		{
-			bullets[tn].x = (float)tx;
-			bullets[tn].y = (float)ty;
-			bullets[tn].minelaidtime = SDL_GetTicks();
+			// bullets[tn].x = (float)tx;
+			// bullets[tn].y = (float)ty;
+			// bullets[tn].minelaidtime = SDL_GetTicks();
 		}
 		
-		bullets[tn].type = tbultyp;
-		bullets[tn].owner = playerread + 1;
-		bullets[tn].active = true;
-		bullets[tn].collide = false;
+		// bullets[tn].type = tbultyp;
+		// bullets[tn].owner = playerread + 1;
+		// bullets[tn].active = true;
+		// bullets[tn].collide = false;
 	}
 	
 	players[ playerread ].lastsendtime = SDL_GetTicks();
@@ -308,34 +302,34 @@ void Server::HandleJoin() {
 	int newteam = 0;
 	for( int searchempty = 1; searchempty < (MAXPLAYERS+1); searchempty++ )
 	{
-		if( !players[searchempty-1].playing )
-		{
-			newnum = searchempty;
-			// we found a number, now find this (wo)man a Team!
-			if( red_team.players <= blue_team.players )
-			{
-				newteam = SHIPZ_TEAM::RED;
-				red_team.players++;
-			}
-			else
-			{
-				newteam = SHIPZ_TEAM::BLUE;
-				blue_team.players++;
-			}
-			break;
-		}
+		// if( !players[searchempty-1].playing )
+		// {
+		// 	newnum = searchempty;
+		// 	// we found a number, now find this (wo)man a Team!
+		// 	if( red_team.players <= blue_team.players )
+		// 	{
+		// 		newteam = SHIPZ_TEAM::RED;
+		// 		red_team.players++;
+		// 	}
+		// 	else
+		// 	{
+		// 		newteam = SHIPZ_TEAM::BLUE;
+		// 		blue_team.players++;
+		// 	}
+		// 	break;
+		// }
 	}
 	if( newnum != 999 )
 	{
-		strncpy( players[ newnum -1 ].name, 
-					(const char * )&in->buf[1], 12 ); 
-		players[ newnum - 1 ].playaddr = in->addr;
-		// Increase ref count to this player's address
-		SDLNet_RefAddress(in->addr);
-		players[ newnum - 1 ].playing = 1;
-		players[ newnum - 1 ].self_sustaining = 1;
-		players[ newnum - 1 ].Init();
-		players[ newnum - 1 ].team = newteam;
+		// strncpy( players[ newnum -1 ].name, 
+		// 			(const char * )&in->buf[1], 12 ); 
+		// players[ newnum - 1 ].playaddr = in->addr;
+		// // Increase ref count to this player's address
+		// SDLNet_RefAddress(in->addr);
+		// players[ newnum - 1 ].playing = 1;
+		// players[ newnum - 1 ].self_sustaining = 1;
+		// players[ newnum - 1 ].Init();
+		// players[ newnum - 1 ].team = newteam;
 
 		std::cout << "Player " << players[newnum-1].name
 			<< " joined into slot " << newnum << std::endl;
@@ -345,17 +339,17 @@ void Server::HandleJoin() {
 		{
 			
 			// 070 PLAYER PLAYJOINNR NAME
-			if( players[ sendplays ].playing == 1 && sendplays != (newnum-1) )
-			{
-				sendbuf.Clear();
-				sendbuf.Write8(SHIPZ_MESSAGE::MSG_PLAYER_JOINS);
-				sendbuf.Write8(sendplays + 1);
-				sendbuf.Write8(newnum);
-				sendbuf.Write8(newteam);
-				sendbuf.WriteString(players[newnum-1].name);
-				sendbuf.Write8('\0');
-				SendBuffer(players[sendplays].playaddr);
-			}
+			// if( players[ sendplays ].playing == 1 && sendplays != (newnum-1) )
+			// {
+			// 	sendbuf.Clear();
+			// 	sendbuf.Write8(SHIPZ_MESSAGE::MSG_PLAYER_JOINS);
+			// 	sendbuf.Write8(sendplays + 1);
+			// 	sendbuf.Write8(newnum);
+			// 	sendbuf.Write8(newteam);
+			// 	sendbuf.WriteString(players[newnum-1].name);
+			// 	sendbuf.Write8('\0');
+			// 	SendBuffer(players[sendplays].playaddr);
+			// }
 		}
 		// now send the player himself a message with his name etc.
 		//S: 030 PLAYER NAME P1 (NAME) P2 (NAME) P3 (NAME) P4 (NAME) P5
@@ -365,15 +359,15 @@ void Server::HandleJoin() {
 		sendbuf.Write8(newnum);
 		for( int gn = 0; gn < MAXPLAYERS; gn++ )
 		{
-			if( players[ gn ].playing )
-			{
-				sendbuf.Write16( (Uint16) players[ gn ].team);
-			}
-			else
-			{
-				sendbuf.Write16( (Uint16) players[ gn ].playing);
-			}
-			sendbuf.WriteString(players[gn].name);
+			// if( players[ gn ].playing )
+			// {
+			// 	sendbuf.Write16( (Uint16) players[ gn ].team);
+			// }
+			// else
+			// {
+			// 	sendbuf.Write16( (Uint16) players[ gn ].playing);
+			// }
+			// sendbuf.WriteString(players[gn].name);
 		}
 		sendbuf.Write8('\0');
 		SendBuffer(players[newnum-1].playaddr);
@@ -386,11 +380,6 @@ void Server::HandleJoin() {
 		// ( rarely happens because client checks this before joining )
 		// should fix this in a later stage though..;
 	}
-
-}
-
-void Server::HandleStatus() {
-	// we got a query, return server status/info
 	// Protocol: S: 020 VERSION PLAYERS MAXPLAYERS TYPE 
 
 	int templen = 0;
@@ -420,270 +409,274 @@ void Server::HandleChat() {
 	sendbuf.Write8('\0');
 	for( int sc = 0; sc < MAXPLAYERS; sc++ )
 	{
-		if( players[sc].playing && sc != (tempplay-1) )
-		{
-			sendbuf.SetPosByte(1, sc+1);
-			SendBuffer(players[sc].playaddr);
-		}
+		// if( players[sc].playing && sc != (tempplay-1) )
+		// {
+		// 	sendbuf.SetPosByte(1, sc+1);
+		// 	SendBuffer(players[sc].playaddr);
+		// }
 	}
+}
+
+void Server::HandleStatus() {
+
 }
 
 void Server::CheckIdlePlayers() {
 	// if a player is idle for 2 secs, kick him:
-	for( int ci = 0; ci < MAXPLAYERS; ci++ )
-	{
-		if( (SDL_GetTicks() - players[ci].lastsendtime) > IDLETIMEBEFOREDROP && players[ci].playing )
-		{
-			// player is idle, kick him and send him kick notification
-			// remove him from the player list and send notification to all the
-			// other players.
-			std::cout << "player " << ( ci + 1 ) << " idle > 2 sec. kicking. " << std::endl;
-			// TODO: Figure out how this is supposed to work
-			sendbuf.Clear();
-			sendbuf.Write8(0);
-			sendbuf.Write8(0);
-			sendbuf.Write8(0);
-			SendBuffer(players[ci].playaddr);
+	// for( int ci = 0; ci < MAXPLAYERS; ci++ )
+	// {
+	// 	if( (SDL_GetTicks() - players[ci].lastsendtime) > IDLETIMEBEFOREDROP && players[ci].playing )
+	// 	{
+	// 		// player is idle, kick him and send him kick notification
+	// 		// remove him from the player list and send notification to all the
+	// 		// other players.
+	// 		std::cout << "player " << ( ci + 1 ) << " idle > 2 sec. kicking. " << std::endl;
+	// 		// TODO: Figure out how this is supposed to work
+	// 		sendbuf.Clear();
+	// 		sendbuf.Write8(0);
+	// 		sendbuf.Write8(0);
+	// 		sendbuf.Write8(0);
+	// 		SendBuffer(players[ci].playaddr);
 			
-			number_of_players--;
-			if( players[ci].team == SHIPZ_TEAM::BLUE )
-			{
-				blue_team.players--;
-			}
-			if( players[ci].team == SHIPZ_TEAM::RED )
-			{
-				red_team.players--;
-			}
+	// 		number_of_players--;
+	// 		if( players[ci].team == SHIPZ_TEAM::BLUE )
+	// 		{
+	// 			blue_team.players--;
+	// 		}
+	// 		if( players[ci].team == SHIPZ_TEAM::RED )
+	// 		{
+	// 			red_team.players--;
+	// 		}
 
-			players[ ci ].playing = 0;
-			// Dereference address
-			SDLNet_UnrefAddress(players[ci].playaddr);
-			players[ ci ].Init();
-			// player has been removed / kicked
-			// now notify all the other players
-			for( int playerleaves = 0; playerleaves < MAXPLAYERS; playerleaves++ )
-			{
-				if( !players[playerleaves].playing )
-				{
-					continue;
-				}
-				sendbuf.Clear();
-				sendbuf.Write8(SHIPZ_MESSAGE::MSG_PLAYER_LEAVES);
-				sendbuf.Write8(playerleaves + 1);
-				sendbuf.Write8(ci + 1);
-				SendBuffer(players[playerleaves].playaddr);
-			}
-		}
-	}
+	// 		// players[ ci ].playing = 0;
+	// 		// Dereference address
+	// 		SDLNet_UnrefAddress(players[ci].playaddr);
+	// 		players[ ci ].Init();
+	// 		// player has been removed / kicked
+	// 		// now notify all the other players
+	// 		for( int playerleaves = 0; playerleaves < MAXPLAYERS; playerleaves++ )
+	// 		{
+	// 			// if( !players[playerleaves].playing )
+	// 			// {
+	// 			// 	continue;
+	// 			// }
+	// 			sendbuf.Clear();
+	// 			sendbuf.Write8(SHIPZ_MESSAGE::MSG_PLAYER_LEAVES);
+	// 			sendbuf.Write8(playerleaves + 1);
+	// 			sendbuf.Write8(ci + 1);
+	// 			SendBuffer(players[playerleaves].playaddr);
+	// 		}
+	// 	}
+	// }
 }
 
 // Update player physics, collisions, etc
 void Server::UpdatePlayers() {
-	for( int up = 0; up < MAXPLAYERS; up++ )
-	{
-		if( players[up].playing && players[up].status == PLAYER_STATUS::FLYING )
-		{
-			players[up].Update();
+	// for( int up = 0; up < MAXPLAYERS; up++ )
+	// {
+	// 	if( players[up].playing && players[up].status == PLAYER_STATUS::FLYING )
+	// 	{
+	// 		players[up].Update();
 			
-			int baseresult;
-			baseresult = PlayerCollideWithBase( &players[up] );
-			if( baseresult != -1 )
-			{
-				if( players[up].vx < 40 && players[up].vx > -40 &&
-					players[up].vy < 60 && players[up].vy > 0 )
-				{
-					players[up].status = PLAYER_STATUS::LANDEDBASE;
-					if( bases[ baseresult ].owner != players[up].team )
-					{
-						std::cout << "team " << players[up].team << " has captured base #" << baseresult << std::endl;
-						bases[ baseresult ].owner = players[up].team;
-						UpdateBases();
-					}
-				}
-				else
-				{
-					if( players[up].team == SHIPZ_TEAM::RED )
-					{
-						red_team.frags--;
-					}
-					else
-					{
-						blue_team.frags--;
-					}
-					std::cout << "player " << players[up].name << " collided with base at " << players[up].x << "," << players[up].y << std::endl;
-					players[up].status = PLAYER_STATUS::JUSTCOLLIDEDBASE;
-				}
-			}
+	// 		int baseresult;
+	// 		baseresult = PlayerCollideWithBase( &players[up] );
+	// 		if( baseresult != -1 )
+	// 		{
+	// 			if( players[up].vx < 40 && players[up].vx > -40 &&
+	// 				players[up].vy < 60 && players[up].vy > 0 )
+	// 			{
+	// 				players[up].status = PLAYER_STATUS::LANDEDBASE;
+	// 				if( bases[ baseresult ].owner != players[up].team )
+	// 				{
+	// 					std::cout << "team " << players[up].team << " has captured base #" << baseresult << std::endl;
+	// 					bases[ baseresult ].owner = players[up].team;
+	// 					UpdateBases();
+	// 				}
+	// 			}
+	// 			else
+	// 			{
+	// 				if( players[up].team == SHIPZ_TEAM::RED )
+	// 				{
+	// 					red_team.frags--;
+	// 				}
+	// 				else
+	// 				{
+	// 					blue_team.frags--;
+	// 				}
+	// 				std::cout << "player " << players[up].name << " collided with base at " << players[up].x << "," << players[up].y << std::endl;
+	// 				players[up].status = PLAYER_STATUS::JUSTCOLLIDEDBASE;
+	// 			}
+	// 		}
 		
-			if( PlayerCollideWithLevel( &players[up], collisionmap ))
-			{
-				if( players[up].vx < 40 && players[up].vx > -40 &&
-					players[up].vy < 60 && players[up].vy > 0)
-				{
-					players[up].status = PLAYER_STATUS::LANDED;
-				}
-				else
-				{
-					// send a chat pkg! :P
-					if( players[up].team == SHIPZ_TEAM::RED )
-					{
-						red_team.frags--;
-					}
-					else
-					{
-						blue_team.frags--;
-					}
-					std::cout << "player " << players[up].name << " collided with rock at " << players[up].x << "," << players[up].y << std::endl;
-					players[up].status = PLAYER_STATUS::JUSTCOLLIDEDROCK;
-				}
-			}
-			int bulletresult = PlayerCollideWithBullet( &players[up], up+1, players );
-			if( bulletresult != -1 )
-			{
-				std::cout << "player " << players[up].name << " collided with bullet at " << players[up].x << "," << players[up].y << std::endl;
-				// the function returns -1 when a player didn't collide, so he must've collided
-				// note down the bullet for removal and change the player status
-				// NOTE: in a later stage we should report which player shot him and
-				// update etc.
-				if( bullets[bulletresult].owner == SHIPZ_TEAM::RED )
-				{
-					if( bullets[bulletresult].type == WEAPON_MINE &&
-						players[up].team == SHIPZ_TEAM::RED )
-					{
-						red_team.frags--;
-					}
-					else
-					{
-						red_team.frags++;
-					}
-				}
-				else
-				{
-					if( bullets[bulletresult].type == WEAPON_MINE &&
-						players[up].team == SHIPZ_TEAM::BLUE )
-					{
-						blue_team.frags--;
-					}
-					else
-					{
-						blue_team.frags++;
-					}
-				}
+	// 		if( PlayerCollideWithLevel( &players[up], collisionmap ))
+	// 		{
+	// 			if( players[up].vx < 40 && players[up].vx > -40 &&
+	// 				players[up].vy < 60 && players[up].vy > 0)
+	// 			{
+	// 				players[up].status = PLAYER_STATUS::LANDED;
+	// 			}
+	// 			else
+	// 			{
+	// 				// send a chat pkg! :P
+	// 				if( players[up].team == SHIPZ_TEAM::RED )
+	// 				{
+	// 					red_team.frags--;
+	// 				}
+	// 				else
+	// 				{
+	// 					blue_team.frags--;
+	// 				}
+	// 				std::cout << "player " << players[up].name << " collided with rock at " << players[up].x << "," << players[up].y << std::endl;
+	// 				players[up].status = PLAYER_STATUS::JUSTCOLLIDEDROCK;
+	// 			}
+	// 		}
+	// 		int bulletresult = PlayerCollideWithBullet( &players[up], up+1, players );
+	// 		if( bulletresult != -1 )
+	// 		{
+	// 			std::cout << "player " << players[up].name << " collided with bullet at " << players[up].x << "," << players[up].y << std::endl;
+	// 			// the function returns -1 when a player didn't collide, so he must've collided
+	// 			// note down the bullet for removal and change the player status
+	// 			// NOTE: in a later stage we should report which player shot him and
+	// 			// update etc.
+	// 			if( bullets[bulletresult].owner == SHIPZ_TEAM::RED )
+	// 			{
+	// 				if( bullets[bulletresult].type == WEAPON_MINE &&
+	// 					players[up].team == SHIPZ_TEAM::RED )
+	// 				{
+	// 					red_team.frags--;
+	// 				}
+	// 				else
+	// 				{
+	// 					red_team.frags++;
+	// 				}
+	// 			}
+	// 			else
+	// 			{
+	// 				if( bullets[bulletresult].type == WEAPON_MINE &&
+	// 					players[up].team == SHIPZ_TEAM::BLUE )
+	// 				{
+	// 					blue_team.frags--;
+	// 				}
+	// 				else
+	// 				{
+	// 					blue_team.frags++;
+	// 				}
+	// 			}
 
-				bullets[bulletresult].collide = true;
+	// 			bullets[bulletresult].collide = true;
 				
-				players[up].status = PLAYER_STATUS::JUSTSHOT;
-			}
-		}
-	}
+	// 			players[up].status = PLAYER_STATUS::JUSTSHOT;
+	// 		}
+	// 	}
+	// }
 
 }
 
 void Server::SendUpdates() {
-	// send all the stuff to all the players
-	// S: 040 PLAYER BASESTATES TEAMSTATES (PSTAT PFRAME PX PY PVX PVY BULX BULY BULVX BULVY) x8
-	if(number_of_players == 0) {
-		return;
-	}
-	std::cout << "BEGIN UPDATE" << std::endl;
-	sendbuf.Clear();
-	sendbuf.Write8(SHIPZ_MESSAGE::UPDATE, "UPDATE");
-	sendbuf.Write8(0, "plyr_placeholder");
+	// // send all the stuff to all the players
+	// // S: 040 PLAYER BASESTATES TEAMSTATES (PSTAT PFRAME PX PY PVX PVY BULX BULY BULVX BULVY) x8
+	// if(number_of_players == 0) {
+	// 	return;
+	// }
+	// std::cout << "BEGIN UPDATE" << std::endl;
+	// sendbuf.Clear();
+	// sendbuf.Write8(SHIPZ_MESSAGE::UPDATE, "UPDATE");
+	// sendbuf.Write8(0, "plyr_placeholder");
 
-	Uint32 basestates = 0;
-	for( int bidx = 0; bidx < MAXBASES; bidx++ ) {
-		if( bases[bidx].owner == SHIPZ_TEAM::RED ) {
-			basestates |= (1 << (bidx *2));
-		}
-		if( bases[bidx].owner == SHIPZ_TEAM::BLUE ) {
-			basestates |= (1 << (bidx *2 +1));
-		}
-	}
-	sendbuf.Write32( basestates, "basestates");
+	// Uint32 basestates = 0;
+	// for( int bidx = 0; bidx < MAXBASES; bidx++ ) {
+	// 	if( bases[bidx].owner == SHIPZ_TEAM::RED ) {
+	// 		basestates |= (1 << (bidx *2));
+	// 	}
+	// 	if( bases[bidx].owner == SHIPZ_TEAM::BLUE ) {
+	// 		basestates |= (1 << (bidx *2 +1));
+	// 	}
+	// }
+	// sendbuf.Write32( basestates, "basestates");
 	
-	sendbuf.Write16( Sint16( red_team.bases ), "red_team.bases");
-	sendbuf.Write16( Sint16( blue_team.bases ), "blue_team.bases");
+	// sendbuf.Write16( Sint16( red_team.bases ), "red_team.bases");
+	// sendbuf.Write16( Sint16( blue_team.bases ), "blue_team.bases");
 	
-	for( int wp = 0; wp < MAXPLAYERS; wp++ )
-	{
-		sendbuf.Write16( Sint16( players[wp].status ), "status");
-		sendbuf.Write16( Sint16( players[wp].shipframe ), "frame");
-		sendbuf.Write16( Sint16( players[wp].typing ), "typing");
-		sendbuf.Write16( Sint16( players[wp].x ), "x");
-		sendbuf.Write16( Sint16( players[wp].y ), "y");
-		sendbuf.Write16( Sint16( players[wp].vx ), "vx");
-		sendbuf.Write16( Sint16( players[wp].vy ), "vy");
-		sendbuf.Write8(Uint8(players[wp].bullet_shot), "bullet_shot");
+	// for( int wp = 0; wp < MAXPLAYERS; wp++ )
+	// {
+	// 	sendbuf.Write16( Sint16( players[wp].status ), "status");
+	// 	sendbuf.Write16( Sint16( players[wp].shipframe ), "frame");
+	// 	sendbuf.Write16( Sint16( players[wp].typing ), "typing");
+	// 	sendbuf.Write16( Sint16( players[wp].x ), "x");
+	// 	sendbuf.Write16( Sint16( players[wp].y ), "y");
+	// 	sendbuf.Write16( Sint16( players[wp].vx ), "vx");
+	// 	sendbuf.Write16( Sint16( players[wp].vy ), "vy");
+	// 	sendbuf.Write8(Uint8(players[wp].bullet_shot), "bullet_shot");
 	
-		if( players[wp].bullet_shot )
-		{
-			sendbuf.Write16( Sint16( players[wp].bulletshotnr ), "bullet_shot_nr");
-			sendbuf.Write16( Sint16( bullets[players[wp].bulletshotnr].type ), "type");
-			if( bullets[players[wp].bulletshotnr].type == WEAPON_BULLET ||
-				bullets[players[wp].bulletshotnr].type == WEAPON_MINE )
-			{
-				sendbuf.Write16( Sint16( bullets[players[wp].bulletshotnr].x ), "x");
-				sendbuf.Write16( Sint16( bullets[players[wp].bulletshotnr].y ), "y");
-				sendbuf.Write16( Sint16( bullets[players[wp].bulletshotnr].vx ), "vx");
-				sendbuf.Write16( Sint16( bullets[players[wp].bulletshotnr].vy ), "vy");
-			}
-			if( bullets[players[wp].bulletshotnr].type == WEAPON_ROCKET )
-			{
-				sendbuf.Write16( 0);
-				sendbuf.Write16( Sint16( bullets[players[wp].bulletshotnr].angle ), "angle");
-				sendbuf.Write16( Sint16( bullets[players[wp].bulletshotnr].x ), "x");
-				sendbuf.Write16( Sint16( bullets[players[wp].bulletshotnr].y ), "y");
-			}
-			players[wp].bullet_shot = 0;
-		}
-	}
+	// 	if( players[wp].bullet_shot )
+	// 	{
+	// 		sendbuf.Write16( Sint16( players[wp].bulletshotnr ), "bullet_shot_nr");
+	// 		sendbuf.Write16( Sint16( bullets[players[wp].bulletshotnr].type ), "type");
+	// 		if( bullets[players[wp].bulletshotnr].type == WEAPON_BULLET ||
+	// 			bullets[players[wp].bulletshotnr].type == WEAPON_MINE )
+	// 		{
+	// 			sendbuf.Write16( Sint16( bullets[players[wp].bulletshotnr].x ), "x");
+	// 			sendbuf.Write16( Sint16( bullets[players[wp].bulletshotnr].y ), "y");
+	// 			sendbuf.Write16( Sint16( bullets[players[wp].bulletshotnr].vx ), "vx");
+	// 			sendbuf.Write16( Sint16( bullets[players[wp].bulletshotnr].vy ), "vy");
+	// 		}
+	// 		if( bullets[players[wp].bulletshotnr].type == WEAPON_ROCKET )
+	// 		{
+	// 			sendbuf.Write16( 0);
+	// 			sendbuf.Write16( Sint16( bullets[players[wp].bulletshotnr].angle ), "angle");
+	// 			sendbuf.Write16( Sint16( bullets[players[wp].bulletshotnr].x ), "x");
+	// 			sendbuf.Write16( Sint16( bullets[players[wp].bulletshotnr].y ), "y");
+	// 		}
+	// 		players[wp].bullet_shot = 0;
+	// 	}
+	// }
 	
-	Sint16 bulcount = 0;
-	for( int cnt = 0; cnt < NUMBEROFBULLETS; cnt++ )
-	{
-		if( bullets[cnt].active == true && bullets[cnt].collide == true )
-		{
-			bulcount++;
-		}
-	}
+	// Sint16 bulcount = 0;
+	// for( int cnt = 0; cnt < NUMBEROFBULLETS; cnt++ )
+	// {
+	// 	if( bullets[cnt].active == true && bullets[cnt].collide == true )
+	// 	{
+	// 		bulcount++;
+	// 	}
+	// }
 
-	sendbuf.Write16( Sint16( bulcount ), "bulcount");
+	// sendbuf.Write16( Sint16( bulcount ), "bulcount");
 
-	for( Sint16 wrb = 0; wrb < NUMBEROFBULLETS; wrb++ )
-	{
-		if( bullets[wrb].active == true && bullets[wrb].collide == true )
-		{
-			sendbuf.Write16( (Sint16)wrb, "wrb");
-			CleanBullet( int( wrb ));
-		}
-	}
+	// for( Sint16 wrb = 0; wrb < NUMBEROFBULLETS; wrb++ )
+	// {
+	// 	if( bullets[wrb].active == true && bullets[wrb].collide == true )
+	// 	{
+	// 		sendbuf.Write16( (Sint16)wrb, "wrb");
+	// 		CleanBullet( int( wrb ));
+	// 	}
+	// }
 
 
-	std::cout << "END UPDATE" << std::endl << std::endl;;
+	// std::cout << "END UPDATE" << std::endl << std::endl;;
 	
-	for( int sp = 0; sp < MAXPLAYERS; sp++ )
-	{
-		if( players[sp].playing )
-		{
-			sendbuf.SetPosByte(1, sp + 1);
-			SendBuffer(players[sp].playaddr);
+	// for( int sp = 0; sp < MAXPLAYERS; sp++ )
+	// {
+	// 	if( players[sp].playing )
+	// 	{
+	// 		sendbuf.SetPosByte(1, sp + 1);
+	// 		SendBuffer(players[sp].playaddr);
 		
-			// deal with stati
-			if(players[sp].status == PLAYER_STATUS::JUSTCOLLIDEDBASE)
-			{
-				players[sp].status = PLAYER_STATUS::DEAD;
-			}
-			if(players[sp].status == PLAYER_STATUS::JUSTCOLLIDEDROCK)
-			{
-				players[sp].status = PLAYER_STATUS::DEAD;
-			}
-			if( players[sp].status == PLAYER_STATUS::JUSTSHOT )
-			{
-				players[sp].status = PLAYER_STATUS::DEAD;
-			}
-		}
-	}
-	lastsendtime = float(SDL_GetTicks());
+	// 		// deal with stati
+	// 		if(players[sp].status == PLAYER_STATUS::JUSTCOLLIDEDBASE)
+	// 		{
+	// 			players[sp].status = PLAYER_STATUS::DEAD;
+	// 		}
+	// 		if(players[sp].status == PLAYER_STATUS::JUSTCOLLIDEDROCK)
+	// 		{
+	// 			players[sp].status = PLAYER_STATUS::DEAD;
+	// 		}
+	// 		if( players[sp].status == PLAYER_STATUS::JUSTSHOT )
+	// 		{
+	// 			players[sp].status = PLAYER_STATUS::DEAD;
+	// 		}
+	// 	}
+	// }
+	// lastsendtime = float(SDL_GetTicks());
 }
 
 void Server::GameLoop() {
@@ -721,7 +714,7 @@ void Server::GameLoop() {
 
 		this->CheckIdlePlayers();
 
-		UpdateBullets( players );
+		// UpdateBullets( players );
 		CheckBulletCollides( collisionmap );
 		UpdatePlayers();
 		// TODO: Update logic:

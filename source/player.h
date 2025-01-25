@@ -4,6 +4,7 @@
 #include <map>
 #include "types.h"
 #include "sync.h"
+#include "base.h"
 
 enum PLAYER_STATUS {
  DEAD,
@@ -101,8 +102,7 @@ void AdjustViewport( Player * play );
 Player* GetNearestEnemyPlayer( int x, int y ,int team );
 int GetNearestEnemyPlayer( Player * plyrs, int x, int y, int pteam );
 Uint16 ShootBullet( Player * play, int owner );
-int FindRespawnBase( int rspwnteam );
+Base * FindRespawnBase( int rspwnteam );
 void UpdateBullets( Player * plyrs );
 void CheckBulletCollides( bool ** colmap );
-void CleanBullet( int num );
 #endif

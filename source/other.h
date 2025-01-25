@@ -5,6 +5,7 @@
 
 #include "net.h"
 #include "types.h"
+#include "base.h"
 
 SDL_Surface * LoadIMG( const char * filename );
 
@@ -12,7 +13,7 @@ void CreateGonLookup();
 
 void InitSDL();
 
-int GetNearestBase( int x, int y );
+Base * GetNearestBase( int x, int y );
 
 bool CheckForQuitSignal();
 

@@ -187,6 +187,7 @@ bool Buffer::WriteOctets(std::vector<Uint8> data) {
         this->position++;
     }
     this->length += data.size();
+    return true;
 }
 
 // Read a number of bytes from buffer
@@ -196,6 +197,7 @@ std::vector<Uint8> Buffer::ReadOctets(size_t size) {
         read_data.push_back(*this->position);
         this->position++;
     }
+    return read_data;
 }
 
 // Write a string to the buffer, without specifying length (Null terminated

@@ -9,7 +9,8 @@
 #include <functional>
 #include "sync.h"
 
-#define SERVER_SHOULD_DEFINE_ID 0
+constexpr uint16_t SERVER_SHOULD_DEFINE_ID = 0;
+constexpr uint16_t NO_OBJECT_ID_AVAILABLE = UINT16_MAX;
 
 enum OBJECT_TYPE {
     BULLET,
@@ -27,20 +28,6 @@ void append_to_object(std::vector<uint8_t>& buffer, T value) {
     for (size_t i = 0; i < size; ++i) {
         buffer.push_back(data[i]);
     }
-}
-
-uint16_t pop_uint16(std::vector<uint8_t>& data) {
-    if (data.size() < 2) {
-        throw std::runtime_error("Not enough data to pop a uint16_t");
-    }
-
-    // Combine the first two bytes into a uint16_t
-    uint16_t value = static_cast<uint16_t>(data[0]) | (static_cast<uint16_t>(data[1]) << 8);
-
-    // Erase the first two bytes from the vector
-    data.erase(data.begin(), data.begin() + 2);
-
-    return value;
 }
 
 using ObjectID = uint16_t;
@@ -91,9 +78,14 @@ class Object {
         // Local update, calling Update callback
         void Update(float delta);
 
+        // Find a free objectID
+        ObjectID GetFreeID();
+
         // Draw all objects
         static void DrawAll();
 };
 
+// Helper function
+uint16_t pop_uint16(std::vector<uint8_t>& data);
 
 #endif

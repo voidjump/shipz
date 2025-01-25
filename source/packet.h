@@ -20,9 +20,19 @@ class Packet : public Buffer {
     void RandomizeIV();
 
    public:
+
     // Append a message
     template <typename T>
-    void Append(T& message);
+    void Append(T &message) {
+        static_assert(std::is_base_of<Message, typename std::remove_pointer<T>::type>::value,
+                  "T must derive from Message");
+
+        if constexpr (std::is_pointer<T>::value) {
+            message->Serialize(dynamic_cast<Buffer*>(this));  // Use -> for pointers
+        } else {
+            message.Serialize(dynamic_cast<Buffer*>(this));   // Use . for non-pointers
+        }
+    }
 
     // Read messages from buffer
     std::list<Message> Read();
@@ -37,7 +47,7 @@ class Packet : public Buffer {
 class MessageHandler {
     private:
         // Registry of functions
-        std::map<Uint16, std::function<void(Message&)>&> registry;
+        std::map<Uint16, std::function<void(Message&)>> registry;
 
         // The default function to call
         std::function<void(Message&)> default_callback;

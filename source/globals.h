@@ -1,6 +1,9 @@
 #ifndef SHIPZ_GLOBALS_H
 #define SHIPZ_GLOBALS_H
 
+#include <SDL3/SDL.h>
+#include "types.h"
+
 extern SDL_Window * sdlWindow;
 extern SDL_Renderer *sdlRenderer;
 
@@ -20,8 +23,6 @@ extern float look_sin[360],
        deltatime,
        lastsendtime;
  
-
-extern Bullet bullets[NUMBEROFBULLETS];
  
 extern Explosion explosions[NUMBEROFEXPLOSIONS];
 #endif 

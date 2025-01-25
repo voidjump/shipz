@@ -2,11 +2,10 @@
 #define SHIPZ_RENDERABLE_H
 
 class Renderable {
-    // TODO:
-
     public:
+    virtual ~Renderable() = default;
     // Draw this renderable
-    virtual void Draw();
+    virtual void Draw() = 0;
 };
 
 #endif

@@ -4,10 +4,6 @@
 #include "event.h"
 
 
-// Destructor
-Message::~Message() {
-}
-
 // Serialize based on message type
 bool Message::Serialize(Buffer &buffer) {
 

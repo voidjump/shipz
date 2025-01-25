@@ -15,7 +15,10 @@ class Base : public Object, public Renderable {
 		int y;
 		int health;
 
-		Base(SyncObjectSpawn * sync) : Object(sync->id, OBJECT_TYPE::ROCKET);
+		static std::vector<Base*> all_bases;
+
+		Base(uint16_t owner, uint16_t x, uint32_t y);
+		Base(SyncObjectSpawn * sync);
 
 		void Sync(SyncObjectUpdate *sync);
 		void Draw();

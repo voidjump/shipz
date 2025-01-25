@@ -10,7 +10,7 @@
 /// @param timeout max seconds to take
 /// @return whether resolved successfully
 bool Socket::ResolveHostname(const char *connect_address,
-                             SDLNet_Address *resolve_target, uint timeout = 5) {
+                             SDLNet_Address *resolve_target, uint timeout) {
     resolve_target = SDLNet_ResolveHostname(connect_address);
     if (resolve_target == NULL) {
         goto fail;

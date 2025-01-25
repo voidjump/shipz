@@ -58,8 +58,7 @@ int main(int argc, char *argv[]) {
             server.Run();
         } else {
             InitVid();
-            // TODO: make listen port customizable
-            Client client(server_ip, client_nick, PORT_CLIENT);
+            Client client(server_ip, client_nick, PORT_CLIENT, PORT_SERVER);
             client.Init();
             client.Run();
         }

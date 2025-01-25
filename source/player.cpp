@@ -15,6 +15,9 @@
 #include "level.h"
 #include "log.h"
 
+// all instances
+std::map<Uint16, Player*> Player::instances;
+
 Player::Player(uint16_t id) {
 	this->client_id = id;
 	instances[this->client_id] = this;
@@ -73,14 +76,14 @@ void Player::HandleUpdate(SyncPlayerState *sync) {
 		}
 		if (temp_status == PLAYER_STATUS::LANDEDRESPAWN && this->status == PLAYER_STATUS::RESPAWN) {
 			log::debug("server said we could respawn!");
-			int tmpbs = FindRespawnBase(this->team);
+			Base * tmpbs = FindRespawnBase(this->team);
 
 			// Base found, reset the player's speed etc.
 			this->Respawn();
 			this->Update();
 			// mount /dev/player /mnt/Base
-			this->x = bases[tmpbs].x;
-			this->y = bases[tmpbs].y - 26;
+			this->x = tmpbs->x;
+			this->y = tmpbs->y - 26;
 
 			this->status = PLAYER_STATUS::LANDEDRESPAWN;
 		}
@@ -98,9 +101,9 @@ void Player::HandleUpdate(SyncPlayerState *sync) {
 		}
 		if (temp_status == PLAYER_STATUS::LANDEDBASE && this->status == PLAYER_STATUS::FLYING) {
 			log::debug("we have landed on a base!");
-			int tmpbase = GetNearestBase(int(this->x), int(this->y));
+			Base *tmpbase = GetNearestBase(int(this->x), int(this->y));
 
-			this->y = bases[tmpbase].y - 26;
+			this->y = tmpbase->y - 26;
 			this->angle = 0;
 			this->shipframe = 0;
 			this->status = PLAYER_STATUS::LANDEDBASE;
@@ -348,111 +351,112 @@ bool PlayerCollideWithLevel( Player * play, bool ** levelcolmap )
 
 int PlayerCollideWithBullet( Player * play, int playernum, Player * players )
 {
-	// this function checks whether a player has collided with a bullet.
-	// if so, it returns the bullet number. if not it returns -1.
+	// TODO: Reimplement for Objects
+	// // this function checks whether a player has collided with a bullet.
+	// // if so, it returns the bullet number. if not it returns -1.
 
-	// NOTE: a better approach maybe would be to do the bullet tagging in this function, so when 2 bullets hit a ship
-	// at the same time they both get erased. do this later (!)
+	// // NOTE: a better approach maybe would be to do the bullet tagging in this function, so when 2 bullets hit a ship
+	// // at the same time they both get erased. do this later (!)
 	
-	int cb = 0;
-	for( cb = 0; cb < NUMBEROFBULLETS; cb++ )
-	{
-		if( players[ bullets[cb].owner - 1 ].team != players[ playernum - 1 ].team )
-		{
-			if( bullets[cb].type == WEAPON_ROCKET || bullets[cb].type == WEAPON_BULLET)
-			{
-				// first check if the bullet even is in the ships clipping rectangle, this saves time.
-				if( bullets[cb].x > ( play->x - 1 ) && bullets[cb].x < ( play->x + 29 ) 
-				&& bullets[cb].y > ( play->y - 1 ) && bullets[cb].y < ( play->y + 29 ))
-				{
-					// the bullet seems to be in the ships clipping rectangle,
-					// check for pixel-precise collisions..
-					// calculate the distance between bullet and ship so we can see how far
-					// the bullet has entered the ships 'domain'
-					int dx = int( bullets[cb].x - play->x );
-					int dy = int( bullets[cb].y - play->y );
-					if( dx > 0 && dx < 28 && dy > 0 && dy < 28 )
-					{
-						if( shipcolmap[ dx ][ dy ] )
-						{
-							return cb;	
-						}
-						if( dx < 27 )	// if we don't do this might get a segsev
-						{
-							if( shipcolmap[play->shipframe][ dx + 1 ][ dy ] )
-							{
-								// return the bullet number, so the main function can use
-								// it to tag the bullet etc. same for the next 2 returns.
-								return cb;
-							}
-						}
-						if( dy < 27 )	// same here..
-						{
-							if( shipcolmap[play->shipframe][ dx ][ dy + 1 ] )
-							{
-								return cb;
-							}
-						}
-						if( dy < 27 && dx < 27 ) // and here..
-						{
-							if( shipcolmap[play->shipframe][ dx + 1 ][ dy + 1 ] )
-							{
-								return cb;
-							}
-						}
-					}
-				}
-			}
-		}
-		if( bullets[cb].type == WEAPON_MINE )
-		{
-			int dx = int( bullets[cb].x - play->x );
-			int dy = int( bullets[cb].y - play->y );
-			if( sqrt( dx*dx + dy*dy ) < MINEDETONATERADIUS && 
-					SDL_GetTicks() - bullets[cb].minelaidtime > MINEACTIVATIONTIME )
-			{
-				return cb;
-			}
-		}
-	}
-	// if this point is reached, no bullet has collided with the players' ship, so apparently he is safe..
-	// FOR NOW!!! NEXT TIME GADGET! NEXT TIME!!!!!!!!!!
+	// int cb = 0;
+	// for( cb = 0; cb < NUMBEROFBULLETS; cb++ )
+	// {
+	// 	if( players[ bullets[cb].owner - 1 ].team != players[ playernum - 1 ].team )
+	// 	{
+	// 		if( bullets[cb].type == WEAPON_ROCKET || bullets[cb].type == WEAPON_BULLET)
+	// 		{
+	// 			// first check if the bullet even is in the ships clipping rectangle, this saves time.
+	// 			if( bullets[cb].x > ( play->x - 1 ) && bullets[cb].x < ( play->x + 29 ) 
+	// 			&& bullets[cb].y > ( play->y - 1 ) && bullets[cb].y < ( play->y + 29 ))
+	// 			{
+	// 				// the bullet seems to be in the ships clipping rectangle,
+	// 				// check for pixel-precise collisions..
+	// 				// calculate the distance between bullet and ship so we can see how far
+	// 				// the bullet has entered the ships 'domain'
+	// 				int dx = int( bullets[cb].x - play->x );
+	// 				int dy = int( bullets[cb].y - play->y );
+	// 				if( dx > 0 && dx < 28 && dy > 0 && dy < 28 )
+	// 				{
+	// 					if( shipcolmap[ dx ][ dy ] )
+	// 					{
+	// 						return cb;	
+	// 					}
+	// 					if( dx < 27 )	// if we don't do this might get a segsev
+	// 					{
+	// 						if( shipcolmap[play->shipframe][ dx + 1 ][ dy ] )
+	// 						{
+	// 							// return the bullet number, so the main function can use
+	// 							// it to tag the bullet etc. same for the next 2 returns.
+	// 							return cb;
+	// 						}
+	// 					}
+	// 					if( dy < 27 )	// same here..
+	// 					{
+	// 						if( shipcolmap[play->shipframe][ dx ][ dy + 1 ] )
+	// 						{
+	// 							return cb;
+	// 						}
+	// 					}
+	// 					if( dy < 27 && dx < 27 ) // and here..
+	// 					{
+	// 						if( shipcolmap[play->shipframe][ dx + 1 ][ dy + 1 ] )
+	// 						{
+	// 							return cb;
+	// 						}
+	// 					}
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+	// 	if( bullets[cb].type == WEAPON_MINE )
+	// 	{
+	// 		int dx = int( bullets[cb].x - play->x );
+	// 		int dy = int( bullets[cb].y - play->y );
+	// 		if( sqrt( dx*dx + dy*dy ) < MINEDETONATERADIUS && 
+	// 				SDL_GetTicks() - bullets[cb].minelaidtime > MINEACTIVATIONTIME )
+	// 		{
+	// 			return cb;
+	// 		}
+	// 	}
+	// }
+	// // if this point is reached, no bullet has collided with the players' ship, so apparently he is safe..
+	// // FOR NOW!!! NEXT TIME GADGET! NEXT TIME!!!!!!!!!!
 	return -1; // return no bullet collide signal.
 }
 
 int PlayerCollideWithBase( Player * play )
 {
-	// returns the number of the Base that is touching, if no Base is touching, returns -1
-	int i;
-	for( i = 0; i < lvl.m_num_bases; i++ )
-	{
-		if( int( play->y ) < bases[i].y-33 ||
-		    int( play->y ) > bases[i].y+17 ||
-		    int( play->x ) < bases[i].x-37 ||
-		    int( play->x ) > bases[i].x+37 )
-		{
-			// player isn't touching Base for sure
-		}
-		else
-		{
-			// there is a chance player is touching Base
-			for( int a =0 ; a < 28 ; a++ )
-			{
-				for( int b = 0; b < 28; b++)
-				{
-					if( int(play->x)+a-14 > bases[i].x - 21 && int(play->x)+a-14 < bases[i].x + 22 &&
-					    int(play->y)+b-14 > bases[i].y - 18 && int(play->y)+b-14 < bases[i].y - 7 && 
-						shipcolmap[play->shipframe][a][b] )
-					{
-						//player collided with level
-						return i; // return the number of the Base.
-					}	
-				}
-			}
-		}
+	// // returns the number of the Base that is touching, if no Base is touching, returns -1
+	// int i;
+	// for( i = 0; i < lvl.m_num_bases; i++ )
+	// {
+	// 	if( int( play->y ) < bases[i].y-33 ||
+	// 	    int( play->y ) > bases[i].y+17 ||
+	// 	    int( play->x ) < bases[i].x-37 ||
+	// 	    int( play->x ) > bases[i].x+37 )
+	// 	{
+	// 		// player isn't touching Base for sure
+	// 	}
+	// 	else
+	// 	{
+	// 		// there is a chance player is touching Base
+	// 		for( int a =0 ; a < 28 ; a++ )
+	// 		{
+	// 			for( int b = 0; b < 28; b++)
+	// 			{
+	// 				if( int(play->x)+a-14 > bases[i].x - 21 && int(play->x)+a-14 < bases[i].x + 22 &&
+	// 				    int(play->y)+b-14 > bases[i].y - 18 && int(play->y)+b-14 < bases[i].y - 7 && 
+	// 					shipcolmap[play->shipframe][a][b] )
+	// 				{
+	// 					//player collided with level
+	// 					return i; // return the number of the Base.
+	// 				}	
+	// 			}
+	// 		}
+	// 	}
 		
-	}
-	// for comment see previous function
+	// }
+	// // for comment see previous function
 	return -1;
 }
 
@@ -511,30 +515,31 @@ Player* GetNearestEnemyPlayer( int x, int y ,int team ) {
 
 int GetNearestEnemyPlayer( Player * plyrs, int x, int y, int pteam )
 {
-	// returns a number to the enemy player nearest to x,y
-	int i; // loop thingy
-	int tdx, tdy; // temp dist
-	float dist = 1000000; // dist to nearest player, arbitrarily set very high.
-	float tdist; // temp value for calc of dist.
-	int plr=-2; // the nearest player so far
+	// // returns a number to the enemy player nearest to x,y
+	// int i; // loop thingy
+	// int tdx, tdy; // temp dist
+	// float dist = 1000000; // dist to nearest player, arbitrarily set very high.
+	// float tdist; // temp value for calc of dist.
+	// int plr=-2; // the nearest player so far
 
-	for( i = 0; i < MAXPLAYERS; i++ )
-	{
-		if( plyrs[i].playing && plyrs[i].status == PLAYER_STATUS::FLYING  )
-		{
-			tdx = int(x - plyrs[i].x);
-			tdy = int(y - plyrs[i].y);
+	// for( i = 0; i < MAXPLAYERS; i++ )
+	// {
+	// 	if( plyrs[i].playing && plyrs[i].status == PLAYER_STATUS::FLYING  )
+	// 	{
+	// 		tdx = int(x - plyrs[i].x);
+	// 		tdy = int(y - plyrs[i].y);
 			
-			tdist = sqrt(( tdx * tdx ) + ( tdy * tdy ));
-			if( tdist < dist && plyrs[i].team != pteam )
-			{
-				dist = tdist;
-				plr = i;
-			}
+	// 		tdist = sqrt(( tdx * tdx ) + ( tdy * tdy ));
+	// 		if( tdist < dist && plyrs[i].team != pteam )
+	// 		{
+	// 			dist = tdist;
+	// 			plr = i;
+	// 		}
 			
-		}
-	}
-	return plr+1;
+	// 	}
+	// }
+	// return plr+1;
+	return 0;
 
 }
 
@@ -542,121 +547,89 @@ int GetNearestEnemyPlayer( Player * plyrs, int x, int y, int pteam )
 void CheckBulletCollides( bool ** colmap )
 {
 	// checks if any active bullets have collided with the level, and, if they have, tags them.
-	int i;
-	for( i = 0; i < NUMBEROFBULLETS; i++ )
-	{
-		if( bullets[i].active == true )
-		{
-			if( bullets[i].type == WEAPON_BULLET || bullets[i].type == WEAPON_ROCKET )
-			{
-				if( bullets[i].x > (lvl.m_width - 1) || bullets[i].x < 0 )
-				{
-					// std::cout << "bullet collided x" << std::endl;
-					bullets[i].collide = true;
-					continue;
-				}
-				if( bullets[i].y > (lvl.m_height - 1) || bullets[i]. y < 0 )
-				{
-					// std::cout << "bullet collided y" << std::endl;
-					bullets[i].collide = true;
-					continue;
-				}
-				if( colmap[ int( bullets[i].x ) ][ int( bullets[i].y ) ] == true )
-				{
-					// std::cout << "bullet " << i << " collided colmap" << std::endl;
-					// std::cout << bullets[i].x << " " << bullets[i].y << std::endl;
-					// std::cout << int(bullets[i].x) << " " << int(bullets[i].y) << std::endl;
-					bullets[i].collide = true;
-					continue;
-				}
-				if( colmap[ int( bullets[i].x ) + 1 ][ int( bullets[i].y ) ] == true )
-				{
-					// std::cout << "bullet collided colmap 2" << std::endl;
-					bullets[i].collide = true;
-					continue;
-				}
-				if( colmap[ int( bullets[i].x ) ][ int( bullets[i].y ) + 1 ] == true )
-				{
-					// std::cout << "bullet collided colmap 3" << std::endl;
-					bullets[i].collide = true;
-					continue;
-				}
-				if( colmap[ int( bullets[i].x ) + 1 ][ int( bullets[i].y ) + 1 ] == true )
-				{
-					// std::cout << "bullet collided colmap 4" << std::endl;
-					bullets[i].collide = true;
-					continue;
-				}
-			}
-			if( bullets[i].type == WEAPON_MINE )
-			{
-				if( SDL_GetTicks() - bullets[i].minelaidtime > MINELIFETIME )
-				{
-					bullets[i].collide = true;
-				}
-			}
-		}
-	}
+	// int i;
+	// for( i = 0; i < NUMBEROFBULLETS; i++ )
+	// {
+	// 	if( bullets[i].active == true )
+	// 	{
+	// 		if( bullets[i].type == WEAPON_BULLET || bullets[i].type == WEAPON_ROCKET )
+	// 		{
+	// 			if( bullets[i].x > (lvl.m_width - 1) || bullets[i].x < 0 )
+	// 			{
+	// 				// std::cout << "bullet collided x" << std::endl;
+	// 				bullets[i].collide = true;
+	// 				continue;
+	// 			}
+	// 			if( bullets[i].y > (lvl.m_height - 1) || bullets[i]. y < 0 )
+	// 			{
+	// 				// std::cout << "bullet collided y" << std::endl;
+	// 				bullets[i].collide = true;
+	// 				continue;
+	// 			}
+	// 			if( colmap[ int( bullets[i].x ) ][ int( bullets[i].y ) ] == true )
+	// 			{
+	// 				// std::cout << "bullet " << i << " collided colmap" << std::endl;
+	// 				// std::cout << bullets[i].x << " " << bullets[i].y << std::endl;
+	// 				// std::cout << int(bullets[i].x) << " " << int(bullets[i].y) << std::endl;
+	// 				bullets[i].collide = true;
+	// 				continue;
+	// 			}
+	// 			if( colmap[ int( bullets[i].x ) + 1 ][ int( bullets[i].y ) ] == true )
+	// 			{
+	// 				// std::cout << "bullet collided colmap 2" << std::endl;
+	// 				bullets[i].collide = true;
+	// 				continue;
+	// 			}
+	// 			if( colmap[ int( bullets[i].x ) ][ int( bullets[i].y ) + 1 ] == true )
+	// 			{
+	// 				// std::cout << "bullet collided colmap 3" << std::endl;
+	// 				bullets[i].collide = true;
+	// 				continue;
+	// 			}
+	// 			if( colmap[ int( bullets[i].x ) + 1 ][ int( bullets[i].y ) + 1 ] == true )
+	// 			{
+	// 				// std::cout << "bullet collided colmap 4" << std::endl;
+	// 				bullets[i].collide = true;
+	// 				continue;
+	// 			}
+	// 		}
+	// 		if( bullets[i].type == WEAPON_MINE )
+	// 		{
+	// 			if( SDL_GetTicks() - bullets[i].minelaidtime > MINELIFETIME )
+	// 			{
+	// 				bullets[i].collide = true;
+	// 			}
+	// 		}
+	// 	}
+	// }
 }
 
-int FindRespawnBase( int rspwnteam )
+Base * FindRespawnBase( int rspwnteam )
 {
 	int i, rndint, tmpctr=0;
+	Base * chosen = NULL;
 	srand(SDL_GetTicks());
-	if( rspwnteam == BLUE )
-	{
+
+	// Select a random index
+	if( rspwnteam == SHIPZ_TEAM::BLUE )
 		rndint = int(rand())%int(blue_team.bases) + 1;
-		for( i = 0; i < MAXBASES; i++ )
-		{
-			if( bases[i].used )
-			{
-				if( bases[i].owner == BLUE )
-				{	
-					tmpctr++;
-					if( tmpctr == rndint )
-					{
-						return i;
-					}
-				}
-			}
-		}
-	}
-	if( rspwnteam == SHIPZ_TEAM::RED )
-	{
+	else
 		rndint = int(rand())%int(red_team.bases) + 1;
-		for( i = 0; i < MAXBASES; i++ )
-		{
-			if( bases[i].used )
+
+
+	// Find the index-th base of this team
+	for( auto base : Base::all_bases ) {
+		if( base->owner == rspwnteam)
+		{	
+			tmpctr++;
+			if( tmpctr == rndint )
 			{
-				if( bases[i].owner == SHIPZ_TEAM::RED )
-				{	
-					tmpctr++;
-					if( tmpctr == rndint )
-					{
-						return i;
-					}
-				}
+				return base;
 			}
 		}
-			
 	}
 	// if the function arrives here, something is definately wrong...
-	return -1;
-}
-
-void CleanBullet( int num )
-{
-	// cleans up a bullet, so it can be used again
-	bullets[num].active = false;
-	bullets[num].owner = 0;
-	bullets[num].collide = false;
-	bullets[num].type = 0;
-	bullets[num].x = 0;
-	bullets[num].y = 0;
-	bullets[num].vx = 0;
-	bullets[num].vy = 0;
-	bullets[num].angle = 0;
-	bullets[num].minelaidtime = 0;
+	return NULL;
 }
 
 // Draw a player
