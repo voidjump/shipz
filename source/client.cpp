@@ -93,6 +93,7 @@ bool Client::Connect() {
     // Create a request
     Packet pack;
     RequestGetServerInfo request(SHIPZ_VERSION);
+    log::debug("version:", (int)request.version);
     pack.Append(request);
 
     log::info("querying server status..");

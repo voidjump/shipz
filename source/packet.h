@@ -8,6 +8,7 @@
 
 #include "message.h"
 #include "net.h"
+#include "log.h"
 
 #define AES_BLOCKSIZE 16
 
@@ -33,6 +34,8 @@ class Packet : public Buffer {
         } else {
             message.Serialize(dynamic_cast<Buffer*>(this));   // Use . for non-pointers
         }
+
+        log::debug("pack.Append: ", this->AsHexString());
     }
 
     // Read messages from buffer

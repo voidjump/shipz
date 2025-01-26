@@ -84,7 +84,7 @@ bool Socket::Poll() {
 
     if (recv->buflen == 0) {
         log::debug("received packet is empty");
-        SDLNet_DestroyDatagram(in);
+        SDLNet_DestroyDatagram(recv);
         return false;
     }
 
@@ -98,8 +98,8 @@ bool Socket::Poll() {
         SDLNet_RefAddress(recv->addr);
         result = true;
     }
-    in_queue.Push(std::make_unique<Packet>(std::move(pack)));
     log::debug("Received buffer:", pack.AsHexString());
+    in_queue.Push(std::make_unique<Packet>(std::move(pack)));
 
     SDLNet_DestroyDatagram(recv);
     return !in_queue.Empty();

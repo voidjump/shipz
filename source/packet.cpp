@@ -1,6 +1,7 @@
 #include <random>
 #include "packet.h"
 #include "AES.h"
+#include "log.h"
 
 AES aes_g(AESKeyLength::AES_256); 
 std::random_device rand_dev_g;
@@ -33,6 +34,7 @@ SDLNet_Address * MessageHandler::CurrentOrigin() {
 
 // Handle all messages in a packet
 void MessageHandler::HandlePacket(Packet &pack) {
+    log::debug("handling packet");
     auto messages = pack.Read();
     this->current_origin = pack.origin;
     for (Message &msg : messages) {
@@ -51,7 +53,9 @@ void MessageHandler::HandlePacket(Packet &pack) {
 
 // Delete the packet
 Packet::~Packet() {
-    SDLNet_UnrefAddress(this->origin);
+    log::debug("packet destroyed");
+    // TODO: Find out why this doesn't work 
+    // if(this->origin) SDLNet_UnrefAddress(this->origin);
 }
 
 // Return a list of messages

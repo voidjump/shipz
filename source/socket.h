@@ -36,7 +36,6 @@ class PacketQueue {
 
 class Socket {
    private:
-    SDLNet_Datagram *in;
     SDLNet_DatagramSocket *udpsock;
     Uint16 listen_port;
     PacketQueue in_queue;

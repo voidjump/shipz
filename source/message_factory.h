@@ -62,7 +62,7 @@
 #define MESSAGE_FIELD_DECLARATION(type, name) type##_TYPE name;
 
 // Field handler that expands field definition into parameter type list;
-#define MESSAGE_FIELD_ARGUMENT_LIST(type, name) ,type##_TYPE
+#define MESSAGE_FIELD_ARGUMENT_LIST(type, name) ,type##_TYPE name
 
 // Field handler that expands field definition into parameter name list;
 #define MESSAGE_FIELD_ARGUMENT_NAME_LIST(type, name) ,name

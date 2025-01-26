@@ -12,7 +12,7 @@ bool Message::Serialize(Buffer &buffer) {
             return static_cast<Event*>(this)->Serialize(&buffer);
             break;
         default:
-            std::cout << "debug: Unknown event type" << std::endl;
+            std::cout << "debug: Cannot Serialize: unknown event type" << std::endl;
             return false;
     }
     return true;
@@ -32,7 +32,7 @@ Message* Message::Deserialize(Buffer &buffer) {
             message = (Message *)Event::Deserialize(&buffer);
             break;
         default:
-            std::cout << "debug: Unknown event type" << std::endl;
+            std::cout << "debug: Cannot Deserialize: Unknown event type" << std::endl;
             return NULL;
     }
     return message;
