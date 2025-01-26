@@ -71,17 +71,18 @@ bool Socket::Send(Buffer &buffer, SDLNet_Address *address, Uint16 port) {
 /// @return whether any packets are waiting in queue
 bool Socket::Poll() {
     bool result = false;
+    SDLNet_Datagram * recv;
 
     if (!this->udpsock) {
         log::error("socket is not initialized!");
         return false;
     }
-    if (!SDLNet_ReceiveDatagram(udpsock, &in) || in == NULL) {
+    if (!SDLNet_ReceiveDatagram(udpsock, &recv) || recv == NULL) {
         // did not receive packet or it is invalid
         return false;
     }
 
-    if (in->buflen == 0) {
+    if (recv->buflen == 0) {
         log::debug("received packet is empty");
         SDLNet_DestroyDatagram(in);
         return false;
@@ -89,26 +90,24 @@ bool Socket::Poll() {
 
     // import packet to new packet
     Packet pack;
-    if (!pack.ImportBytes(in->buf, in->buflen)) {
+    if (!pack.ImportBytes(recv->buf, recv->buflen)) {
         log::error("failed to import packet to buffer");
         result = false;
     } else {
-        pack.origin = in->addr;
-        SDLNet_RefAddress(in->addr);
+        pack.origin = recv->addr;
+        SDLNet_RefAddress(recv->addr);
         result = true;
     }
     in_queue.Push(std::make_unique<Packet>(std::move(pack)));
     log::debug("Received buffer:", pack.AsHexString());
 
-    SDLNet_DestroyDatagram(in);
+    SDLNet_DestroyDatagram(recv);
     return !in_queue.Empty();
 }
 
 /// @brief Construct a socket
 /// @param listen_port the port to listen on
 Socket::Socket(Uint16 listen_port) {
-    this->listen_port = listen_port;
-
     this->listen_port = listen_port;
     this->udpsock = SDLNet_CreateDatagramSocket(NULL, this->listen_port);
 

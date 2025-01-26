@@ -73,7 +73,7 @@ void Server::GameLoop() {
 
 // Handle an unknown message
 void Server::HandleUnknownMessage(Message &msg) {
-    log::debug("received unknown message type:", msg.GetMessageType());
+    log::debug("received unknown message type:", static_cast<int>(msg.GetMessageType()));
     // TODO: Should we output the content of the message?
 }
 
