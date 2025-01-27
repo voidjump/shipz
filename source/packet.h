@@ -39,7 +39,7 @@ class Packet : public Buffer {
     }
 
     // Read messages from buffer
-    std::list<Message> Read();
+    std::list<Message*> Read();
 
     ~Packet();
 
@@ -53,20 +53,20 @@ class Packet : public Buffer {
 class MessageHandler {
     private:
         // Registry of functions
-        std::map<Uint16, std::function<void(Message&)>> registry;
+        std::map<Uint16, std::function<void(Message*)>> registry;
 
         // The default function to call
-        std::function<void(Message&)> default_callback;
+        std::function<void(Message*)> default_callback;
 
         // Holds the origin address when handling packets
         SDLNet_Address * current_origin;
 
     public:
         // Register a callback function
-        void RegisterHandler(std::function<void(Message&)> callback, Uint16 msg_sub_type);
+        void RegisterHandler(std::function<void(Message*)> callback, Uint16 msg_sub_type);
 
         // Register a default callback function
-        void RegisterDefault(std::function<void(Message&)> callback);
+        void RegisterDefault(std::function<void(Message*)> callback);
 
         // Delete a packet handler
         void DeleteHandler(Uint16 msg_sub_type);

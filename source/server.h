@@ -29,10 +29,10 @@ class Server {
         // Start server
         Server(std::string level_name, uint16_t port);
         ~Server();
-        void HandleUnknownMessage(Message &msg);
+        void HandleUnknownMessage(Message *msg);
         void SetupCallbacks();
-        void HandleJoin(Message &msg);
-        void HandleInfo(Message &msg);
+        void HandleJoin(Message *msg);
+        void HandleInfo(Message *msg);
 
         void Run();
         void Init();

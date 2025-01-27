@@ -43,19 +43,19 @@ Message* Message::Deserialize(Buffer &buffer) {
     switch(GetMessageTypeFromHeader(buffer.Peek8())) {
         case MessageType::EVENT:
             log::debug("reading EVENT");
-            message = (Message *)Event::Deserialize(&buffer);
+            message = Event::Deserialize(&buffer);
             break;
         case MessageType::REQUEST:
             log::debug("reading REQUEST");
-            message = (Message *)Request::Deserialize(&buffer);
+            message = Request::Deserialize(&buffer);
             break;
         case MessageType::RESPONSE:
             log::debug("reading RESPONSE");
-            message = (Message *)Response::Deserialize(&buffer);
+            message = Response::Deserialize(&buffer);
             break;
         case MessageType::SYNC:
             log::debug("reading SYNC");
-            message = (Message *)Sync::Deserialize(&buffer);
+            message = Sync::Deserialize(&buffer);
             break;
         default:
             std::cout << "debug: Cannot Deserialize: Unknown message type" << std::endl;

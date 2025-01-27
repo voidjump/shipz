@@ -8,12 +8,12 @@ std::random_device rand_dev_g;
 
 
 // Register a callback function
-void MessageHandler::RegisterHandler(std::function<void(Message&)> callback, Uint16 msg_sub_type) {
+void MessageHandler::RegisterHandler(std::function<void(Message*)> callback, Uint16 msg_sub_type) {
     this->registry[msg_sub_type] = callback;
 }
 
 // Register a default callback function
-void MessageHandler::RegisterDefault(std::function<void(Message&)> callback) {
+void MessageHandler::RegisterDefault(std::function<void(Message*)> callback) {
     this->default_callback = callback;
 }
 
@@ -37,8 +37,8 @@ void MessageHandler::HandlePacket(Packet &pack) {
     log::debug("handling packet");
     auto messages = pack.Read();
     this->current_origin = pack.origin;
-    for (Message &msg : messages) {
-        Uint16 msg_type = msg.GetMessageSubType();
+    for (Message *msg : messages) {
+        Uint16 msg_type = msg->GetMessageSubType();
         // Check if the registry contains a handler for this message type
         if(this->registry.count(msg_type) == 0) {
             log::debug("handler not registered");
@@ -61,15 +61,15 @@ Packet::~Packet() {
 }
 
 // Return a list of messages
-std::list<Message> Packet::Read() {
-    std::list<Message> messages;
+std::list<Message*> Packet::Read() {
+    std::list<Message*> messages;
     this->Seek(0);
     while(true) {
         Message * msg = Message::Deserialize(static_cast<Buffer&>(*this));
         if( msg == NULL) {
             break;
         }
-        messages.push_back(*msg);
+        messages.push_back(msg);
     }
     log::debug("read ", messages.size(), " messages");
     return messages;

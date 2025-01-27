@@ -138,8 +138,8 @@
         /* Consume header */                                                                     \
         buffer->Read8();                                                                         \
         /* Deserialize fields */                                                                 \
-        FIELDS_##CLASS_NAME(DESERIALIZE_FIELDS_FROM_BUFFER) return new EXPAND_CONCAT(            \
-            BASE_CLASS_NAME, CLASS_NAME)(EXPAND_AND_REMOVE_FIRST(FIELDS_##CLASS_NAME(MESSAGE_FIELD_ARGUMENT_NAME_LIST))); \
+        FIELDS_##CLASS_NAME(DESERIALIZE_FIELDS_FROM_BUFFER) return dynamic_cast<BASE_CLASS_NAME*>( new EXPAND_CONCAT(            \
+            BASE_CLASS_NAME, CLASS_NAME)(EXPAND_AND_REMOVE_FIRST(FIELDS_##CLASS_NAME(MESSAGE_FIELD_ARGUMENT_NAME_LIST)))); \
     }
 
 // Implement Deserialization from base class

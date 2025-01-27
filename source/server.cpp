@@ -28,7 +28,7 @@ void Server::Run() {
 // Initialize the server
 void Server::Init() {
     handler.RegisterDefault(
-        std::function<void(Message&)>(
+        std::function<void(Message*)>(
             std::bind(&Server::HandleUnknownMessage, this, std::placeholders::_1)
         )
     );
@@ -73,23 +73,19 @@ void Server::GameLoop() {
 ///////////////////////////////////////////////////////////////////////////////
 
 // Handle an unknown message
-void Server::HandleUnknownMessage(Message &msg) {
-    log::debug("received unknown message type:", static_cast<int>(msg.GetMessageType()));
+void Server::HandleUnknownMessage(Message *msg) {
+    log::debug("received unknown message type:", static_cast<int>(msg->GetMessageType()));
     // TODO: Should we output the content of the message?
 }
 
 // A player wants to join 
-void Server::HandleJoin(Message &msg) {
-    auto join = msg.As<EventPlayerJoins>(); 
+void Server::HandleJoin(Message *msg) {
+    auto join = msg->As<EventPlayerJoins>(); 
 }
 
 // A player wants to join 
-void Server::HandleInfo(Message &msg) {
-    auto info = msg.As<RequestGetServerInfo>(); 
-    std::cout << typeid(msg).name() << std::endl;
-    std::cout << "addr" << std::endl;
-    std::cout << info << std::endl;
-    std::cout << "addr" << std::endl;
+void Server::HandleInfo(Message *msg) {
+    auto info = msg->As<RequestGetServerInfo>(); 
     int foo = info->version;
     // log::debug("client version ", (int)info->version, " requested information");
 
@@ -108,7 +104,7 @@ void Server::HandleInfo(Message &msg) {
 // Setup message handling callbacks
 void Server::SetupCallbacks() {
     this->handler.RegisterHandler(
-        std::function<void(Message&)>(
+        std::function<void(Message*)>(
             std::bind(&Server::HandleInfo, this, std::placeholders::_1)
         ),
         SERVER_INFO

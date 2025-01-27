@@ -50,7 +50,7 @@ void Client::Run() {
 void Client::Init() {
     // Explicitly wrap std::bind with std::function
     this->handler.RegisterDefault(
-        std::function<void(Message&)>(
+        std::function<void(Message*)>(
             std::bind(&Client::HandleUnknownMessage, this, std::placeholders::_1)
         )
     );
@@ -104,10 +104,10 @@ bool Client::Connect() {
         if (socket.Poll()) {
             auto recieved_packet = socket.GetPacket();
             auto messages = recieved_packet->Read();
-            for (Message &msg : messages) {
-                if (msg.IsTypes(MessageType::RESPONSE, SERVER_INFO)) {
+            for (Message *msg : messages) {
+                if (msg->IsTypes(MessageType::RESPONSE, SERVER_INFO)) {
                     log::info("@ server responded...");
-                    ResponseServerInformation *info = static_cast<ResponseServerInformation *>(&msg);
+                    ResponseServerInformation *info = msg->As<ResponseServerInformation>();
 
                     if (info->shipz_version != SHIPZ_VERSION) {
                         log::error("server is running shipz version:", info->shipz_version);
@@ -144,19 +144,19 @@ bool Client::Join() {
         if (socket.Poll()) {
             auto recieved_packet = socket.GetPacket();
             auto messages = recieved_packet->Read();
-            for (Message &msg : messages) {
-                if (msg.IsTypes(MessageType::RESPONSE, ACCEPT_JOIN)) {
+            for (Message *msg : messages) {
+                if (msg->IsTypes(MessageType::RESPONSE, ACCEPT_JOIN)) {
                     log::info("@ join accepted...");
-                    auto info = msg.As<ResponseAcceptJoin>();
+                    auto info = msg->As<ResponseAcceptJoin>();
                     self = new Player(info->client_id);
                     self->name = name;
                     self->self_sustaining = false;
                     this->players.push_back(self);
                     accepted = true;
                 }
-                if (msg.IsTypes(MessageType::RESPONSE, PLAYER_INFO)) {
+                if (msg->IsTypes(MessageType::RESPONSE, PLAYER_INFO)) {
                     log::info("@ player info");
-                    auto info = msg.As<ResponsePlayerInformation>();
+                    auto info = msg->As<ResponsePlayerInformation>();
                     auto player = new Player(info->client_id);
                     player->team = info->team;
                     player->name = info->player_name;
@@ -277,55 +277,55 @@ void Client::Tick() {
 // Set all callbacks used during the game loop
 void Client::SetupCallbacks() {
     this->handler.RegisterHandler(
-        std::function<void(Message&)>(
+        std::function<void(Message*)>(
             std::bind(&Client::HandleKicked, this, std::placeholders::_1)
         ),
         PLAYER_KICKED
     );
     this->handler.RegisterHandler(
-        std::function<void(Message&)>(
+        std::function<void(Message*)>(
             std::bind(&Client::HandlePlayerJoins, this, std::placeholders::_1)
         ),
         PLAYER_JOINS
     );
     this->handler.RegisterHandler(
-        std::function<void(Message&)>(
+        std::function<void(Message*)>(
             std::bind(&Client::HandlePlayerLeaves, this, std::placeholders::_1)
         ),
         PLAYER_LEAVES
     );
     this->handler.RegisterHandler(
-        std::function<void(Message&)>(
+        std::function<void(Message*)>(
             std::bind(&Client::HandleChat, this, std::placeholders::_1)
         ),
         CHAT_ALL
     );
     this->handler.RegisterHandler(
-        std::function<void(Message&)>(
+        std::function<void(Message*)>(
             std::bind(&Client::HandleObjectSpawn, this, std::placeholders::_1)
         ),
         OBJECT_SPAWN
     );
     this->handler.RegisterHandler(
-        std::function<void(Message&)>(
+        std::function<void(Message*)>(
             std::bind(&Client::HandleObjectUpdate, this, std::placeholders::_1)
         ),
         OBJECT_UPDATE
     );
     this->handler.RegisterHandler(
-        std::function<void(Message&)>(
+        std::function<void(Message*)>(
             std::bind(&Client::HandleObjectDestroy, this, std::placeholders::_1)
         ),
         OBJECT_DESTROY
     );
     this->handler.RegisterHandler(
-        std::function<void(Message&)>(
+        std::function<void(Message*)>(
             std::bind(&Client::HandlePlayerState, this, std::placeholders::_1)
         ),
         PLAYER_STATE
     );
     this->handler.RegisterHandler(
-        std::function<void(Message&)>(
+        std::function<void(Message*)>(
             std::bind(&Client::HandleTeamStates, this, std::placeholders::_1)
         ),
         TEAM_STATES
@@ -510,20 +510,20 @@ void Client::SendChatLine() {
 ///////////////////////////////////////////////////////////////////////////////
 
 // Handle an unknown message
-void Client::HandleUnknownMessage(Message &msg) {
+void Client::HandleUnknownMessage(Message *msg) {
     log::debug("received unknown message type");
     // TODO: Should we output the content of the message?
 }
 
 // Handle chat message
-void Client::HandleChat(Message &msg) {
-    auto event = msg.As<EventChat>();
+void Client::HandleChat(Message *msg) {
+    auto event = msg->As<EventChat>();
     console.AddFromMessage(event);
 }
 
 // Handle a player join event 
-void Client::HandlePlayerJoins(Message &msg) {
-    auto event = msg.As<EventPlayerJoins>();
+void Client::HandlePlayerJoins(Message *msg) {
+    auto event = msg->As<EventPlayerJoins>();
     AddPlayer(event->client_id, event->player_name, event->team);
     log::info("@ player ", event->player_name, " joined the server");
 }
@@ -556,14 +556,14 @@ void Client::RemovePlayer(Uint16 id, std::string reason) {
     }
 }
 
-void Client::HandlePlayerLeaves(Message& msg) {
-    auto event = msg.As<EventPlayerLeaves>();
+void Client::HandlePlayerLeaves(Message *msg) {
+    auto event = msg->As<EventPlayerLeaves>();
     RemovePlayer(event->client_id, event->leave_reason);
 }
 
 // Handle a message that a player was kicked
-void Client::HandleKicked(Message &msg) {
-    auto event = msg.As<EventPlayerKicked>();
+void Client::HandleKicked(Message *msg) {
+    auto event = msg->As<EventPlayerKicked>();
     if(event->client_id == client_id) {
         log::info("@ kicked by server");
         done = true;
@@ -573,31 +573,31 @@ void Client::HandleKicked(Message &msg) {
 }
 
 // An object is spawned
-void Client::HandleObjectSpawn(Message& msg) {
-    auto obj_spawn = msg.As<SyncObjectSpawn>();
+void Client::HandleObjectSpawn(Message *msg) {
+    auto obj_spawn = msg->As<SyncObjectSpawn>();
 
     Object::HandleSpawn(obj_spawn);
 }
 
 // An object is updated
-void Client::HandleObjectUpdate(Message& msg) {
-    auto obj_update = msg.As<SyncObjectUpdate>();
+void Client::HandleObjectUpdate(Message *msg) {
+    auto obj_update = msg->As<SyncObjectUpdate>();
 
     auto obj_instance = Object::GetByID(obj_update->id);
     obj_instance->HandleSync(obj_update);
 }
 
 // An object is destroyed
-void Client::HandleObjectDestroy(Message& msg) {
-    auto obj_destroy = msg.As<SyncObjectDestroy>();
+void Client::HandleObjectDestroy(Message *msg) {
+    auto obj_destroy = msg->As<SyncObjectDestroy>();
 
     auto obj_instance = Object::GetByID(obj_destroy->id);
     obj_instance->HandleDestroy(obj_destroy);
 }
 
 // Update a player
-void Client::HandlePlayerState(Message& msg) {
-    auto player_state = msg.As<SyncPlayerState>();
+void Client::HandlePlayerState(Message *msg) {
+    auto player_state = msg->As<SyncPlayerState>();
     auto player = Player::GetByID(player_state->client_id);
     if( !player ) {
         return;
@@ -608,7 +608,7 @@ void Client::HandlePlayerState(Message& msg) {
 }
 
 // Update the team state, including the bases
-void Client::HandleTeamStates(Message& msg) {
-    auto sync = msg.As<SyncTeamStates>();
+void Client::HandleTeamStates(Message *msg) {
+    auto sync = msg->As<SyncTeamStates>();
 
 }

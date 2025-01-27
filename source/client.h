@@ -89,16 +89,16 @@ class Client {
     void SetupCallbacks();
 
     // Packet handlers
-    void HandleKicked(Message& msg);
-    void HandleChat(Message& msg);
-    void HandlePlayerJoins(Message& msg);
-    void HandlePlayerLeaves(Message& msg);
-    void HandleUnknownMessage(Message& msg);
-    void HandleObjectSpawn(Message& msg);
-    void HandleObjectUpdate(Message& msg);
-    void HandleObjectDestroy(Message& msg);
-    void HandlePlayerState(Message& msg);
-    void HandleTeamStates(Message& msg);
+    void HandleKicked(Message* msg);
+    void HandleChat(Message* msg);
+    void HandlePlayerJoins(Message* msg);
+    void HandlePlayerLeaves(Message* msg);
+    void HandleUnknownMessage(Message* msg);
+    void HandleObjectSpawn(Message* msg);
+    void HandleObjectUpdate(Message* msg);
+    void HandleObjectDestroy(Message* msg);
+    void HandlePlayerState(Message* msg);
+    void HandleTeamStates(Message* msg);
 };
 
 #endif

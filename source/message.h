@@ -2,7 +2,9 @@
 #define SHIPZ_MESSAGE_H
 #include <SDL3/SDL.h>
 
+#include <iostream>
 #include "net.h"
+
 
 // Bitmask constants
 
