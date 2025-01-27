@@ -52,10 +52,12 @@ class Message {
     static Message *Deserialize(Buffer &buffer);
 
     inline void SetMessageSubType(Uint8 msg_type) {
+        this->header = this->header & ~MESSAGE_SUBTYPE_MASK; // clear bits
         this->header = this->header | ((Uint8)msg_type & MESSAGE_SUBTYPE_MASK);
     }
 
     inline void SetMessageType(MessageType msg_type) {
+        this->header = this->header & ~MESSAGE_TYPE_MASK; // clear bits
         this->header =
             this->header | (((Uint8)msg_type << 5) & MESSAGE_TYPE_MASK);
     }

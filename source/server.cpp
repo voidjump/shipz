@@ -86,7 +86,12 @@ void Server::HandleJoin(Message &msg) {
 // A player wants to join 
 void Server::HandleInfo(Message &msg) {
     auto info = msg.As<RequestGetServerInfo>(); 
-    log::debug("client version ", info->version, " requested information");
+    std::cout << typeid(msg).name() << std::endl;
+    std::cout << "addr" << std::endl;
+    std::cout << info << std::endl;
+    std::cout << "addr" << std::endl;
+    int foo = info->version;
+    // log::debug("client version ", (int)info->version, " requested information");
 
     // Send Info
     Packet pack;
@@ -104,8 +109,14 @@ void Server::HandleInfo(Message &msg) {
 void Server::SetupCallbacks() {
     this->handler.RegisterHandler(
         std::function<void(Message&)>(
-            std::bind(&Server::HandleJoin, this, std::placeholders::_1)
+            std::bind(&Server::HandleInfo, this, std::placeholders::_1)
         ),
-        PLAYER_JOINS
+        SERVER_INFO
     );
+    // this->handler.RegisterHandler(
+    //     std::function<void(Message&)>(
+    //         std::bind(&Server::HandleJoin, this, std::placeholders::_1)
+    //     ),
+    //     PLAYER_JOINS
+    // );
 }

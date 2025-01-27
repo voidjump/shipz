@@ -11,6 +11,7 @@
 
 #include "message.h"
 #include "net.h"
+#include "log.h"
 
 // Expand field into type
 #define FIELD_UINT8_TYPE Uint8
@@ -113,6 +114,7 @@
 // Implement deserialization case in base class
 #define MESSAGE_CLASS_DESERIALIZATION_CASE(CLASS_NAME, HEADER)                      \
     case HEADER:                                                                    \
+        log::debug("reading", #CLASS_NAME);                                         \
         instance = EXPAND_CONCAT(BASE_CLASS_NAME, CLASS_NAME)::Deserialize(buffer); \
         break;
 
@@ -122,6 +124,8 @@
         if (buffer->AvailableWrite() < (FIELDS_##CLASS_NAME(SUM_REQUIRED_FIELD_SIZE) 0)) { \
             return false;                                                                  \
         }                                                                                  \
+        /* Write header */                                                                 \
+        buffer->Write8(this->header);                                                      \
         FIELDS_##CLASS_NAME(SERIALIZE_FIELDS_TO_BUFFER) return true;                       \
     }
 
@@ -131,7 +135,7 @@
         if (buffer->AvailableRead() < 1) {                                                       \
             return NULL;                                                                         \
         }                                                                                        \
-        /* Consume event type header */                                                          \
+        /* Consume header */                                                                     \
         buffer->Read8();                                                                         \
         /* Deserialize fields */                                                                 \
         FIELDS_##CLASS_NAME(DESERIALIZE_FIELDS_FROM_BUFFER) return new EXPAND_CONCAT(            \

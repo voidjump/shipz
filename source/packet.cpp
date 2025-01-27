@@ -41,11 +41,13 @@ void MessageHandler::HandlePacket(Packet &pack) {
         Uint16 msg_type = msg.GetMessageSubType();
         // Check if the registry contains a handler for this message type
         if(this->registry.count(msg_type) == 0) {
+            log::debug("handler not registered");
             // Call default handler
             this->default_callback(msg);
             continue;
         }
         // Call registered callback
+        log::debug("calling registered handler");
         this->registry[msg_type](msg);
     }
     this->current_origin = NULL;
@@ -69,6 +71,7 @@ std::list<Message> Packet::Read() {
         }
         messages.push_back(*msg);
     }
+    log::debug("read ", messages.size(), " messages");
     return messages;
 }
 
