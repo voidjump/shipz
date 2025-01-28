@@ -59,7 +59,7 @@ void Server::GameLoop() {
         }
 
         if (socket.Poll()) {
-            log::debug("received a packet");
+            // log::debug("received a packet");
             auto recieved_packet = socket.GetPacket();
             handler.HandlePacket(*recieved_packet);
         }

@@ -81,6 +81,6 @@ bool LevelData::Load() {
     log::info(" . image:", m_image_filename);
 
     log::info(" . size:", m_width, " x ", m_height);
-    log::info("@ done reading.");
+    log::info("done reading");
     return true;
 }

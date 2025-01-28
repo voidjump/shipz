@@ -30,13 +30,8 @@ void ConfigureParser(cli::Parser& parser) {
                                      "Your nickname");
 }
 
-int main(int argc, char* argv[]) {
-    cli::Parser parser(argc, argv);
-    ConfigureParser(parser);
-    parser.run_and_exit_if_error();
-
+void RunMode(cli::Parser& parser) {
     auto run_as_server = parser.get<bool>("s");
-    InitSDL();
     if (run_as_server) {
         auto filename = parser.get<std::string>("f");
         Server server(filename, PORT_SERVER, MAXPLAYERS);
@@ -50,6 +45,20 @@ int main(int argc, char* argv[]) {
         Client client(address.c_str(), nickname.c_str(), listen_port,
                       PORT_SERVER);
         client.Run();
+    }
+}
+
+int main(int argc, char* argv[]) {
+    cli::Parser parser(argc, argv);
+    ConfigureParser(parser);
+    parser.run_and_exit_if_error();
+
+    InitSDL();
+
+    try {
+        RunMode(parser);
+    } catch (const std::runtime_error& e) {
+        log::error("a fatal error occured:", e.what());
     }
 
     SDL_Quit();

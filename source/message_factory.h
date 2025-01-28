@@ -126,7 +126,6 @@
 // Implement deserialization case in base class
 #define MESSAGE_CLASS_DESERIALIZATION_CASE(CLASS_NAME, HEADER)                      \
     case HEADER:                                                                    \
-        log::debug("reading", #CLASS_NAME);                                         \
         instance = EXPAND_CONCAT(BASE_CLASS_NAME, CLASS_NAME)::Deserialize(buffer); \
         break;
 

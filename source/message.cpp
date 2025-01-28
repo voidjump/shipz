@@ -1,46 +1,48 @@
-#include <iostream>
 #include "message.h"
-#include "net.h"
-#include "event.h"
-#include "response.h"
-#include "request.h"
-#include "sync.h"
-#include "log.h"
 
+#include <iostream>
+
+#include "event.h"
+#include "log.h"
+#include "net.h"
+#include "request.h"
+#include "response.h"
+#include "sync.h"
 
 // Serialize based on message type
 bool Message::Serialize(Buffer &buffer) {
-
-    switch(this->GetMessageType()) {
+    switch (this->GetMessageType()) {
         case MessageType::EVENT:
-            return static_cast<Event*>(this)->Serialize(&buffer);
+            return static_cast<Event *>(this)->Serialize(&buffer);
             break;
         case MessageType::REQUEST:
-            return static_cast<Request*>(this)->Serialize(&buffer);
+            return static_cast<Request *>(this)->Serialize(&buffer);
             break;
         case MessageType::RESPONSE:
-            return static_cast<Response*>(this)->Serialize(&buffer);
+            return static_cast<Response *>(this)->Serialize(&buffer);
             break;
         case MessageType::SYNC:
-            return static_cast<Sync*>(this)->Serialize(&buffer);
+            return static_cast<Sync *>(this)->Serialize(&buffer);
             break;
         default:
-            std::cout << "debug: Cannot Serialize: unknown event type" << std::endl;
+            std::cout << "debug: Cannot Serialize: unknown event type"
+                      << std::endl;
             return false;
     }
     return true;
 }
 
-Message* Message::Deserialize(Buffer &buffer) {
+Message *Message::Deserialize(Buffer &buffer) {
     Message *message = NULL;
     Uint8 header;
 
-    if( buffer.AvailableRead() < 1) {
+    if (buffer.AvailableRead() < 1) {
         // insufficient bytes remaining for message header
         return NULL;
     }
-     
-    switch(GetMessageTypeFromHeader(buffer.Peek8())) {
+
+    Uint8 msg_type = buffer.Peek8();
+    switch (GetMessageTypeFromHeader(msg_type)) {
         case MessageType::EVENT:
             log::debug("reading EVENT");
             message = Event::Deserialize(&buffer);
@@ -58,7 +60,8 @@ Message* Message::Deserialize(Buffer &buffer) {
             message = Sync::Deserialize(&buffer);
             break;
         default:
-            std::cout << "debug: Cannot Deserialize: Unknown message type" << std::endl;
+            log::debug("cannot deserialize: unknown message type: ",
+                       (Uint16)msg_type);
             return NULL;
     }
     return message;

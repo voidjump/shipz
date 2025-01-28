@@ -39,20 +39,19 @@ SDLNet_Address * MessageHandler::CurrentOrigin() {
 
 // Handle all messages in a packet
 void MessageHandler::HandlePacket(Packet &pack) {
-    log::debug("handling packet");
     auto messages = pack.Read();
     this->current_origin = pack.origin;
     for (Message *msg : messages) {
         Uint16 msg_type = msg->GetFullType();
         // Check if the registry contains a handler for this message type
         if(this->registry.count(msg_type) == 0) {
-            log::debug("handler not registered");
+            // log::debug("handler not registered");
             // Call default handler
             this->default_callback(msg);
             continue;
         }
         // Call registered callback
-        log::debug("calling registered handler");
+        // log::debug("calling registered handler");
         this->registry[msg_type](msg);
     }
     this->current_origin = NULL;
@@ -60,7 +59,7 @@ void MessageHandler::HandlePacket(Packet &pack) {
 
 // Delete the packet
 Packet::~Packet() {
-    log::debug("packet destroyed");
+    // log::debug("packet destroyed");
     // TODO: Find out why this doesn't work 
     // if(this->origin) SDLNet_UnrefAddress(this->origin);
 }
@@ -76,7 +75,7 @@ std::list<Message*> Packet::Read() {
         }
         messages.push_back(msg);
     }
-    log::debug("read ", messages.size(), " messages");
+    // log::debug("read ", messages.size(), " messages");
     return messages;
 }
 

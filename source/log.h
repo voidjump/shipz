@@ -19,7 +19,7 @@ template <typename... Args>
 inline void info(Args &&...args) {
     std::ostringstream oss;
     (oss << ... << std::forward<Args>(args));
-    std::cout << termcolor::white << "[I] " << oss.str() << termcolor::reset
+    std::cout << termcolor::yellow << "[I] " << oss.str() << termcolor::reset
               << std::endl;
 }
 

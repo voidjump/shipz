@@ -103,7 +103,7 @@ bool Client::Connect() {
             auto messages = recieved_packet->Read();
             for (Message *msg : messages) {
                 if (msg->IsTypes(MessageType::RESPONSE, SERVER_INFO)) {
-                    log::info("@ server responded...");
+                    log::info("server responded...");
                     ResponseServerInformation *info =
                         msg->As<ResponseServerInformation>();
                     info->LogDebug();
@@ -129,7 +129,7 @@ bool Client::Connect() {
 
 // Join a server
 bool Client::Join() {
-    log::info("@ joining...");
+    log::info("joining...");
 
     // Create a join request
     Packet pack;
@@ -145,7 +145,7 @@ bool Client::Join() {
             auto messages = recieved_packet->Read();
             for (Message *msg : messages) {
                 if (msg->IsTypes(MessageType::RESPONSE, ACCEPT_JOIN)) {
-                    log::info("@ join accepted...");
+                    log::info("join accepted...");
                     auto info = msg->As<ResponseAcceptJoin>();
                     info->LogDebug();
                     self = new Player(info->client_id);
@@ -155,7 +155,7 @@ bool Client::Join() {
                     accepted = true;
                 }
                 if (msg->IsTypes(MessageType::RESPONSE, PLAYER_INFO)) {
-                    log::info("@ player info");
+                    log::info("player info");
                     auto info = msg->As<ResponsePlayerInformation>();
                     info->LogDebug();
                     auto player = new Player(info->client_id);
@@ -512,7 +512,7 @@ void Client::HandleChat(Message *msg) {
 void Client::HandlePlayerJoins(Message *msg) {
     auto event = msg->As<EventPlayerJoins>();
     AddPlayer(event->client_id, event->player_name, event->team);
-    log::info("@ player ", event->player_name, " joined the server");
+    log::info("player ", event->player_name, " joined the server");
 }
 
 // Add a player to the game
@@ -537,7 +537,7 @@ void Client::RemovePlayer(Uint16 id, std::string reason) {
             delete (*p);
             // Erase reference
             players.erase(p);
-            log::info("@ player ", id, " left the server: ", reason);
+            log::info("player ", id, " left the server: ", reason);
             return;
         }
     }
@@ -552,7 +552,7 @@ void Client::HandlePlayerLeaves(Message *msg) {
 void Client::HandleKicked(Message *msg) {
     auto event = msg->As<EventPlayerKicked>();
     if (event->client_id == client_id) {
-        log::info("@ kicked by server");
+        log::info("kicked by server");
         done = true;
     } else {
         RemovePlayer(event->client_id, "Kicked by server");
