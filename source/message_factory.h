@@ -43,6 +43,12 @@
 #define FIELD_UINT32_DESERIALIZE Read32()
 #define FIELD_STRING_DESERIALIZE ReadString()
 #define FIELD_OCTETS_DESERIALIZE ReadOctets(size)
+// Expand field into log message
+#define FIELD_UINT8_DEBUG(name, value) log::debug(name, ":", (uint16_t)value)
+#define FIELD_UINT16_DEBUG(name, value) log::debug(name, ":", value)
+#define FIELD_UINT32_DEBUG(name, value) log::debug(name, ":", value)
+#define FIELD_STRING_DEBUG(name, value) log::debug(name, ":", value)
+#define FIELD_OCTETS_DEBUG(name, value) log::debug(name, ":", value.size())
 
 // Indirection macro's
 #define CONCAT(a, b) a##b
@@ -74,6 +80,9 @@
 // Field handler that expands field definition into buffer writes;
 #define SERIALIZE_FIELDS_TO_BUFFER(type, name) buffer->type##_SERIALIZE(name);
 
+// Field handler that expands field definition into buffer writes;
+#define DEBUG_LOG_FIELDS(type, name) type##_DEBUG(#name, name);
+
 // Field handler that expands field definition into a required write size;
 #define SUM_REQUIRED_FIELD_SIZE(type, name) type##_SIZE(name) +
 
@@ -100,6 +109,9 @@
                                                                                                            \
         /* Serialize Message */                                                                            \
         bool Serialize(Buffer *buffer);                                                                    \
+                                                                                                           \
+        /* debug Message */                                                                                \
+        void LogDebug();                                                                                  \
                                                                                                            \
         /* Deserialize Message*/                                                                           \
         static BASE_CLASS_NAME *Deserialize(Buffer *buffer);                                               \
@@ -140,6 +152,12 @@
         /* Deserialize fields */                                                                 \
         FIELDS_##CLASS_NAME(DESERIALIZE_FIELDS_FROM_BUFFER) return dynamic_cast<BASE_CLASS_NAME*>( new EXPAND_CONCAT(            \
             BASE_CLASS_NAME, CLASS_NAME)(EXPAND_AND_REMOVE_FIRST(FIELDS_##CLASS_NAME(MESSAGE_FIELD_ARGUMENT_NAME_LIST)))); \
+    }
+
+// Implement debug methods
+#define MESSAGE_CLASS_DEBUG_FUNCTIONS(CLASS_NAME, HEADER)           \
+    void EXPAND_CONCAT(BASE_CLASS_NAME, CLASS_NAME)::LogDebug() {   \
+        FIELDS_##CLASS_NAME(DEBUG_LOG_FIELDS)                       \
     }
 
 // Implement Deserialization from base class
@@ -195,6 +213,7 @@
     BASE_CLASS_SERIALIZATION_IMPLEMENTATION                   \
     BASE_CLASS_DESERIALIZATION_IMPLEMENTATION                 \
     MESSAGE_CLASS_LIST(MESSAGE_CLASS_SERIALIZATION_FUNCTIONS) \
-    MESSAGE_CLASS_LIST(MESSAGE_CLASS_DESERIALIZATION_FUNCTIONS)
+    MESSAGE_CLASS_LIST(MESSAGE_CLASS_DESERIALIZATION_FUNCTIONS)\
+    MESSAGE_CLASS_LIST(MESSAGE_CLASS_DEBUG_FUNCTIONS)
 
 #endif

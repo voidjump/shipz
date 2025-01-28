@@ -90,10 +90,8 @@ void Server::HandleJoin(Message *msg) {
         return;
     }
 
-    log::debug("1");
     // Allocate new player;
     auto new_player = new Player();
-    log::debug("2");
 
     log::debug("Added new client id# ", new_player->client_id);
     new_player->name = join->player_name;

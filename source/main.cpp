@@ -6,6 +6,7 @@
 #include <string.h>
 #include <time.h>
 
+#include <cmdparser.hpp>
 #include <fstream>
 #include <iostream>
 
@@ -16,51 +17,39 @@
 #include "other.h"
 #include "server.h"
 
-// MAIN
-// ///////////////////////////////////////////////////////////////////////////////////////////////////////
+void ConfigureParser(cli::Parser& parser) {
+    parser.set_optional<bool>("s", "server", false, "Run as server");
+    parser.set_optional<std::string>("f", "filename", "rusty.json",
+                                     "Which level to run");
 
-// TODO: use some kind of modern CLI parsing lib
-int main(int argc, char *argv[]) {
-    bool run_server = false;  // is this the server or a client?
-    bool cli_init = false;
-    int error = 0, menu_result;
+    parser.set_optional<uint16_t>("l", "listen", PORT_CLIENT,
+                                  "The port to listen on (client)");
+    parser.set_optional<std::string>("a", "address", "localhost",
+                                     "The server host address");
+    parser.set_optional<std::string>("n", "nickname", "UnnamedPlayer",
+                                     "Your nickname");
+}
 
-    char server_ip[16];
-    char client_nick[13];
-    char *level_filename;
+int main(int argc, char* argv[]) {
+    cli::Parser parser(argc, argv);
+    ConfigureParser(parser);
+    parser.run_and_exit_if_error();
 
-    if (argc > 1) {
-        if (strstr(argv[1], "server")) {
-            if (argc < 3) {
-                error = 10;
-            } else {
-                cli_init = true;
-                run_server = true;
-                level_filename = argv[2];
-            }
-        }
-        if (strstr(argv[1], "client")) {
-            if (argc < 4) {
-                error = 10;
-            } else {
-                cli_init = true;
-                run_server = false;
-                strcpy(server_ip, argv[2]);
-                strcpy(client_nick, argv[3]);
-            }
-        }
-    }
+    auto run_as_server = parser.get<bool>("s");
+    InitSDL();
+    if (run_as_server) {
+        auto filename = parser.get<std::string>("f");
+        Server server(filename, PORT_SERVER, MAXPLAYERS);
+        server.Run();
+    } else {
+        InitVid();
+        auto listen_port = parser.get<uint16_t>("l");
+        auto address = parser.get<std::string>("a");
+        auto nickname = parser.get<std::string>("n");
 
-    if (cli_init && error == 0) {
-        InitSDL();
-        if (run_server) {
-            Server server(level_filename, PORT_SERVER, MAXPLAYERS);
-            server.Run();
-        } else {
-            InitVid();
-            Client client(server_ip, client_nick, PORT_CLIENT, PORT_SERVER);
-            client.Run();
-        }
+        Client client(address.c_str(), nickname.c_str(), listen_port,
+                      PORT_SERVER);
+        client.Run();
     }
 
     SDL_Quit();

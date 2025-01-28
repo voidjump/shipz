@@ -1,9 +1,20 @@
 #pragma once
 #include <iostream>
+#include <vector>
 #include <sstream>
 #include <termcolor/termcolor.hpp>
 
 namespace log {
+template <typename T>
+std::ostream &operator<<(std::ostream &os, const std::vector<T> &vec) {
+    os << "[";
+    for (size_t i = 0; i < vec.size(); ++i) {
+        os << vec[i];
+    }
+    os << "]";
+    return os;
+}
+
 template <typename... Args>
 inline void info(Args &&...args) {
     std::ostringstream oss;

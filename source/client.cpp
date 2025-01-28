@@ -8,8 +8,8 @@
 #include <string>
 
 #include "assets.h"
-#include "bullet.h"
 #include "base.h"
+#include "bullet.h"
 #include "event.h"
 #include "font.h"
 #include "gfx.h"
@@ -22,15 +22,13 @@
 #include "request.h"
 #include "response.h"
 #include "sound.h"
+#include "sync.h"
 #include "team.h"
 #include "types.h"
-#include "sync.h"
 
 // Construct a client
-Client::Client(const char *server_hostname, 
-               const char *player_name, 
-               Uint16 listen_port, 
-               Uint16 server_port)
+Client::Client(const char *server_hostname, const char *player_name,
+               Uint16 listen_port, Uint16 server_port)
     : socket(listen_port) {
     this->server_hostname = server_hostname;
     this->name = player_name;
@@ -41,20 +39,17 @@ Client::Client(const char *server_hostname,
 // Run the game
 void Client::Run() {
     this->Init();
-    if(!this->Connect()) return;
-    if(!this->Join()) return;
-    if(!this->Load()) return;
+    if (!this->Connect()) return;
+    if (!this->Join()) return;
+    if (!this->Load()) return;
     this->GameLoop();
 }
 
 // Initialize client
 void Client::Init() {
     // Explicitly wrap std::bind with std::function
-    this->handler.RegisterDefault(
-        std::function<void(Message*)>(
-            std::bind(&Client::HandleUnknownMessage, this, std::placeholders::_1)
-        )
-    );
+    this->handler.RegisterDefault(std::function<void(Message *)>(
+        std::bind(&Client::HandleUnknownMessage, this, std::placeholders::_1)));
     // Setup chat console
     this->console.SetHeight(3);
 }
@@ -88,7 +83,8 @@ void Client::GameLoop() {
 
 // Connect to the Server
 bool Client::Connect() {
-    Socket::ResolveHostname(this->server_hostname.c_str(), &this->server_address);
+    Socket::ResolveHostname(this->server_hostname.c_str(),
+                            &this->server_address);
     int attempts = 0;
 
     // Create a request
@@ -108,10 +104,13 @@ bool Client::Connect() {
             for (Message *msg : messages) {
                 if (msg->IsTypes(MessageType::RESPONSE, SERVER_INFO)) {
                     log::info("@ server responded...");
-                    ResponseServerInformation *info = msg->As<ResponseServerInformation>();
+                    ResponseServerInformation *info =
+                        msg->As<ResponseServerInformation>();
+                    info->LogDebug();
 
                     if (info->shipz_version != SHIPZ_VERSION) {
-                        log::error("server is running shipz version:", info->shipz_version);
+                        log::error("server is running shipz version:",
+                                   info->shipz_version);
                         return false;
                     }
                     lvl.SetFile(info->level_filename);
@@ -136,12 +135,11 @@ bool Client::Join() {
     Packet pack;
     RequestJoinGame req(name, this->listen_port);
     pack.Append(req);
- 
+
     int attempts = 0;
     bool accepted = false;
 
-    while(!accepted) {
-        socket.Send(pack, server_address, server_port);
+    while (!accepted) {
         if (socket.Poll()) {
             auto recieved_packet = socket.GetPacket();
             auto messages = recieved_packet->Read();
@@ -149,6 +147,7 @@ bool Client::Join() {
                 if (msg->IsTypes(MessageType::RESPONSE, ACCEPT_JOIN)) {
                     log::info("@ join accepted...");
                     auto info = msg->As<ResponseAcceptJoin>();
+                    info->LogDebug();
                     self = new Player(info->client_id);
                     self->name = name;
                     self->self_sustaining = false;
@@ -158,6 +157,7 @@ bool Client::Join() {
                 if (msg->IsTypes(MessageType::RESPONSE, PLAYER_INFO)) {
                     log::info("@ player info");
                     auto info = msg->As<ResponsePlayerInformation>();
+                    info->LogDebug();
                     auto player = new Player(info->client_id);
                     player->team = info->team;
                     player->name = info->player_name;
@@ -166,9 +166,10 @@ bool Client::Join() {
                 }
             }
         }
-        SDL_Delay(1000);
+        socket.Send(pack, server_address, server_port);
+        SDL_Delay(400);
         attempts++;
-        if(attempts > 5) {
+        if (attempts > 5) {
             return false;
         }
     }
@@ -234,7 +235,8 @@ void Client::HandleInputs() {
     }
 
     if (keys[SDL_SCANCODE_UP]) {
-        if (self->status == PLAYER_STATUS::LANDED || self->status == PLAYER_STATUS::LANDEDBASE) {
+        if (self->status == PLAYER_STATUS::LANDED ||
+            self->status == PLAYER_STATUS::LANDEDBASE) {
             self->status = PLAYER_STATUS::LIFTOFF;
             self->y -= 10;
             self->lastliftofftime = SDL_GetTicks();
@@ -254,7 +256,8 @@ void Client::HandleInputs() {
 
     if (!self->typing) {
         if (keys[SDL_SCANCODE_X]) {
-            if (self->status != PLAYER_STATUS::DEAD && self->status != PLAYER_STATUS::RESPAWN) {
+            if (self->status != PLAYER_STATUS::DEAD &&
+                self->status != PLAYER_STATUS::RESPAWN) {
                 self->status = PLAYER_STATUS::SUICIDE;
             }
         }
@@ -278,71 +281,53 @@ void Client::Tick() {
 // Set all callbacks used during the game loop
 void Client::SetupCallbacks() {
     this->handler.RegisterHandler(
-        std::function<void(Message*)>(
-            std::bind(&Client::HandleKicked, this, std::placeholders::_1)
-        ),
-        PLAYER_KICKED
-    );
+        std::function<void(Message *)>(
+            std::bind(&Client::HandleKicked, this, std::placeholders::_1)),
+        PLAYER_KICKED);
     this->handler.RegisterHandler(
-        std::function<void(Message*)>(
-            std::bind(&Client::HandlePlayerJoins, this, std::placeholders::_1)
-        ),
-        PLAYER_JOINS
-    );
+        std::function<void(Message *)>(
+            std::bind(&Client::HandlePlayerJoins, this, std::placeholders::_1)),
+        PLAYER_JOINS);
     this->handler.RegisterHandler(
-        std::function<void(Message*)>(
-            std::bind(&Client::HandlePlayerLeaves, this, std::placeholders::_1)
-        ),
-        PLAYER_LEAVES
-    );
+        std::function<void(Message *)>(std::bind(&Client::HandlePlayerLeaves,
+                                                 this, std::placeholders::_1)),
+        PLAYER_LEAVES);
     this->handler.RegisterHandler(
-        std::function<void(Message*)>(
-            std::bind(&Client::HandleChat, this, std::placeholders::_1)
-        ),
-        CHAT_ALL
-    );
+        std::function<void(Message *)>(
+            std::bind(&Client::HandleChat, this, std::placeholders::_1)),
+        CHAT_ALL);
     this->handler.RegisterHandler(
-        std::function<void(Message*)>(
-            std::bind(&Client::HandleObjectSpawn, this, std::placeholders::_1)
-        ),
-        OBJECT_SPAWN
-    );
+        std::function<void(Message *)>(
+            std::bind(&Client::HandleObjectSpawn, this, std::placeholders::_1)),
+        OBJECT_SPAWN);
     this->handler.RegisterHandler(
-        std::function<void(Message*)>(
-            std::bind(&Client::HandleObjectUpdate, this, std::placeholders::_1)
-        ),
-        OBJECT_UPDATE
-    );
+        std::function<void(Message *)>(std::bind(&Client::HandleObjectUpdate,
+                                                 this, std::placeholders::_1)),
+        OBJECT_UPDATE);
     this->handler.RegisterHandler(
-        std::function<void(Message*)>(
-            std::bind(&Client::HandleObjectDestroy, this, std::placeholders::_1)
-        ),
-        OBJECT_DESTROY
-    );
+        std::function<void(Message *)>(std::bind(&Client::HandleObjectDestroy,
+                                                 this, std::placeholders::_1)),
+        OBJECT_DESTROY);
     this->handler.RegisterHandler(
-        std::function<void(Message*)>(
-            std::bind(&Client::HandlePlayerState, this, std::placeholders::_1)
-        ),
-        PLAYER_STATE
-    );
+        std::function<void(Message *)>(
+            std::bind(&Client::HandlePlayerState, this, std::placeholders::_1)),
+        PLAYER_STATE);
     this->handler.RegisterHandler(
-        std::function<void(Message*)>(
-            std::bind(&Client::HandleTeamStates, this, std::placeholders::_1)
-        ),
-        TEAM_STATES
-    );
+        std::function<void(Message *)>(
+            std::bind(&Client::HandleTeamStates, this, std::placeholders::_1)),
+        TEAM_STATES);
 }
-
 
 // Send a state update to the server
 // This contains both our position, state and the bullets we've fired
 // TODO: We can add chat messages to this later
 void Client::SendUpdate() {
     Packet pack;
-    SyncPlayerState sync(self->client_id, self->status, self->typing, self->angle, self->x, self->y, self->vx, self->vy);
+    SyncPlayerState sync(self->client_id, self->status, self->typing,
+                         self->angle, self->x, self->y, self->vx, self->vy);
     pack.Append(sync);
 
-    for ( auto &bullet : this->bullets_shot ) {
+    for (auto &bullet : this->bullets_shot) {
         pack.Append(bullet);
     }
 
@@ -351,7 +336,7 @@ void Client::SendUpdate() {
     lastsendtime = SDL_GetTicks();
 }
 
-// Notify the server that we are leaving 
+// Notify the server that we are leaving
 void Client::Leave() {
     // Create a request
     Packet pack;
@@ -363,7 +348,6 @@ void Client::Leave() {
 }
 
 bool Client::Load() {
-
     if (!lvl.Load()) {
         log::error("failed to load level");
         return false;
@@ -399,7 +383,8 @@ void Client::Draw() {
     DrawExplosions();
 
     if (self->status == PLAYER_STATUS::DEAD) {
-        DrawFont(sansboldbig, "Press space to respawn.", XRES - 280, YRES - 13, FONT_COLOR::WHITE);
+        DrawFont(sansboldbig, "Press space to respawn.", XRES - 280, YRES - 13,
+                 FONT_COLOR::WHITE);
     }
 
     this->console.Draw();
@@ -434,7 +419,8 @@ void Client::Draw() {
     }
 
     if (self->typing) {
-        DrawFont(sansbold, type_buffer.c_str(), 5, YRES - 26, FONT_COLOR::WHITE);
+        DrawFont(sansbold, type_buffer.c_str(), 5, YRES - 26,
+                 FONT_COLOR::WHITE);
     }
 
     UpdateScreen();
@@ -472,7 +458,7 @@ Client::~Client() {
 
 // Spawn a bullet
 void Client::Shoot() {
-    switch (self->weapon ) {
+    switch (self->weapon) {
         case WEAPON_BULLET:
             if ((SDL_GetTicks() - self->lastshottime) <= BULLETDELAY) return;
             this->bullets_shot.push_back(Bullet::Shoot(self));
@@ -522,7 +508,7 @@ void Client::HandleChat(Message *msg) {
     console.AddFromMessage(event);
 }
 
-// Handle a player join event 
+// Handle a player join event
 void Client::HandlePlayerJoins(Message *msg) {
     auto event = msg->As<EventPlayerJoins>();
     AddPlayer(event->client_id, event->player_name, event->team);
@@ -531,9 +517,9 @@ void Client::HandlePlayerJoins(Message *msg) {
 
 // Add a player to the game
 void Client::AddPlayer(Uint16 id, std::string player_name, Uint8 team) {
-    Player * new_player = new Player(id);
+    Player *new_player = new Player(id);
     new_player->Init();
-    
+
     // Indicate that this updates coordinates by server
     new_player->self_sustaining = 1;
 
@@ -546,7 +532,7 @@ void Client::AddPlayer(Uint16 id, std::string player_name, Uint8 team) {
 // Remove a player from the game
 void Client::RemovePlayer(Uint16 id, std::string reason) {
     for (auto p = players.begin(); p != players.end();) {
-        if( (*p)->client_id == id) {
+        if ((*p)->client_id == id) {
             // Delete player object
             delete (*p);
             // Erase reference
@@ -565,7 +551,7 @@ void Client::HandlePlayerLeaves(Message *msg) {
 // Handle a message that a player was kicked
 void Client::HandleKicked(Message *msg) {
     auto event = msg->As<EventPlayerKicked>();
-    if(event->client_id == client_id) {
+    if (event->client_id == client_id) {
         log::info("@ kicked by server");
         done = true;
     } else {
@@ -600,7 +586,7 @@ void Client::HandleObjectDestroy(Message *msg) {
 void Client::HandlePlayerState(Message *msg) {
     auto player_state = msg->As<SyncPlayerState>();
     auto player = Player::GetByID(player_state->client_id);
-    if( !player ) {
+    if (!player) {
         return;
         log::error("recieved state for player that does not exist");
     }
@@ -611,5 +597,4 @@ void Client::HandlePlayerState(Message *msg) {
 // Update the team state, including the bases
 void Client::HandleTeamStates(Message *msg) {
     auto sync = msg->As<SyncTeamStates>();
-
 }
