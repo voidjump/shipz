@@ -2,6 +2,7 @@
 #include <iostream>
 #include <stdlib.h>
 #include <math.h>
+#include <limits>
 #include <SDL3/SDL.h>
 
 #include "types.h"
@@ -16,7 +17,23 @@
 #include "log.h"
 
 // all instances
-std::map<Uint16, Player*> Player::instances;
+std::map<ClientID, Player*> Player::instances;
+
+// Allocate new clientID
+ClientID Player::GenerateClientID() {
+    for(ClientID id = 1; id < std::numeric_limits<ClientID>::max(); id++)  {
+		if (instances.find(id) == instances.end()) {
+			return id;
+		}
+	}
+	throw new std::runtime_error("no free client ID slots available");
+	return 0;
+}
+
+Player::Player() {
+	this->client_id = GenerateClientID();
+	instances[this->client_id] = this;
+}
 
 Player::Player(uint16_t id) {
 	this->client_id = id;

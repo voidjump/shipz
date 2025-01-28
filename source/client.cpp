@@ -35,6 +35,7 @@ Client::Client(const char *server_hostname,
     this->server_hostname = server_hostname;
     this->name = player_name;
     this->server_port = server_port;
+    this->listen_port = listen_port;
 }
 
 // Run the game
@@ -92,7 +93,7 @@ bool Client::Connect() {
 
     // Create a request
     Packet pack;
-    RequestGetServerInfo request(SHIPZ_VERSION);
+    RequestGetServerInfo request(SHIPZ_VERSION, this->listen_port);
     pack.Append(request);
 
     log::info("querying server status..");
@@ -133,7 +134,7 @@ bool Client::Join() {
 
     // Create a join request
     Packet pack;
-    RequestJoinGame req(name);
+    RequestJoinGame req(name, this->listen_port);
     pack.Append(req);
  
     int attempts = 0;

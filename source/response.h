@@ -18,6 +18,7 @@
     class_handler(ServerInformation,    SERVER_INFO) \
     class_handler(PlayerInformation,    PLAYER_INFO) \
     class_handler(AcceptJoin,           ACCEPT_JOIN) \
+    class_handler(DenyJoin,             DENY_JOIN) \
     class_handler(AcknowledgeLeave,     ACK_LEAVE) \
 
 // Server responds to a client's 'GET_SERVER_INFO' request
@@ -32,6 +33,10 @@
 #define FIELDS_AcceptJoin(field_handler) \
     field_handler(FIELD_UINT16, client_id) \
     field_handler(FIELD_UINT8, team) 
+
+// Server responds to a client's 'JOIN_GAME' request
+#define FIELDS_DenyJoin(field_handler) \
+    field_handler(FIELD_STRING, reason) 
 
 // Notice about which players are in the game
 // Could add some kind of status package here

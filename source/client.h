@@ -14,6 +14,7 @@ class Client {
     std::string name;             // The player's name
     std::string server_hostname;  // The hostname we want to connect to
     Uint16 server_port;           // The port to connect to
+    Uint16 listen_port;           // The port this listens on
 
     // networking state
     SDLNet_Address* server_address;  // The server

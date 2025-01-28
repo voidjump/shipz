@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
     if (cli_init && error == 0) {
         InitSDL();
         if (run_server) {
-            Server server(level_filename, PORT_SERVER);
+            Server server(level_filename, PORT_SERVER, MAXPLAYERS);
             server.Run();
         } else {
             InitVid();

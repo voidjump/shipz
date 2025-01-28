@@ -98,7 +98,7 @@ bool Socket::Poll() {
         SDLNet_RefAddress(recv->addr);
         result = true;
     }
-    log::debug("Received buffer:", pack.AsHexString());
+    log::debug("received buffer:", pack.AsHexString());
     in_queue.Push(std::make_unique<Packet>(std::move(pack)));
 
     SDLNet_DestroyDatagram(recv);

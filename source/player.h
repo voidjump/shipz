@@ -56,6 +56,7 @@ class Player
 		// is the player local or remote?
 		bool self_sustaining; 
 		SDLNet_Address * playaddr;
+		Uint16 port;
 
 		// is the player typing a message?
 		// TODO: this could be a bitflag in the player state
@@ -69,9 +70,11 @@ class Player
 		float lastshottime;
 
 	Player(uint16_t id);
+	Player();
 	~Player();
 
 	void HandleUpdate(SyncPlayerState *sync);
+	ClientID GenerateClientID();
 
 	// Retrieve a player instance by their ID
 	static Player * GetByID(uint16_t search_id);

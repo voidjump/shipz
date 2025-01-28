@@ -22,11 +22,13 @@
 
 // Request server information
 #define FIELDS_GetServerInfo(field_handler) \
-    field_handler(FIELD_UINT8, version)
+    field_handler(FIELD_UINT8, version) \
+    field_handler(FIELD_UINT16, port)
 
 // Request to join the game
 #define FIELDS_JoinGame(field_handler) \
-    field_handler(FIELD_STRING, player_name)
+    field_handler(FIELD_STRING, player_name) \
+    field_handler(FIELD_UINT16, port)
 
 // Notify that we are quitting
 #define FIELDS_LeaveGame(field_handler) \

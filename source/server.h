@@ -20,6 +20,7 @@ class Server {
     private:
         bool done = false;
         
+        uint max_clients;
         std::string level_name;
         Socket socket;
         MessageHandler handler;
@@ -27,7 +28,7 @@ class Server {
 
     public:
         // Start server
-        Server(std::string level_name, uint16_t port);
+        Server(std::string level_name, uint16_t port, uint max_clients);
         ~Server();
         void HandleUnknownMessage(Message *msg);
         void SetupCallbacks();
