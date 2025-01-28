@@ -8,8 +8,13 @@ std::random_device rand_dev_g;
 
 
 // Register a callback function
-void MessageHandler::RegisterHandler(std::function<void(Message*)> callback, Uint16 msg_sub_type) {
-    this->registry[msg_sub_type] = callback;
+//
+// The callbacks are registered on the full header, with the exclusion of
+// The reliability bit
+// So the reliable and unreliable message will both call the same message
+void MessageHandler::RegisterHandler(std::function<void(Message*)> callback, Uint16 header) {
+    header = header & ~RELIABLE_MASK;
+    this->registry[header] = callback;
 }
 
 // Register a default callback function
@@ -38,7 +43,7 @@ void MessageHandler::HandlePacket(Packet &pack) {
     auto messages = pack.Read();
     this->current_origin = pack.origin;
     for (Message *msg : messages) {
-        Uint16 msg_type = msg->GetMessageSubType();
+        Uint16 msg_type = msg->GetFullType();
         // Check if the registry contains a handler for this message type
         if(this->registry.count(msg_type) == 0) {
             log::debug("handler not registered");
