@@ -1,8 +1,8 @@
 #include <string>
 #include <iostream>
 
+#include <asio.hpp>
 #include <SDL3/SDL.h>
-#include <SDL3_net/SDL_net.h>
 #include <SDL3_ttf/SDL_ttf.h>
 
 #include "client.h"
@@ -19,6 +19,8 @@
 #include "assets.h"
 #include "level.h"
 
+using asio::ip::udp;
+
 // TODO:
 // Candidates for bitwise state flags
 
@@ -29,33 +31,17 @@ Client::Client(const char *server_address, const char * player_name) {
 }
 
 void Client::ResolveHostname(const char * connect_address) {
-	this->ipaddr = SDLNet_ResolveHostname(connect_address);
-	if( this->ipaddr == NULL) {
-		FailErr("could not resolve server address");
-	}
-	
-	// wait for the hostname to resolve:
-	std::cout << "resolving hostname" << std::endl;
-	while(SDLNet_GetAddressStatus(this->ipaddr) == 0) {
-		std::cout << ".";
-		SDL_Delay(1000);
-	}
+	udp::resolver resolver(this->io_context);
+	char buffer[10];
 
-	if( SDLNet_GetAddressStatus(this->ipaddr) != 1) {
-		FailErr("could not resolve server address");
-	}
-
-	// Resolved address
-	std::cout << "resolved server address:" << SDLNet_GetAddressString(this->ipaddr) << std::endl;
+	snprintf(buffer, 9, "%i", PORT_SERVER);
+	this->server_endpoint = *resolver.resolve(udp::v4(), connect_address, buffer).begin();
+	std::cout << "resolved address" << std::endl;
 }
 
 void Client::CreateUDPSocket() {
-	this->udpsock = SDLNet_CreateDatagramSocket(NULL, PORT_CLIENT);
-
-	if(this->udpsock == NULL) {
-		SDLNet_DestroyDatagramSocket(udpsock);
-		FailErr("Failed to open socket");
-	}
+    this->socket = new udp::socket(io_context, udp::endpoint(udp::v4(), PORT_CLIENT));
+	// socket->open(udp::v4());
 }
 
 // Send Buffer to server
@@ -63,15 +49,8 @@ void Client::SendBuffer() {
 	std::cout << "Sending buffer:";
 	PrintRawBytes(this->send_buffer.AsString(), this->send_buffer.length);
 	std::cout << std::endl;
-	if (! SDLNet_SendDatagram(this->udpsock, 
-							  this->ipaddr, 
-							  PORT_SERVER, 
-							  (void *)this->send_buffer.data, 
-							  this->send_buffer.length)) {
-		// proper failure
-		SDLNet_DestroyDatagramSocket(this->udpsock);
-		FailErr("Cannot send buffer to server");
-	}
+	this->socket->send_to(asio::buffer(send_buffer.data, send_buffer.length), server_endpoint);
+	std::cout << "Sent" << std::endl;
 }
 
 // Connect to the Server
@@ -93,21 +72,27 @@ void Client::Connect(const char *connect_address) {
 		// 020 VERSION
 		this->SendBuffer();
 
-		if (WaitForPacket(this->udpsock, &this->in)) {
+		this->receive_buffer.Clear();
+		if (WaitForPacket()) {
 			// got a response.
 
+			std::cout << "received data" << std::endl;
+			std::cout << receive_buffer.length << std::endl;
+			PrintRawBytes((char *)receive_buffer.data, receive_buffer.length);
+
 			// TODO: Safely read from buffer
-			if( in->buflen > 0 && in->buf[0] == SHIPZ_MESSAGE::STATUS )
+			if( receive_buffer.length > 0 && receive_buffer.data[0] == SHIPZ_MESSAGE::STATUS )
 			{
-				if( in->buf[1] == SHIPZ_VERSION )
+				std::cout << "@ 2" << std::endl;
+				if( receive_buffer.data[1] == SHIPZ_VERSION )
 				{
 					std::cout << "@ server responded..." << std::endl;
-					if( in->buf[2] < in->buf[3] )
+					if( receive_buffer.data[2] < receive_buffer.data[3] )
 					{
-						this->number_of_players = in->buf[2];
-						lvl.m_levelversion = in->buf[4];
+						this->number_of_players = receive_buffer.data[2];
+						lvl.m_levelversion = receive_buffer.data[4];
 						// TODO: This should be a safe copy..
-						lvl.SetFile((const char*)&in->buf[5]);
+						lvl.SetFile((const char*)&receive_buffer.data[5]);
 						// proceed with joining
 						this->notreadytocontinue = 0;	
 						this->attempts = 0; // make sure we don't confuse stuff
@@ -129,8 +114,6 @@ void Client::Connect(const char *connect_address) {
 				// error, protocol error, please try to reconnect.
 				this->error = 1;
 			}
-			// Free packet
-			SDLNet_DestroyDatagram(this->in);
 		}
 		this->attempts++;
 	}
@@ -140,9 +123,8 @@ void Client::Connect(const char *connect_address) {
 	}
 	if( this->error != 0 )
 	{	
-		SDLNet_DestroyDatagramSocket(this->udpsock);
-		SDLNet_Quit();
 		// return this->error;
+		std::cout << "??" << std::endl;
 	}
 }
 
@@ -332,31 +314,20 @@ void Client::HandleInputs() {
 
 bool Client::ReceivedPacket() {
 	bool result = false;
-	if(!SDLNet_ReceiveDatagram(udpsock, &in) || in == NULL) {
+
+	receive_buffer.Clear();
+	asio::ip::udp::endpoint recieve_endpoint;
+	size_t reply_length = this->socket->receive_from(
+		 asio::buffer(receive_buffer.data, MAXBUFSIZE), recieve_endpoint);
+
+	if(reply_length == 0 || recieve_endpoint != server_endpoint) {
 		// did not receive packet or it is invalid
 		return false;
+	} else 
+	{
+		this->receive_buffer.length = reply_length;
+		return true;
 	}
-
-	if(in->buflen == 0 || SDLNet_CompareAddresses(in->addr, ipaddr) != 0) {
-		// packet is 0 byte or it is not addressed to us
-		std::cout << "received packet not addressed to us" << std::endl;
-		result = false;
-		goto return_result;
-	}
-
-	// import packet to buffer
-	this->receive_buffer.Clear();
-	if(!this->receive_buffer.ImportBytes(in->buf, in->buflen)) {
-		std::cout << "failed to import packet to buffer" << std::endl;
-		result = false;
-		goto return_result;
-	} else {
-		result = true;
-	}
-
-	return_result:
-	SDLNet_DestroyDatagram(in);
-	return result;
 }
 
 void Client::HandleKicked() {
@@ -746,9 +717,13 @@ void Client::FailErr(const char * msg) {
 }
 
 // Wait for a packet for a while
-bool Client::WaitForPacket(SDLNet_DatagramSocket * sock, SDLNet_Datagram ** dgram) {
-	SDL_Delay(1000);
-	return SDLNet_ReceiveDatagram(sock, dgram) && *dgram != NULL;
+bool Client::WaitForPacket() {
+	SDL_Delay(500);
+	asio::ip::udp::endpoint recieve_endpoint;
+	size_t reply_length = this->socket->receive_from(
+		 asio::buffer(receive_buffer.data, MAXBUFSIZE), recieve_endpoint);
+	receive_buffer.length = reply_length;
+	return reply_length > 0 && recieve_endpoint == server_endpoint;
 }
 
 // Join a server
@@ -766,15 +741,15 @@ bool Client::Join() {
 
 	this->SendBuffer();
 	
-	in = NULL;
-	if (WaitForPacket(udpsock, &in))
+	this->receive_buffer.Clear();
+	if (WaitForPacket())
 	{
-		if( in->buf[0] == SHIPZ_MESSAGE::JOIN )
+		if( receive_buffer.data[0] == SHIPZ_MESSAGE::JOIN )
 		{
-			my_player_nr = in->buf[1];
+			my_player_nr = receive_buffer.data[1];
 			std::cout << "Joined as player " << this->name << std::endl;
 			self = &players[my_player_nr-1];
-			Uint8 * tmpptr = &in->buf[2];	
+			Uint8 * tmpptr = &receive_buffer.data[2];	
 			for( int player_index = 0; player_index < MAXPLAYERS; player_index++ )
 			{
 				int tmpteam = (int) Read16( tmpptr );
@@ -803,8 +778,6 @@ bool Client::Join() {
 			// error, protocol error, please try to reconnect.
 			error = 1;
 		}
-		// Free packet
-		SDLNet_DestroyDatagram(in);
 	}
 	else
 	{	
@@ -814,8 +787,6 @@ bool Client::Join() {
 	
 	if( error != 0 )
 	{
-		SDLNet_DestroyDatagramSocket(udpsock);
-		SDLNet_Quit();
 		return error;
 	}
 	return 0;
@@ -835,8 +806,6 @@ void Client::Load() {
 	{	
 		std::cout << "failed to load level!" << std::endl;
 		error = 5;
-		SDLNet_DestroyDatagramSocket(udpsock);
-		SDLNet_Quit();
 		// return error;
 		exit(1);
 	}
@@ -978,7 +947,6 @@ Client::~Client() {
 
 	TTF_Quit();
 
-	SDLNet_DestroyDatagramSocket(udpsock);
 	SDLNet_Quit();
 }
 

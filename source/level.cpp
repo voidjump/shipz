@@ -23,7 +23,7 @@ std::map<std::string, SHIPZ_TEAM> teams_from_string {
 };
 
 void LevelData::SetFile(const char * filename ) {
-	std::cout << filename << std::endl;
+	std::cout << "setting file: " << filename << std::endl;
 	std::cout << strlen(filename) << std::endl;
 	m_filename.assign(filename);
 }
