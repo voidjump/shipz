@@ -1,6 +1,7 @@
 #ifndef SHIPZSERVER_H
 #define SHIPZSERVER_H
 
+#include <asio.hpp>
 #include "types.h"
 #include "event.h"
 #include "net.h"
@@ -14,13 +15,12 @@
 #define IDLETIMEBEFOREDROP 2000
 
 int RunServer();
+using asio::ip::udp;
 
 class Server {
     private:
         Buffer sendbuf;
-        SDLNet_Datagram * in;
-        SDLNet_Address * ipaddr;
-        SDLNet_DatagramSocket * udpsock;
+        Buffer receive_buffer;
         int error = 0;
         bool ** collisionmap;
         int done = 0;
@@ -30,6 +30,9 @@ class Server {
         uint runstate;
 
         Player players[MAXPLAYERS];
+        asio::io_context io_context;
+        udp::socket * socket;
+        udp::endpoint remote_address;
 
     public:
         // Start server
@@ -52,8 +55,10 @@ class Server {
         void UpdatePlayers();
         void SendUpdates();
         // Send buffer to a client
-        void SendBuffer(SDLNet_Address * client_address);
+        void SendBuffer(asio::ip::udp::endpoint client_address);
         void UpdateBases();
+        void ReceiveUDP();
+        void HandlePacket();
 };
 
 #endif

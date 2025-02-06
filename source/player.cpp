@@ -14,6 +14,8 @@
 #include "assets.h"
 #include "level.h"
 
+const asio::ip::udp::endpoint zero_addr(asio::ip::address_v4::any(), 0);
+
 const char * GetStatusString(int status) {
 	switch(status) {
 		case PLAYER_STATUS::DEAD:
@@ -71,7 +73,7 @@ void EmptyPlayer( Player * play )
 	play->crossx = 0;
 	play->crossy = 0;
 	play->self_sustaining = 0;
-	play->playaddr = NULL;
+	play->playaddr = zero_addr;
 	play->typing = 0;
 }
 

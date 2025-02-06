@@ -130,17 +130,10 @@ void Client::Connect(const char *connect_address) {
 
 // Initialize some state
 // Empty players
-// Initialize SDL_Net
 void Client::Init() {
 	for( int ip = 0; ip < MAXPLAYERS; ip++ )
 	{
 		EmptyPlayer( &players[ ip ] );
-	}
-	
-	//initiate SDL_NET
-	if(!SDLNet_Init())
-	{
-		FailErr("failed to initialize SDLNet");
 	}
 }
 
@@ -312,22 +305,19 @@ void Client::HandleInputs() {
 	}
 }
 
-bool Client::ReceivedPacket() {
-	bool result = false;
-
+// Callback function for UDP receive events
+void Client::ReceiveUDP() {
 	receive_buffer.Clear();
-	asio::ip::udp::endpoint recieve_endpoint;
-	size_t reply_length = this->socket->receive_from(
-		 asio::buffer(receive_buffer.data, MAXBUFSIZE), recieve_endpoint);
-
-	if(reply_length == 0 || recieve_endpoint != server_endpoint) {
-		// did not receive packet or it is invalid
-		return false;
-	} else 
-	{
-		this->receive_buffer.length = reply_length;
-		return true;
-	}
+	socket->async_receive_from(
+		asio::buffer(receive_buffer.data, MAXBUFSIZE), client_endpoint,
+		[this](std::error_code ec, std::size_t bytes_received) {
+			if (!ec) {
+				std::cout << "received packet!" << std::endl;
+				receive_buffer.Debug();
+				HandlePacket();
+				ReceiveUDP();
+			}
+		});
 }
 
 void Client::HandleKicked() {
@@ -594,44 +584,51 @@ void Client::Tick() {
 	deltatime = newtime - oldtime;
 }
 
+void Client::HandlePacket() {
+	Uint8 protocol_header = receive_buffer.Read8();
+	switch(protocol_header) {
+		case SHIPZ_MESSAGE::KICK:
+			std::cout << "received kick notice" << std::endl;
+			HandleKicked();
+			break;
+		case SHIPZ_MESSAGE::UPDATE:
+			std::cout << "received update" << std::endl;
+			HandleUpdate();
+			break;
+		case SHIPZ_MESSAGE::CHAT:
+			std::cout << "received chat" << std::endl;
+			HandleChat();
+			break;
+		case SHIPZ_MESSAGE::MSG_PLAYER_JOINS:
+			std::cout << "received joins" << std::endl;
+			HandlePlayerJoins();
+			break;
+		case SHIPZ_MESSAGE::MSG_PLAYER_LEAVES:
+			std::cout << "received leaves" << std::endl;
+			HandlePlayerLeaves();
+			break;
+		case SHIPZ_MESSAGE::EVENT:
+			std::cout << "received event" << std::endl;
+			HandleEvent();
+			break;
+		default:
+			std::cout << "received unknown packet type" << std::endl;
+			receive_buffer.Debug();
+			break;
+	}
+}
+
 void Client::GameLoop() {
+	ReceiveUDP(); // Arm callback
 	while(!done)
 	{
 		HandleInputs();
 	
 		Tick();
 
-		if(ReceivedPacket()) {
-			Uint8 protocol_header = receive_buffer.Read8();
-			switch(protocol_header) {
-				case SHIPZ_MESSAGE::KICK:
-					std::cout << "received kick notice" << std::endl;
-					HandleKicked();
-					break;
-				case SHIPZ_MESSAGE::UPDATE:
-					std::cout << "received update" << std::endl;
-					HandleUpdate();
-					break;
-				case SHIPZ_MESSAGE::CHAT:
-					std::cout << "received chat" << std::endl;
-					HandleChat();
-					break;
-				case SHIPZ_MESSAGE::MSG_PLAYER_JOINS:
-					std::cout << "received joins" << std::endl;
-					HandlePlayerJoins();
-					break;
-				case SHIPZ_MESSAGE::MSG_PLAYER_LEAVES:
-					std::cout << "received leaves" << std::endl;
-					HandlePlayerLeaves();
-					break;
-				case SHIPZ_MESSAGE::EVENT:
-					std::cout << "received event" << std::endl;
-					HandleEvent();
-					break;
-				default:
-					std::cout << "received unknown packet type" << std::endl;
-					break;
-			}
+		io_context.poll();
+		if (!socket->is_open()) {
+			std::cerr << "Socket is closed! Cannot receive more packets." << std::endl;
 		}
 
 		UpdatePlayers();
@@ -712,7 +709,6 @@ void Client::FailErr(const char * msg) {
 	std::cout << SDL_GetError() << std::endl;
 	
 	// TODO: Cleanup state
-	SDLNet_Quit();
 	exit(1);
 }
 
@@ -946,8 +942,6 @@ Client::~Client() {
 	TTF_CloseFont( sansboldbig );
 
 	TTF_Quit();
-
-	SDLNet_Quit();
 }
 
 void Client::TakeScreenShot() {

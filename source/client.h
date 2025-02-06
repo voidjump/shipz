@@ -19,6 +19,8 @@ class Client {
 
         udp::socket * socket;
         udp::endpoint server_endpoint;
+	    asio::ip::udp::endpoint client_endpoint;
+        bool packet_ready;
 
         int error = 0;
         int attempts = 0;
@@ -108,6 +110,8 @@ class Client {
         void HandlePlayerJoins();
         void HandlePlayerLeaves();
         void HandleEvent();
+        void ReceiveUDP();
+        void HandlePacket();
 };
 
 #endif
