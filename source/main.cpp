@@ -11,7 +11,6 @@
 
 #include "server.h"
 #include "client.h"
-#include "menu.h"
 #include "other.h"
 #include "gfx.h"
 

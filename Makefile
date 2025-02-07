@@ -2,8 +2,8 @@
 
 # Compiler and flags
 CXX = g++
-CXXFLAGS = -std=c++11 -I/usr/local/include -DSHAREPATH="\"./\"" -I./include/
-LDFLAGS = -L/usr/local/lib -lSDL3 -lSDL3_image -lSDL3_mixer -lSDL3_net -lSDL3_ttf -rpath /usr/local/lib
+CXXFLAGS = -std=c++11 -I/home/steve/builds/include -I/usr/local/include -DSHAREPATH="\"./\"" -I./include/
+LDFLAGS = -L/usr/local/lib -L/home/steve/builds/lib64 -lSDL3 -lSDL3_image -lSDL3_mixer -lSDL3_net -lSDL3_ttf 
 RPATH = /usr/local/lib
 DEBUG_FLAGS = -g -O0
 

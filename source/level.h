@@ -1,6 +1,8 @@
 #ifndef SHIPZ_LEVEL_H
 #define SHIPZ_LEVEL_H
 
+#include <vector>
+
 struct LevelBase {
 	int owner; // RED, BLUE or NEUTRAL
 	int x;

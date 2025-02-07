@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string.h>
+#include <vector>
 
 #include <SDL3_net/SDL_net.h>
 
@@ -404,6 +405,10 @@ void Server::HandleStatus() {
 
 	sendbuf.Write8('\0');
 	
+	// Send
+	std::cout << "sending status reply" << std::endl;
+	std::cout << "to address:" << SDLNet_GetAddressString(in->addr) << std::endl;
+
 	SendBuffer(in->addr);
 }
 
@@ -696,6 +701,7 @@ void Server::GameLoop() {
 		this->Tick();
 		
 		if(SDLNet_ReceiveDatagram(udpsock, &in) && in != NULL ) {
+			std::cout << "received packet" << std::endl;
 			switch(in->buf[0]) {
 				case SHIPZ_MESSAGE::LEAVE:
 					this->HandleLeave();

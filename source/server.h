@@ -1,6 +1,7 @@
 #ifndef SHIPZSERVER_H
 #define SHIPZSERVER_H
 
+#include <vector>
 #include "types.h"
 #include "event.h"
 #include "net.h"
