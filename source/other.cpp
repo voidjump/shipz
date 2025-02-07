@@ -110,7 +110,13 @@ void CreateGonLookup() // create lookup tables for sin and cos
 
 void InitSDL()
 {
+	#ifdef HEADLESS
+	// Headless server build (No audio / video)
 	if ( !SDL_Init(SDL_INIT_EVENTS) )
+	#else
+	// Client build
+	if ( !SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO))
+	#endif
 	{
 		std::cout << "Unable to init SDL:" << std::endl << SDL_GetError();
 		exit(1);
