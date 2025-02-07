@@ -7,8 +7,8 @@
 // Bitmask constants
 
 constexpr Uint8 MESSAGE_SUBTYPE_MASK =
-    0b00011111;                                  // 5 bits for message subtype
-constexpr Uint8 MESSAGE_TYPE_MASK = 0b01100000;  // 2 bits for message type
+    0b00001111;                                  // 4 bits for message subtype
+constexpr Uint8 MESSAGE_TYPE_MASK = 0b01110000;  // 3 bits for message type
 constexpr Uint8 RELIABLE_MASK = 0b10000000;      // 1 bit for reliable
 
 enum class MessageType {
@@ -16,6 +16,7 @@ enum class MessageType {
     RESPONSE = 2,  // Response to data request
     SYNC = 3,      // An update that synchronizes game state
     EVENT = 4,     // An event
+    SESSION = 5,   // Session data
 };
 
 /// @brief Helper function to return a SubType from a message header
@@ -29,7 +30,7 @@ inline Uint8 GetSubMessageTypeFromHeader(Uint8 header) {
 /// @param header header byte to process
 /// @return MessageType
 inline MessageType GetMessageTypeFromHeader(Uint8 header) {
-    return (MessageType)((header & MESSAGE_TYPE_MASK) >> 5);
+    return (MessageType)((header & MESSAGE_TYPE_MASK) >> 4);
 }
 
 /// @brief Helper function to return MessageType from a message header
@@ -37,7 +38,7 @@ inline MessageType GetMessageTypeFromHeader(Uint8 header) {
 /// @return MessageType
 inline Uint8 ConstructHeader(MessageType message_type, Uint8 sub_type) {
     return (0x00 | (sub_type & MESSAGE_SUBTYPE_MASK) |
-            ((Uint8)message_type << 5 & MESSAGE_TYPE_MASK));
+            ((Uint8)message_type << 4 & MESSAGE_TYPE_MASK));
 }
 
 // A message is a base class for objects that read from and write to a buffer
@@ -67,7 +68,7 @@ class Message {
     inline void SetMessageType(MessageType msg_type) {
         this->header = this->header & ~MESSAGE_TYPE_MASK;  // clear bits
         this->header =
-            this->header | (((Uint8)msg_type << 5) & MESSAGE_TYPE_MASK);
+            this->header | (((Uint8)msg_type << 4) & MESSAGE_TYPE_MASK);
     }
 
     inline MessageType GetMessageType() {

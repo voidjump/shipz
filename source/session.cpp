@@ -1,0 +1,3 @@
+#include "session.h"
+
+MESSAGE_FACTORY_IMPLEMENTATION

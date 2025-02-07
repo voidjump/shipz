@@ -4,6 +4,7 @@
 #include "net.h"
 #include "packet.h"
 #include "player.h"
+#include "session.h"
 #include "socket.h"
 #include "types.h"
 #include "chat.h"
@@ -17,6 +18,7 @@ class Client {
     Uint16 listen_port;           // The port this listens on
 
     // networking state
+    ShipzSession session;
     SDLNet_Address* server_address;  // The server
     Socket socket;
     MessageHandler handler;
@@ -45,7 +47,7 @@ class Client {
 
     // Connect to a server
     // This should probably return some levelinfo
-    bool Connect();
+    ShipzSession Connect();
 
     // Leave the game
     void Leave();

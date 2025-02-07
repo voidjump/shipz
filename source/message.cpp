@@ -7,6 +7,7 @@
 #include "net.h"
 #include "request.h"
 #include "response.h"
+#include "session.h"
 #include "sync.h"
 
 // Serialize based on message type
@@ -58,6 +59,10 @@ Message *Message::Deserialize(Buffer &buffer) {
         case MessageType::SYNC:
             log::debug("reading SYNC");
             message = Sync::Deserialize(&buffer);
+            break;
+        case MessageType::SESSION:
+            log::debug("reading SESSION");
+            message = Session::Deserialize(&buffer);
             break;
         default:
             log::debug("cannot deserialize: unknown message type: ",

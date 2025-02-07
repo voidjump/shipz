@@ -31,8 +31,10 @@ class Packet : public Buffer {
 
         if constexpr (std::is_pointer<T>::value) {
             message->Serialize(dynamic_cast<Buffer*>(this));  // Use -> for pointers
+            message->LogDebug();
         } else {
             message.Serialize(dynamic_cast<Buffer*>(this));   // Use . for non-pointers
+            message.LogDebug();
         }
 
         log::debug("pack.Append: ", this->AsHexString());

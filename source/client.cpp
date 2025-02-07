@@ -21,6 +21,7 @@
 #include "player.h"
 #include "request.h"
 #include "response.h"
+#include "session.h"
 #include "sound.h"
 #include "sync.h"
 #include "team.h"
@@ -39,7 +40,7 @@ Client::Client(const char *server_hostname, const char *player_name,
 // Run the game
 void Client::Run() {
     this->Init();
-    if (!this->Connect()) return;
+    if((this->session = this->Connect()) == NO_SHIPZ_SESSION) return;
     if (!this->Join()) return;
     if (!this->Load()) return;
     this->GameLoop();
@@ -82,16 +83,18 @@ void Client::GameLoop() {
 }
 
 // Connect to the Server
-bool Client::Connect() {
+// Todo return a session
+ShipzSession Client::Connect() {
     Socket::ResolveHostname(this->server_hostname.c_str(),
                             &this->server_address);
     int attempts = 0;
 
     // Create a request
     Packet pack;
-    RequestGetServerInfo request(SHIPZ_VERSION, this->listen_port);
+    SessionRequestSession request(SHIPZ_VERSION, this->listen_port);
     pack.Append(request);
 
+    ShipzSession session_id = NO_SHIPZ_SESSION;
     log::info("querying server status..");
 
     while (true) {
@@ -102,6 +105,13 @@ bool Client::Connect() {
             auto recieved_packet = socket.GetPacket();
             auto messages = recieved_packet->Read();
             for (Message *msg : messages) {
+                if (msg->IsTypes(MessageType::SESSION, PROVIDE_SESSION)) {
+                    log::info("obtained session...");
+                    SessionProvideSession *session =
+                        msg->As<SessionProvideSession>();
+                    session->LogDebug();
+                    session_id = session->session_id;
+                }
                 if (msg->IsTypes(MessageType::RESPONSE, SERVER_INFO)) {
                     log::info("server responded...");
                     ResponseServerInformation *info =
@@ -111,10 +121,10 @@ bool Client::Connect() {
                     if (info->shipz_version != SHIPZ_VERSION) {
                         log::error("server is running shipz version:",
                                    info->shipz_version);
-                        return false;
+                        return 0;
                     }
                     lvl.SetFile(info->level_filename);
-                    return true;
+                    return session_id;
                 }
             }
         }

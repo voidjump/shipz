@@ -8,7 +8,11 @@
 #include "other.h"
 #include "request.h"
 #include "response.h"
+#include "session.h"
 #include "sync.h"
+
+std::map<SDLNet_Address*, SessionState> SessionState::active_sessions;
+std::unordered_set<ShipzSession> SessionState::ids_in_use;
 
 Server::Server(std::string level_name, const uint16_t listen_port,
                uint max_clients)
@@ -63,6 +67,10 @@ void Server::GameLoop() {
             auto recieved_packet = socket.GetPacket();
             handler.HandlePacket(*recieved_packet);
         }
+
+        // TODO: Stick this in some sort of timer
+        // Purge stale sessions
+        SessionState::PurgeStale();
     }
 }
 
@@ -141,12 +149,49 @@ void Server::HandleInfo(Message *msg) {
     return;
 }
 
+// Client wants to initiate a session
+// If the endpoint belonging to the player doens't have a session lining
+// up yet, create a session. Otherwise, the session request is simply 
+// ignored.
+void Server::CreateSession(Message *msg) {
+    auto info = msg->As<SessionRequestSession>();
+    log::debug("client version ", (int)info->version, " requested session");
+
+    // Create a session for this id:
+    ShipzSession session_id = SessionState::NewSession(handler.CurrentOrigin());
+    if(session_id == NO_SHIPZ_SESSION) {
+        return;
+    }
+
+    SessionProvideSession provide_session_message(session_id);
+    ResponseServerInformation server_info(SHIPZ_VERSION, Player::instances.size(),
+                                       MAXPLAYERS, lvl.m_levelversion,
+                                       lvl.m_filename);
+
+    // Send Info
+    Packet pack;
+    pack.Append(provide_session_message);
+    pack.Append(server_info);
+    socket.Send(pack, handler.CurrentOrigin(), info->port);
+    return;
+}
+
+
 // Setup message handling callbacks
 void Server::SetupCallbacks() {
+    // Client wants to initiate a session
+    this->handler.RegisterHandler(
+        std::function<void(Message *)>(
+            std::bind(&Server::CreateSession, this, std::placeholders::_1)),
+        ConstructHeader(MessageType::SESSION, REQUEST_SESSION));
+
+    // Client requests server information 
     this->handler.RegisterHandler(
         std::function<void(Message *)>(
             std::bind(&Server::HandleInfo, this, std::placeholders::_1)),
         ConstructHeader(MessageType::REQUEST, SERVER_INFO));
+
+    // Client wants to join game 
     this->handler.RegisterHandler(
         std::function<void(Message *)>(
             std::bind(&Server::HandleJoin, this, std::placeholders::_1)),
