@@ -34,6 +34,7 @@ class Buffer {
 
     bool ImportBytes(void *, size_t);
 
+    void Debug();
     // Clear the buffer
     void Clear();
     // Seek to a location

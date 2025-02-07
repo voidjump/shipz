@@ -2,8 +2,6 @@
 #include <string.h>
 #include <vector>
 
-#include <SDL3_net/SDL_net.h>
-
 #include "types.h"
 #include "player.h"
 #include "other.h"
@@ -39,8 +37,6 @@ Server::~Server() {
      		delete collisionmap[row];
 	}
 	delete collisionmap;
-	SDLNet_DestroyDatagramSocket(udpsock);
-	SDLNet_Quit();
 }
 
 Uint8 Server::CheckVictory() {
@@ -65,8 +61,6 @@ void Server::LoadLevel() {
 		}
 		delete this->collisionmap;
 		error = 5;
-		SDLNet_DestroyDatagramSocket(this->udpsock);
-		SDLNet_Quit();
 		this->runstate = SERVER_RUNSTATE_FAIL;
 		return;
 	}
@@ -75,24 +69,9 @@ void Server::LoadLevel() {
 void Server::Init() {
 
 	this->runstate = SERVER_RUNSTATE_OK;
-	//initiate SDL_NET
-	if(!SDLNet_Init())
-	{
- 		printf("SDLNet_Init: %s\n", SDL_GetError());
-		SDL_Quit();
-		this->runstate = SERVER_RUNSTATE_FAIL;
-		return;
-	}
 
 	// Listen on all available local addresses
-	this->udpsock = SDLNet_CreateDatagramSocket(NULL, PORT_SERVER);
-	if(!this->udpsock)
-	{
-    		printf("SDLNet_UDP_Open: %s\n", SDL_GetError());
-			SDL_Quit();
-			this->runstate = SERVER_RUNSTATE_FAIL;
-			return;
-	}
+    this->socket = new udp::socket(io_context, udp::endpoint(udp::v4(), PORT_SERVER));
 
 	this->LoadLevel();
 	
@@ -139,7 +118,7 @@ void Server::HandleLeave() {
 
 	// TODO: validate whether leave number is in range of array
 
-	Player *leaving_player = &players[in->buf[1] -1];
+	Player *leaving_player = &players[receive_buffer.data[1] -1];
 
 	std::cout << "@ player " << leaving_player->name << " left" << std::endl;
 	number_of_players--;
@@ -154,8 +133,6 @@ void Server::HandleLeave() {
 		red_team.players--;
 	}
 						
-	// dereference player address
-	SDLNet_UnrefAddress(leaving_player->playaddr);
 	InitPlayer( leaving_player );
 	// player has been removed
 	// now notify all the other players
@@ -169,36 +146,71 @@ void Server::HandleLeave() {
 		sendbuf.Clear();
 		sendbuf.Write8(SHIPZ_MESSAGE::MSG_PLAYER_LEAVES);
 		sendbuf.Write8(playerleaves + 1); // Intended recipient
-		sendbuf.Write8(in->buf[1]); // The leaving player
+		sendbuf.Write8(receive_buffer.data[1]); // The leaving player
 
 		SendBuffer(players[ playerleaves ].playaddr);
 	}
 				
 }
 
+void Server::HandlePacket() {
+	Uint8 protocol_header = receive_buffer.Read8();
+	switch(protocol_header) {
+		case SHIPZ_MESSAGE::LEAVE:
+			this->HandleLeave();
+			break;
+		case SHIPZ_MESSAGE::UPDATE:
+			this->HandleUpdate();
+			break;
+		case SHIPZ_MESSAGE::JOIN:
+			this->HandleJoin();
+			break;
+		case SHIPZ_MESSAGE::STATUS:
+			this->HandleStatus();
+			break;
+		case SHIPZ_MESSAGE::CHAT:
+			this->HandleChat();
+			break;
+	}
+}
+
+// Callback function for UDP receive events
+void Server::ReceiveUDP() {
+	receive_buffer.Clear();
+	socket->async_receive_from(
+		asio::buffer(receive_buffer.data, MAXBUFSIZE), remote_address,
+		[this](std::error_code ec, std::size_t bytes_received) {
+			if (!ec) {
+				std::cout << "received packet!" << std::endl;
+				receive_buffer.Debug();
+				HandlePacket();
+				ReceiveUDP();
+			}
+		});
+}
+
+
 // Send the sendbuffer to a client
-void Server::SendBuffer(SDLNet_Address * client_address) {
-	// TODO: Check for return value
-	SDLNet_SendDatagram(udpsock,
-						client_address,
-						PORT_CLIENT, 
-						(void *)sendbuf.data, 
-						sendbuf.length); 
+void Server::SendBuffer(asio::ip::udp::endpoint client_address) {
+	std::cout << "sending buffer to " 
+	<< client_address.address().to_string() << ":" << client_address.port() << std::endl;
+	this->socket->send_to(asio::buffer(sendbuf.data, sendbuf.length), client_address);
 }
 
 void Server::HandleUpdate() {
-	int playerread = in->buf[1];
+	int playerread = receive_buffer.data[1];
 	playerread--;
 	// client let's us know how he's doing, how nice of him.
 	// read his status, buls, etc.
 	
-	Uint8 * tmpptr = in->buf;
+	std::cout << "received update from plyr " << playerread << std::endl;
+	Uint8 * tmpptr = receive_buffer.data;
 
-	if( in->buf[2] == PLAYER_STATUS::SUICIDE )
+	if( receive_buffer.data[2] == PLAYER_STATUS::SUICIDE )
 	{
 		players[playerread].status = PLAYER_STATUS::DEAD;
 	}
-	if( in->buf[2] == PLAYER_STATUS::LIFTOFF )
+	if( receive_buffer.data[2] == PLAYER_STATUS::LIFTOFF )
 	{
 		std::cout << players[playerread].name << " wants to liftoff" << std::endl;
 		if( players[playerread].status == PLAYER_STATUS::LANDED )
@@ -221,7 +233,7 @@ void Server::HandleUpdate() {
 	}
 	if( players[playerread].status == PLAYER_STATUS::DEAD )
 	{
-		if( in->buf[2] == PLAYER_STATUS::RESPAWN )
+		if( receive_buffer.data[2] == PLAYER_STATUS::RESPAWN )
 		{
 			std::cout << players[playerread].name << " wants to respawn" << std::endl;
 			players[playerread].x = -14;       // this is needed for the
@@ -326,10 +338,8 @@ void Server::HandleJoin() {
 	if( newnum != 999 )
 	{
 		strncpy( players[ newnum -1 ].name, 
-					(const char * )&in->buf[1], 12 ); 
-		players[ newnum - 1 ].playaddr = in->addr;
-		// Increase ref count to this player's address
-		SDLNet_RefAddress(in->addr);
+					(const char * )&receive_buffer.data[1], 12 ); 
+		players[ newnum - 1 ].playaddr = remote_address;
 		players[ newnum - 1 ].playing = 1;
 		players[ newnum - 1 ].self_sustaining = 1;
 		InitPlayer( &players[ newnum - 1 ] );
@@ -405,20 +415,16 @@ void Server::HandleStatus() {
 
 	sendbuf.Write8('\0');
 	
-	// Send
-	std::cout << "sending status reply" << std::endl;
-	std::cout << "to address:" << SDLNet_GetAddressString(in->addr) << std::endl;
-
-	SendBuffer(in->addr);
+	SendBuffer(remote_address);
 }
 
 void Server::HandleChat() {
-	int tempplay = in->buf[1];
+	int tempplay = receive_buffer.data[1];
 
 	sendbuf.Clear();
 	sendbuf.Write8(SHIPZ_MESSAGE::CHAT);
 	sendbuf.Write8(0);
-	sendbuf.WriteString((const char*)&in->buf[2]);
+	sendbuf.WriteString((const char*)&receive_buffer.data[2]);
 	sendbuf.Write8('\0');
 	for( int sc = 0; sc < MAXPLAYERS; sc++ )
 	{
@@ -459,7 +465,6 @@ void Server::CheckIdlePlayers() {
 
 			players[ ci ].playing = 0;
 			// Dereference address
-			SDLNet_UnrefAddress(players[ci].playaddr);
 			InitPlayer( &players[ ci ] );
 			// player has been removed / kicked
 			// now notify all the other players
@@ -690,6 +695,7 @@ void Server::SendUpdates() {
 }
 
 void Server::GameLoop() {
+	ReceiveUDP(); // Arm callback
 	while(done == 0)
 	{
 		if( CheckForQuitSignal() )
@@ -700,28 +706,7 @@ void Server::GameLoop() {
 		}
 		this->Tick();
 		
-		if(SDLNet_ReceiveDatagram(udpsock, &in) && in != NULL ) {
-			std::cout << "received packet" << std::endl;
-			switch(in->buf[0]) {
-				case SHIPZ_MESSAGE::LEAVE:
-					this->HandleLeave();
-					break;
-				case SHIPZ_MESSAGE::UPDATE:
-					this->HandleUpdate();
-					break;
-				case SHIPZ_MESSAGE::JOIN:
-					this->HandleJoin();
-					break;
-				case SHIPZ_MESSAGE::STATUS:
-					this->HandleStatus();
-					break;
-				case SHIPZ_MESSAGE::CHAT:
-					this->HandleChat();
-					break;
-			}
-			// Free datagram:
-			SDLNet_DestroyDatagram(in);
-		}
+		io_context.poll();
 
 		this->CheckIdlePlayers();
 

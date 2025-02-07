@@ -1,6 +1,7 @@
 #ifndef SHIPZPLAYER_H
 #define SHIPZPLAYER_H
 
+#include <asio.hpp>
 #include "types.h"
 
 enum PLAYER_STATUS {
@@ -30,7 +31,7 @@ struct Player
 	int y_bmp, x_bmp;
 	float crossx, crossy; // x and y of the crosshair
 	bool self_sustaining; // is the player local or remote?
-	SDLNet_Address * playaddr;
+	asio::ip::udp::endpoint playaddr;
 	float lastsendtime;
 
 	bool typing; // is the player typing a message?

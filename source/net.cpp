@@ -4,7 +4,6 @@
 #include <iomanip>  // for std::hex, std::setw, std::setfill
 
 #include <SDL3/SDL.h>
-#include <SDL3_net/SDL_net.h>
 
 #include "types.h"
 #include "net.h"
@@ -78,6 +77,10 @@ void DebugPackage(const char* debug_msg, SDLNet_Datagram * dgram) {
 Buffer::Buffer() {
     this->position = this->data;
     this->length = 0;
+}
+
+void Buffer::Debug() {
+    PrintRawBytes((char *)this->data, this->length);
 }
 
 // Import bytes from source buffer

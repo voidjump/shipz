@@ -1,8 +1,10 @@
 #ifndef SHIPZCLIENT_H
 #define SHIPZCLIENT_H
+#include <asio.hpp>
 #include "types.h"
 #include "net.h"
 #include "player.h"
+using asio::ip::udp;
 
 class Client {
     private:
@@ -10,14 +12,15 @@ class Client {
         Buffer receive_buffer;
         Buffer type_buffer;
         const bool* keys;
+        asio::io_context io_context;
 
         const char* server_address; // The address we want to connect to
         const char* name; // The player's name
 
-        SDLNet_Datagram * in;
-        SDLNet_Address * ipaddr;
-        SDLNet_DatagramSocket * udpsock;
-        
+        udp::socket * socket;
+        udp::endpoint server_endpoint;
+	    asio::ip::udp::endpoint client_endpoint;
+        bool packet_ready;
 
         int error = 0;
         int attempts = 0;
@@ -89,7 +92,7 @@ class Client {
         void FailErr(const char *);
 
         // Wait for a packet for a while
-        bool WaitForPacket(SDLNet_DatagramSocket * sock, SDLNet_Datagram ** dgram);
+        bool WaitForPacket();
 
         // Wait for a packet without blocking
         bool ReceivedPacket();
@@ -107,6 +110,8 @@ class Client {
         void HandlePlayerJoins();
         void HandlePlayerLeaves();
         void HandleEvent();
+        void ReceiveUDP();
+        void HandlePacket();
 };
 
 #endif
