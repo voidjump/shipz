@@ -1,6 +1,7 @@
 #include "message.h"
 
 #include <iostream>
+#include <memory>
 
 #include "event.h"
 #include "log.h"
@@ -25,6 +26,9 @@ bool Message::Serialize(Buffer &buffer) {
         case MessageType::SYNC:
             return static_cast<Sync *>(this)->Serialize(&buffer);
             break;
+        case MessageType::SESSION:
+            return static_cast<Session *>(this)->Serialize(&buffer);
+            break;
         default:
             std::cout << "debug: Cannot Serialize: unknown event type"
                       << std::endl;
@@ -33,8 +37,8 @@ bool Message::Serialize(Buffer &buffer) {
     return true;
 }
 
-Message *Message::Deserialize(Buffer &buffer) {
-    Message *message = NULL;
+std::shared_ptr<Message> Message::Deserialize(Buffer &buffer) {
+    std::shared_ptr<Message> message = NULL;
     Uint8 header;
 
     if (buffer.AvailableRead() < 1) {
@@ -46,23 +50,23 @@ Message *Message::Deserialize(Buffer &buffer) {
     switch (GetMessageTypeFromHeader(msg_type)) {
         case MessageType::EVENT:
             log::debug("reading EVENT");
-            message = Event::Deserialize(&buffer);
+            message = std::dynamic_pointer_cast<Message>(Event::Deserialize(&buffer));
             break;
         case MessageType::REQUEST:
             log::debug("reading REQUEST");
-            message = Request::Deserialize(&buffer);
+            message = std::dynamic_pointer_cast<Message>(Request::Deserialize(&buffer));
             break;
         case MessageType::RESPONSE:
             log::debug("reading RESPONSE");
-            message = Response::Deserialize(&buffer);
+            message = std::dynamic_pointer_cast<Message>(Response::Deserialize(&buffer));
             break;
         case MessageType::SYNC:
             log::debug("reading SYNC");
-            message = Sync::Deserialize(&buffer);
+            message = std::dynamic_pointer_cast<Message>(Sync::Deserialize(&buffer));
             break;
         case MessageType::SESSION:
             log::debug("reading SESSION");
-            message = Session::Deserialize(&buffer);
+            message = std::dynamic_pointer_cast<Message>(Session::Deserialize(&buffer));
             break;
         default:
             log::debug("cannot deserialize: unknown message type: ",

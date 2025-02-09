@@ -9,10 +9,9 @@
 #include "request.h"
 #include "response.h"
 #include "session.h"
+#include "session_manager.h"
 #include "sync.h"
 
-std::map<SDLNet_Address*, SessionState> SessionState::active_sessions;
-std::unordered_set<ShipzSession> SessionState::ids_in_use;
 
 Server::Server(std::string level_name, const uint16_t listen_port,
                uint max_clients)
@@ -32,7 +31,7 @@ void Server::Run() {
 
 // Initialize the server
 void Server::Init() {
-    handler.RegisterDefault(std::function<void(Message *)>(
+    handler.RegisterDefault(std::function<void(std::shared_ptr<Message>)>(
         std::bind(&Server::HandleUnknownMessage, this, std::placeholders::_1)));
     SetupCallbacks();
     // Setup chat console
@@ -65,12 +64,20 @@ void Server::GameLoop() {
         if (socket.Poll()) {
             // log::debug("received a packet");
             auto recieved_packet = socket.GetPacket();
-            handler.HandlePacket(*recieved_packet);
+            // If the packet has a session but it is not active, drop it
+            // altogether
+            auto session_id = recieved_packet->SessionID();
+            if (ShipzSession::IsActiveID(session_id) ||
+                ShipzSession::IsNoneID(session_id)) {
+                handler.HandlePacket(*recieved_packet);
+            } else {
+                log::debug("dropped packed due to invalid session");
+            }
         }
 
         // TODO: Stick this in some sort of timer
         // Purge stale sessions
-        SessionState::PurgeStale();
+        ShipzSessionManager::PurgeStale();
     }
 }
 
@@ -79,14 +86,15 @@ void Server::GameLoop() {
 ///////////////////////////////////////////////////////////////////////////////
 
 // Handle an unknown message
-void Server::HandleUnknownMessage(Message *msg) {
+void Server::HandleUnknownMessage(std::shared_ptr<Message> msg) {
     log::debug("received unknown message type:",
                static_cast<int>(msg->GetMessageType()));
     // TODO: Should we output the content of the message?
 }
 
 // A player wants to join
-void Server::HandleJoin(Message *msg) {
+// TODO: Attach the right session headers
+void Server::HandleJoin(std::shared_ptr<Message> msg) {
     auto join = msg->As<RequestJoinGame>();
     log::debug("client with name ", join->player_name, " requests join game");
 
@@ -135,7 +143,7 @@ void Server::HandleJoin(Message *msg) {
 }
 
 // Client requests server information
-void Server::HandleInfo(Message *msg) {
+void Server::HandleInfo(std::shared_ptr<Message> msg) {
     auto info = msg->As<RequestGetServerInfo>();
     log::debug("client version ", (int)info->version, " requested information");
 
@@ -151,24 +159,25 @@ void Server::HandleInfo(Message *msg) {
 
 // Client wants to initiate a session
 // If the endpoint belonging to the player doens't have a session lining
-// up yet, create a session. Otherwise, the session request is simply 
+// up yet, create a session. Otherwise, the session request is simply
 // ignored.
-void Server::CreateSession(Message *msg) {
+void Server::CreateSession(std::shared_ptr<Message> msg) {
     auto info = msg->As<SessionRequestSession>();
     log::debug("client version ", (int)info->version, " requested session");
 
     // Create a session for this id:
-    ShipzSession session_id = SessionState::NewSession(handler.CurrentOrigin());
-    if(session_id == NO_SHIPZ_SESSION) {
+    ShipzSession *session =
+        ShipzSessionManager::NewSession(handler.CurrentOrigin());
+    if (session == nullptr) {
         return;
     }
 
-    SessionProvideSession provide_session_message(session_id);
-    ResponseServerInformation server_info(SHIPZ_VERSION, Player::instances.size(),
-                                       MAXPLAYERS, lvl.m_levelversion,
-                                       lvl.m_filename);
+    SessionProvideSession provide_session_message(session->session_id);
+    ResponseServerInformation server_info(SHIPZ_VERSION,
+                                          Player::instances.size(), MAXPLAYERS,
+                                          lvl.m_levelversion, lvl.m_filename);
 
-    // Send Info
+    // Send Info; Note this has no session header
     Packet pack;
     pack.Append(provide_session_message);
     pack.Append(server_info);
@@ -176,24 +185,23 @@ void Server::CreateSession(Message *msg) {
     return;
 }
 
-
 // Setup message handling callbacks
 void Server::SetupCallbacks() {
     // Client wants to initiate a session
     this->handler.RegisterHandler(
-        std::function<void(Message *)>(
+        std::function<void(std::shared_ptr<Message>)>(
             std::bind(&Server::CreateSession, this, std::placeholders::_1)),
         ConstructHeader(MessageType::SESSION, REQUEST_SESSION));
 
-    // Client requests server information 
+    // Client requests server information
     this->handler.RegisterHandler(
-        std::function<void(Message *)>(
+        std::function<void(std::shared_ptr<Message>)>(
             std::bind(&Server::HandleInfo, this, std::placeholders::_1)),
         ConstructHeader(MessageType::REQUEST, SERVER_INFO));
 
-    // Client wants to join game 
+    // Client wants to join game
     this->handler.RegisterHandler(
-        std::function<void(Message *)>(
+        std::function<void(std::shared_ptr<Message>)>(
             std::bind(&Server::HandleJoin, this, std::placeholders::_1)),
         ConstructHeader(MessageType::REQUEST, JOIN_GAME));
 }

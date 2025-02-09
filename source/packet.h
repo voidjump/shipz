@@ -2,16 +2,18 @@
 #define SHIPZ_PACKET_H
 #include <functional>
 #include <list>
-#include <optional>
 #include <map>
 
 
 #include "message.h"
 #include "net.h"
 #include "log.h"
+#include "session.h"
 
 #define AES_BLOCKSIZE 16
 
+// This should be changed if any thing is placed before the dynamic buffer
+constexpr uint16_t PACKET_HEADER_SIZE = sizeof(ShipzSessionID);
 
 // A packet is a buffer containing a series of shipz messages
 // It owns the memory that the messages write to and read from
@@ -21,7 +23,9 @@ class Packet : public Buffer {
     void RandomizeIV();
 
    public:
+    ShipzSessionID session;
     SDLNet_Address * origin;
+    SDLNet_Address * destination;
 
     // Append a message
     template <typename T>
@@ -41,9 +45,21 @@ class Packet : public Buffer {
     }
 
     // Read messages from buffer
-    std::list<Message*> Read();
+    std::list<std::shared_ptr<Message>> Read();
 
+    // Read the packet session
+    inline ShipzSessionID ReadSession() {
+        this->session = this->Read16();
+        return this->session;
+    }
+
+    Packet();
+    Packet(ShipzSessionID session);
     ~Packet();
+
+    inline ShipzSessionID SessionID() {
+        return this->session;
+    }
 
     // Encrypt the underlying data using a preshared 256 bit symmetric AES key
     void Encrypt(Uint8* key);
@@ -55,20 +71,20 @@ class Packet : public Buffer {
 class MessageHandler {
     private:
         // Registry of functions
-        std::map<Uint16, std::function<void(Message*)>> registry;
+        std::map<Uint16, std::function<void(std::shared_ptr<Message>)>> registry;
 
         // The default function to call
-        std::function<void(Message*)> default_callback;
+        std::function<void(std::shared_ptr<Message>)> default_callback;
 
         // Holds the origin address when handling packets
         SDLNet_Address * current_origin;
 
     public:
         // Register a callback function
-        void RegisterHandler(std::function<void(Message*)> callback, Uint16 msg_sub_type);
+        void RegisterHandler(std::function<void(std::shared_ptr<Message>)> callback, Uint16 msg_sub_type);
 
         // Register a default callback function
-        void RegisterDefault(std::function<void(Message*)> callback);
+        void RegisterDefault(std::function<void(std::shared_ptr<Message>)> callback);
 
         // Delete a packet handler
         void DeleteHandler(Uint16 msg_sub_type);
@@ -82,5 +98,4 @@ class MessageHandler {
         // Get the origin address for the current packet 
         SDLNet_Address * CurrentOrigin();
 };
-
 #endif

@@ -6,3 +6,5 @@ ss*.bmp
 .vscode/
 build.sh
 test_program
+todo.md
+

@@ -40,7 +40,7 @@ Client::Client(const char *server_hostname, const char *player_name,
 // Run the game
 void Client::Run() {
     this->Init();
-    if((this->session = this->Connect()) == NO_SHIPZ_SESSION) return;
+    if ((this->session = this->Connect()) == NO_SHIPZ_SESSION) return;
     if (!this->Join()) return;
     if (!this->Load()) return;
     this->GameLoop();
@@ -49,7 +49,7 @@ void Client::Run() {
 // Initialize client
 void Client::Init() {
     // Explicitly wrap std::bind with std::function
-    this->handler.RegisterDefault(std::function<void(Message *)>(
+    this->handler.RegisterDefault(std::function<void(std::shared_ptr<Message>)>(
         std::bind(&Client::HandleUnknownMessage, this, std::placeholders::_1)));
     // Setup chat console
     this->console.SetHeight(3);
@@ -83,8 +83,7 @@ void Client::GameLoop() {
 }
 
 // Connect to the Server
-// Todo return a session
-ShipzSession Client::Connect() {
+ShipzSessionID Client::Connect() {
     Socket::ResolveHostname(this->server_hostname.c_str(),
                             &this->server_address);
     int attempts = 0;
@@ -94,7 +93,7 @@ ShipzSession Client::Connect() {
     SessionRequestSession request(SHIPZ_VERSION, this->listen_port);
     pack.Append(request);
 
-    ShipzSession session_id = NO_SHIPZ_SESSION;
+    ShipzSessionID session_id = NO_SHIPZ_SESSION;
     log::info("querying server status..");
 
     while (true) {
@@ -104,7 +103,7 @@ ShipzSession Client::Connect() {
         if (socket.Poll()) {
             auto recieved_packet = socket.GetPacket();
             auto messages = recieved_packet->Read();
-            for (Message *msg : messages) {
+            for (auto msg : messages) {
                 if (msg->IsTypes(MessageType::SESSION, PROVIDE_SESSION)) {
                     log::info("obtained session...");
                     SessionProvideSession *session =
@@ -142,7 +141,7 @@ bool Client::Join() {
     log::info("joining...");
 
     // Create a join request
-    Packet pack;
+    Packet pack(this->session);
     RequestJoinGame req(name, this->listen_port);
     pack.Append(req);
 
@@ -153,7 +152,7 @@ bool Client::Join() {
         if (socket.Poll()) {
             auto recieved_packet = socket.GetPacket();
             auto messages = recieved_packet->Read();
-            for (Message *msg : messages) {
+            for (auto msg : messages) {
                 if (msg->IsTypes(MessageType::RESPONSE, ACCEPT_JOIN)) {
                     log::info("join accepted...");
                     auto info = msg->As<ResponseAcceptJoin>();
@@ -291,39 +290,39 @@ void Client::Tick() {
 // Set all callbacks used during the game loop
 void Client::SetupCallbacks() {
     this->handler.RegisterHandler(
-        std::function<void(Message *)>(
+        std::function<void(std::shared_ptr<Message>)>(
             std::bind(&Client::HandleKicked, this, std::placeholders::_1)),
         PLAYER_KICKED);
     this->handler.RegisterHandler(
-        std::function<void(Message *)>(
+        std::function<void(std::shared_ptr<Message>)>(
             std::bind(&Client::HandlePlayerJoins, this, std::placeholders::_1)),
         PLAYER_JOINS);
     this->handler.RegisterHandler(
-        std::function<void(Message *)>(std::bind(&Client::HandlePlayerLeaves,
-                                                 this, std::placeholders::_1)),
+        std::function<void(std::shared_ptr<Message>)>(std::bind(
+            &Client::HandlePlayerLeaves, this, std::placeholders::_1)),
         PLAYER_LEAVES);
     this->handler.RegisterHandler(
-        std::function<void(Message *)>(
+        std::function<void(std::shared_ptr<Message>)>(
             std::bind(&Client::HandleChat, this, std::placeholders::_1)),
         CHAT_ALL);
     this->handler.RegisterHandler(
-        std::function<void(Message *)>(
+        std::function<void(std::shared_ptr<Message>)>(
             std::bind(&Client::HandleObjectSpawn, this, std::placeholders::_1)),
         OBJECT_SPAWN);
     this->handler.RegisterHandler(
-        std::function<void(Message *)>(std::bind(&Client::HandleObjectUpdate,
-                                                 this, std::placeholders::_1)),
+        std::function<void(std::shared_ptr<Message>)>(std::bind(
+            &Client::HandleObjectUpdate, this, std::placeholders::_1)),
         OBJECT_UPDATE);
     this->handler.RegisterHandler(
-        std::function<void(Message *)>(std::bind(&Client::HandleObjectDestroy,
-                                                 this, std::placeholders::_1)),
+        std::function<void(std::shared_ptr<Message>)>(std::bind(
+            &Client::HandleObjectDestroy, this, std::placeholders::_1)),
         OBJECT_DESTROY);
     this->handler.RegisterHandler(
-        std::function<void(Message *)>(
+        std::function<void(std::shared_ptr<Message>)>(
             std::bind(&Client::HandlePlayerState, this, std::placeholders::_1)),
         PLAYER_STATE);
     this->handler.RegisterHandler(
-        std::function<void(Message *)>(
+        std::function<void(std::shared_ptr<Message>)>(
             std::bind(&Client::HandleTeamStates, this, std::placeholders::_1)),
         TEAM_STATES);
 }
@@ -332,7 +331,7 @@ void Client::SetupCallbacks() {
 // This contains both our position, state and the bullets we've fired
 // TODO: We can add chat messages to this later
 void Client::SendUpdate() {
-    Packet pack;
+    Packet pack(this->session);
     SyncPlayerState sync(self->client_id, self->status, self->typing,
                          self->angle, self->x, self->y, self->vx, self->vy);
     pack.Append(sync);
@@ -349,7 +348,7 @@ void Client::SendUpdate() {
 // Notify the server that we are leaving
 void Client::Leave() {
     // Create a request
-    Packet pack;
+    Packet pack(this->session);
     RequestLeaveGame request(this->client_id);
     pack.Append(request);
     socket.Send(pack, this->server_address, PORT_SERVER);
@@ -490,7 +489,7 @@ void Client::Shoot() {
 // This is called when a player presses return
 // It transmits the current chat entered in the chat buffer to the server.
 void Client::SendChatLine() {
-    Packet pack;
+    Packet pack(this->session);
     EventChat event(this->type_buffer.c_str(), this->client_id, 0);
 
     pack.Append(event);
@@ -507,19 +506,19 @@ void Client::SendChatLine() {
 ///////////////////////////////////////////////////////////////////////////////
 
 // Handle an unknown message
-void Client::HandleUnknownMessage(Message *msg) {
+void Client::HandleUnknownMessage(std::shared_ptr<Message> msg) {
     log::debug("received unknown message type");
     // TODO: Should we output the content of the message?
 }
 
 // Handle chat message
-void Client::HandleChat(Message *msg) {
+void Client::HandleChat(std::shared_ptr<Message> msg) {
     auto event = msg->As<EventChat>();
     console.AddFromMessage(event);
 }
 
 // Handle a player join event
-void Client::HandlePlayerJoins(Message *msg) {
+void Client::HandlePlayerJoins(std::shared_ptr<Message> msg) {
     auto event = msg->As<EventPlayerJoins>();
     AddPlayer(event->client_id, event->player_name, event->team);
     log::info("player ", event->player_name, " joined the server");
@@ -553,13 +552,13 @@ void Client::RemovePlayer(Uint16 id, std::string reason) {
     }
 }
 
-void Client::HandlePlayerLeaves(Message *msg) {
+void Client::HandlePlayerLeaves(std::shared_ptr<Message> msg) {
     auto event = msg->As<EventPlayerLeaves>();
     RemovePlayer(event->client_id, event->leave_reason);
 }
 
 // Handle a message that a player was kicked
-void Client::HandleKicked(Message *msg) {
+void Client::HandleKicked(std::shared_ptr<Message> msg) {
     auto event = msg->As<EventPlayerKicked>();
     if (event->client_id == client_id) {
         log::info("kicked by server");
@@ -570,14 +569,14 @@ void Client::HandleKicked(Message *msg) {
 }
 
 // An object is spawned
-void Client::HandleObjectSpawn(Message *msg) {
+void Client::HandleObjectSpawn(std::shared_ptr<Message> msg) {
     auto obj_spawn = msg->As<SyncObjectSpawn>();
 
     Object::HandleSpawn(obj_spawn);
 }
 
 // An object is updated
-void Client::HandleObjectUpdate(Message *msg) {
+void Client::HandleObjectUpdate(std::shared_ptr<Message> msg) {
     auto obj_update = msg->As<SyncObjectUpdate>();
 
     auto obj_instance = Object::GetByID(obj_update->id);
@@ -585,7 +584,7 @@ void Client::HandleObjectUpdate(Message *msg) {
 }
 
 // An object is destroyed
-void Client::HandleObjectDestroy(Message *msg) {
+void Client::HandleObjectDestroy(std::shared_ptr<Message> msg) {
     auto obj_destroy = msg->As<SyncObjectDestroy>();
 
     auto obj_instance = Object::GetByID(obj_destroy->id);
@@ -593,7 +592,7 @@ void Client::HandleObjectDestroy(Message *msg) {
 }
 
 // Update a player
-void Client::HandlePlayerState(Message *msg) {
+void Client::HandlePlayerState(std::shared_ptr<Message> msg) {
     auto player_state = msg->As<SyncPlayerState>();
     auto player = Player::GetByID(player_state->client_id);
     if (!player) {
@@ -605,6 +604,6 @@ void Client::HandlePlayerState(Message *msg) {
 }
 
 // Update the team state, including the bases
-void Client::HandleTeamStates(Message *msg) {
+void Client::HandleTeamStates(std::shared_ptr<Message> msg) {
     auto sync = msg->As<SyncTeamStates>();
 }

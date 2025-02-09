@@ -18,7 +18,7 @@ class Client {
     Uint16 listen_port;           // The port this listens on
 
     // networking state
-    ShipzSession session;
+    ShipzSessionID session;
     SDLNet_Address* server_address;  // The server
     Socket socket;
     MessageHandler handler;
@@ -47,7 +47,7 @@ class Client {
 
     // Connect to a server
     // This should probably return some levelinfo
-    ShipzSession Connect();
+    ShipzSessionID Connect();
 
     // Leave the game
     void Leave();
@@ -90,18 +90,18 @@ class Client {
 
     // Set up message handling callbacks
     void SetupCallbacks();
-
+    
     // Packet handlers
-    void HandleKicked(Message* msg);
-    void HandleChat(Message* msg);
-    void HandlePlayerJoins(Message* msg);
-    void HandlePlayerLeaves(Message* msg);
-    void HandleUnknownMessage(Message* msg);
-    void HandleObjectSpawn(Message* msg);
-    void HandleObjectUpdate(Message* msg);
-    void HandleObjectDestroy(Message* msg);
-    void HandlePlayerState(Message* msg);
-    void HandleTeamStates(Message* msg);
+    void HandleKicked(std::shared_ptr<Message> msg);
+    void HandleChat(std::shared_ptr<Message> msg);
+    void HandlePlayerJoins(std::shared_ptr<Message> msg);
+    void HandlePlayerLeaves(std::shared_ptr<Message> msg);
+    void HandleUnknownMessage(std::shared_ptr<Message> msg);
+    void HandleObjectSpawn(std::shared_ptr<Message> msg);
+    void HandleObjectUpdate(std::shared_ptr<Message> msg);
+    void HandleObjectDestroy(std::shared_ptr<Message> msg);
+    void HandlePlayerState(std::shared_ptr<Message> msg);
+    void HandleTeamStates(std::shared_ptr<Message> msg);
 };
 
 #endif

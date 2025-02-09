@@ -7,18 +7,19 @@
 #include <SDL3/SDL.h>
 
 #include <iostream>
+#include <memory>
 #include <string>
 
+#include "log.h"
 #include "message.h"
 #include "net.h"
-#include "log.h"
 
 // Expand field into type
 #define FIELD_UINT8_TYPE Uint8
 #define FIELD_UINT16_TYPE Uint16
 #define FIELD_UINT32_TYPE Uint32
 #define FIELD_STRING_TYPE std::string
-#define FIELD_OCTETS_TYPE std::vector<Uint8> 
+#define FIELD_OCTETS_TYPE std::vector<Uint8>
 // Expand field into serialization size
 #define FIELD_UINT8_SIZE(value) 1
 #define FIELD_UINT16_SIZE(value) 2
@@ -69,12 +70,13 @@
 #define MESSAGE_FIELD_DECLARATION(type, name) type##_TYPE name;
 
 // Field handler that expands field definition into parameter type list;
-#define MESSAGE_FIELD_ARGUMENT_LIST(type, name) ,type##_TYPE name
+#define MESSAGE_FIELD_ARGUMENT_LIST(type, name) , type##_TYPE name
 
 // Field handler that expands field definition into parameter name list;
-#define MESSAGE_FIELD_ARGUMENT_NAME_LIST(type, name) ,name
+#define MESSAGE_FIELD_ARGUMENT_NAME_LIST(type, name) , name
 
-// Field handler that expands field definition into constructor initializer statements;
+// Field handler that expands field definition into constructor initializer
+// statements;
 #define MESSAGE_FIELD_INIT(type, name) this->name = name;
 
 // Field handler that expands field definition into buffer writes;
@@ -94,110 +96,136 @@
     type##_TYPE name = buffer->type##_DESERIALIZE;
 
 // Define message classes
-#define MESSAGE_CLASS_DEFINITION_HANDLER(CLASS_NAME, HEADER)                                               \
-    class EXPAND_CONCAT(BASE_CLASS_NAME, CLASS_NAME) : public BASE_CLASS_NAME {                            \
-       public:                                                                                             \
-        /* Add field declarations */                                                                       \
-        FIELDS_##CLASS_NAME(MESSAGE_FIELD_DECLARATION)                                                     \
-                                                                                                           \
-            /* Constructor */                                                                              \
-            EXPAND_CONCAT(BASE_CLASS_NAME, CLASS_NAME)(EXPAND_AND_REMOVE_FIRST(FIELDS_##CLASS_NAME( MESSAGE_FIELD_ARGUMENT_LIST))) { \
-            this->SetMessageType(MessageType::BASE_CLASS_HEADER);                                          \
-            this->SetMessageSubType(HEADER);                                                               \
-            FIELDS_##CLASS_NAME(MESSAGE_FIELD_INIT)                                                        \
-        }                                                                                                  \
-                                                                                                           \
-        /* Serialize Message */                                                                            \
-        bool Serialize(Buffer *buffer);                                                                    \
-                                                                                                           \
-        /* debug Message */                                                                                \
-        void LogDebug();                                                                                  \
-                                                                                                           \
-        /* Deserialize Message*/                                                                           \
-        static BASE_CLASS_NAME *Deserialize(Buffer *buffer);                                               \
+#define MESSAGE_CLASS_DEFINITION_HANDLER(CLASS_NAME, HEADER)                 \
+    class EXPAND_CONCAT(BASE_CLASS_NAME, CLASS_NAME)                         \
+        : public BASE_CLASS_NAME {                                           \
+       public:                                                               \
+        /* Add field declarations */                                         \
+        FIELDS_##CLASS_NAME(MESSAGE_FIELD_DECLARATION)                       \
+                                                                             \
+            /* Constructor */                                                \
+            EXPAND_CONCAT(BASE_CLASS_NAME,                                   \
+                          CLASS_NAME)(EXPAND_AND_REMOVE_FIRST(               \
+                FIELDS_##CLASS_NAME(MESSAGE_FIELD_ARGUMENT_LIST))) {         \
+            this->SetMessageType(MessageType::BASE_CLASS_HEADER);            \
+            this->SetMessageSubType(HEADER);                                 \
+            FIELDS_##CLASS_NAME(MESSAGE_FIELD_INIT)                          \
+        }                                                                    \
+                                                                             \
+        /* Serialize Message */                                              \
+        bool Serialize(Buffer *buffer);                                      \
+                                                                             \
+        /* debug Message */                                                  \
+        void LogDebug();                                                     \
+                                                                             \
+        /* Deserialize Message*/                                             \
+        static std::shared_ptr<BASE_CLASS_NAME> Deserialize(Buffer *buffer); \
     };
 
 // Implement serialization case in base class
-#define MESSAGE_CLASS_SERIALIZATION_CASE(CLASS_NAME, HEADER)                                       \
-    case HEADER:                                                                                   \
-        return static_cast<EXPAND_CONCAT(BASE_CLASS_NAME, CLASS_NAME) *>(this)->Serialize(buffer); \
+#define MESSAGE_CLASS_SERIALIZATION_CASE(CLASS_NAME, HEADER)                   \
+    case HEADER:                                                               \
+        return static_cast<EXPAND_CONCAT(BASE_CLASS_NAME, CLASS_NAME) *>(this) \
+            ->Serialize(buffer);                                               \
         break;
 
 // Implement deserialization case in base class
-#define MESSAGE_CLASS_DESERIALIZATION_CASE(CLASS_NAME, HEADER)                      \
-    case HEADER:                                                                    \
-        instance = EXPAND_CONCAT(BASE_CLASS_NAME, CLASS_NAME)::Deserialize(buffer); \
+#define MESSAGE_CLASS_DESERIALIZATION_CASE(CLASS_NAME, HEADER)               \
+    case HEADER:                                                             \
+        instance =                                                           \
+            EXPAND_CONCAT(BASE_CLASS_NAME, CLASS_NAME)::Deserialize(buffer); \
         break;
 
 // Implement Serialization methods
-#define MESSAGE_CLASS_SERIALIZATION_FUNCTIONS(CLASS_NAME, HEADER)                          \
-    bool EXPAND_CONCAT(BASE_CLASS_NAME, CLASS_NAME)::Serialize(Buffer *buffer) {           \
-        if (buffer->AvailableWrite() < (FIELDS_##CLASS_NAME(SUM_REQUIRED_FIELD_SIZE) 0)) { \
-            return false;                                                                  \
-        }                                                                                  \
-        /* Write header */                                                                 \
-        buffer->Write8(this->header);                                                      \
-        FIELDS_##CLASS_NAME(SERIALIZE_FIELDS_TO_BUFFER) return true;                       \
+#define MESSAGE_CLASS_SERIALIZATION_FUNCTIONS(CLASS_NAME, HEADER)           \
+    bool EXPAND_CONCAT(BASE_CLASS_NAME,                                     \
+                       CLASS_NAME)::Serialize(Buffer *buffer) {             \
+        if (buffer->AvailableWrite() <                                      \
+            (FIELDS_##CLASS_NAME(SUM_REQUIRED_FIELD_SIZE) 0)) {             \
+            return false;                                                   \
+        }                                                                   \
+        /* Write header */                                                  \
+        buffer->Write8(this->header);                                       \
+        if (this->header & RELIABLE_MASK) buffer->Write8(this->GetSeqNr()); \
+        FIELDS_##CLASS_NAME(SERIALIZE_FIELDS_TO_BUFFER) return true;        \
     }
 
 // Implement Deserialization methods
-#define MESSAGE_CLASS_DESERIALIZATION_FUNCTIONS(CLASS_NAME, HEADER)                              \
-    BASE_CLASS_NAME *EXPAND_CONCAT(BASE_CLASS_NAME, CLASS_NAME)::Deserialize(Buffer *buffer) {   \
-        if (buffer->AvailableRead() < 1) {                                                       \
-            return NULL;                                                                         \
-        }                                                                                        \
-        /* Consume header */                                                                     \
-        buffer->Read8();                                                                         \
-        /* Deserialize fields */                                                                 \
-        FIELDS_##CLASS_NAME(DESERIALIZE_FIELDS_FROM_BUFFER) return dynamic_cast<BASE_CLASS_NAME*>( new EXPAND_CONCAT(            \
-            BASE_CLASS_NAME, CLASS_NAME)(EXPAND_AND_REMOVE_FIRST(FIELDS_##CLASS_NAME(MESSAGE_FIELD_ARGUMENT_NAME_LIST)))); \
+#define MESSAGE_CLASS_DESERIALIZATION_FUNCTIONS(CLASS_NAME, HEADER)      \
+    std::shared_ptr<BASE_CLASS_NAME> EXPAND_CONCAT(                      \
+        BASE_CLASS_NAME, CLASS_NAME)::Deserialize(Buffer *buffer) {      \
+        if (buffer->AvailableRead() < 1) {                               \
+            return NULL;                                                 \
+        }                                                                \
+        /* Consume header. If it is reliable, also read the seq_nr */    \
+        uint8_t _seq_nr = 0;                                             \
+        if (buffer->Read8() & RELIABLE_MASK) _seq_nr = buffer->Read8();  \
+        /* Deserialize fields */                                         \
+        FIELDS_##CLASS_NAME(                                             \
+            DESERIALIZE_FIELDS_FROM_BUFFER) /* create instance */        \
+            std::shared_ptr<BASE_CLASS_NAME>                             \
+                _instance = std::dynamic_pointer_cast<BASE_CLASS_NAME>(  \
+                    std::make_shared<EXPAND_CONCAT(BASE_CLASS_NAME,      \
+                                                   CLASS_NAME)>(         \
+                        EXPAND_CONCAT(BASE_CLASS_NAME, CLASS_NAME)(      \
+                            EXPAND_AND_REMOVE_FIRST(FIELDS_##CLASS_NAME( \
+                                MESSAGE_FIELD_ARGUMENT_NAME_LIST)))));   \
+        /* assign seq_nr */                                              \
+        _instance->SetSeqNr(_seq_nr);                                    \
+        return _instance;                                                \
     }
 
 // Implement debug methods
-#define MESSAGE_CLASS_DEBUG_FUNCTIONS(CLASS_NAME, HEADER)           \
-    void EXPAND_CONCAT(BASE_CLASS_NAME, CLASS_NAME)::LogDebug() {   \
-        FIELDS_##CLASS_NAME(DEBUG_LOG_FIELDS)                       \
+#define MESSAGE_CLASS_DEBUG_FUNCTIONS(CLASS_NAME, HEADER)         \
+    void EXPAND_CONCAT(BASE_CLASS_NAME, CLASS_NAME)::LogDebug() { \
+        FIELDS_##CLASS_NAME(DEBUG_LOG_FIELDS)                     \
     }
 
 // Implement Deserialization from base class
-#define BASE_CLASS_SERIALIZATION_IMPLEMENTATION                                                              \
-    bool BASE_CLASS_NAME::Serialize(Buffer *buffer) {                                                        \
-        switch (this->GetMessageSubType()) {                                                                 \
-            MESSAGE_CLASS_LIST(MESSAGE_CLASS_SERIALIZATION_CASE)                                             \
-            default:                                                                                         \
-                std::cout << "debug: Unknown " << EXPAND_STRINGIFY(BASE_CLASS_NAME) << " type" << std::endl; \
-                return false;                                                                                \
-        }                                                                                                    \
-        return false;                                                                                        \
+#define BASE_CLASS_SERIALIZATION_IMPLEMENTATION                           \
+    bool BASE_CLASS_NAME::Serialize(Buffer *buffer) {                     \
+        switch (this->GetMessageSubType()) {                              \
+            MESSAGE_CLASS_LIST(MESSAGE_CLASS_SERIALIZATION_CASE)          \
+            default:                                                      \
+                std::cout << "debug: Unknown "                            \
+                          << EXPAND_STRINGIFY(BASE_CLASS_NAME) << " type" \
+                          << std::endl;                                   \
+                return false;                                             \
+        }                                                                 \
+        return false;                                                     \
     }
 
 // Factory function to Deserialize an event
 // Returns an event type based on the type
 // of event deserialized
-#define BASE_CLASS_DESERIALIZATION_IMPLEMENTATION                                                           \
-    BASE_CLASS_NAME *BASE_CLASS_NAME::Deserialize(Buffer *buffer) {                                         \
-        BASE_CLASS_NAME *instance = NULL;                                                                   \
-                                                                                                            \
-        switch (GetSubMessageTypeFromHeader(buffer->Peek8())) {                                             \
-            MESSAGE_CLASS_LIST(MESSAGE_CLASS_DESERIALIZATION_CASE)                                          \
-            default:                                                                                        \
-                std::cout << "debug: Unknown " << EXPAND_STRINGIFY(BASE_CLASS_NAME) << "type" << std::endl; \
-                return NULL;                                                                                \
-        }                                                                                                   \
-        return instance;                                                                                    \
+#define BASE_CLASS_DESERIALIZATION_IMPLEMENTATION                        \
+    std::shared_ptr<BASE_CLASS_NAME> BASE_CLASS_NAME::Deserialize(       \
+        Buffer *buffer) {                                                \
+        std::shared_ptr<BASE_CLASS_NAME> instance = NULL;                \
+                                                                         \
+        switch (GetSubMessageTypeFromHeader(buffer->Peek8())) {          \
+            MESSAGE_CLASS_LIST(MESSAGE_CLASS_DESERIALIZATION_CASE)       \
+            default:                                                     \
+                std::cout << "debug: Unknown "                           \
+                          << EXPAND_STRINGIFY(BASE_CLASS_NAME) << "type" \
+                          << std::endl;                                  \
+                return NULL;                                             \
+        }                                                                \
+        return instance;                                                 \
     }
 
-#define MESSAGE_TYPE_ENUM_DECLARATION                                                                        \
-    enum EXPAND_CONCAT(BASE_CLASS_HEADER, _SUBMESSAGE_TYPE) {                                                \
-        MESSAGE_CLASS_LIST(CLASS_LIST_EMIT_HEADER_COMMA) EXPAND_CONCAT(BASE_CLASS_HEADER, _SUBMESSAGE_COUNT) \
+#define MESSAGE_TYPE_ENUM_DECLARATION                           \
+    enum EXPAND_CONCAT(BASE_CLASS_HEADER, _SUBMESSAGE_TYPE) {   \
+        MESSAGE_CLASS_LIST(CLASS_LIST_EMIT_HEADER_COMMA)        \
+            EXPAND_CONCAT(BASE_CLASS_HEADER, _SUBMESSAGE_COUNT) \
     };
 
-#define BASE_CLASS_DECLARATION                         \
-    class BASE_CLASS_NAME : public Message {           \
-       public:                                         \
-        virtual ~BASE_CLASS_NAME() {}                  \
-        bool Serialize(Buffer *);                      \
-        static BASE_CLASS_NAME *Deserialize(Buffer *); \
+#define BASE_CLASS_DECLARATION                                         \
+    class BASE_CLASS_NAME : public Message {                           \
+       public:                                                         \
+        virtual ~BASE_CLASS_NAME() {}                                  \
+        bool Serialize(Buffer *);                                      \
+        static std::shared_ptr<BASE_CLASS_NAME> Deserialize(Buffer *); \
     };
 
 // Declare enumeration type
@@ -208,11 +236,11 @@
     BASE_CLASS_DECLARATION        \
     MESSAGE_CLASS_LIST(MESSAGE_CLASS_DEFINITION_HANDLER)
 
-#define MESSAGE_FACTORY_IMPLEMENTATION                        \
-    BASE_CLASS_SERIALIZATION_IMPLEMENTATION                   \
-    BASE_CLASS_DESERIALIZATION_IMPLEMENTATION                 \
-    MESSAGE_CLASS_LIST(MESSAGE_CLASS_SERIALIZATION_FUNCTIONS) \
-    MESSAGE_CLASS_LIST(MESSAGE_CLASS_DESERIALIZATION_FUNCTIONS)\
+#define MESSAGE_FACTORY_IMPLEMENTATION                          \
+    BASE_CLASS_SERIALIZATION_IMPLEMENTATION                     \
+    BASE_CLASS_DESERIALIZATION_IMPLEMENTATION                   \
+    MESSAGE_CLASS_LIST(MESSAGE_CLASS_SERIALIZATION_FUNCTIONS)   \
+    MESSAGE_CLASS_LIST(MESSAGE_CLASS_DESERIALIZATION_FUNCTIONS) \
     MESSAGE_CLASS_LIST(MESSAGE_CLASS_DEBUG_FUNCTIONS)
 
 #endif

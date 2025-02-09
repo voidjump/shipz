@@ -6,6 +6,7 @@
 
 // Bitmask constants
 
+using MessageSequenceID = uint8_t;
 constexpr Uint8 MESSAGE_SUBTYPE_MASK =
     0b00001111;                                  // 4 bits for message subtype
 constexpr Uint8 MESSAGE_TYPE_MASK = 0b01110000;  // 3 bits for message type
@@ -51,6 +52,8 @@ class Message {
     // The MessageType
     // The MessageSubType
     Uint8 header;
+    // The sequence number (used for reliable message tracking)
+    Uint8 seq_nr;
 
    public:
     virtual ~Message() = default;  // virtual destructor to enable RTTI
@@ -58,7 +61,7 @@ class Message {
     // Serialize this message into a buffer
     bool Serialize(Buffer &buffer);
     // Deserialize current buffer position into a message
-    static Message *Deserialize(Buffer &buffer);
+    static std::shared_ptr<Message> Deserialize(Buffer &buffer);
 
     inline void SetMessageSubType(Uint8 msg_type) {
         this->header = this->header & ~MESSAGE_SUBTYPE_MASK;  // clear bits
@@ -91,6 +94,16 @@ class Message {
     }
 
     inline bool GetReliability() { return (bool)header & RELIABLE_MASK; }
+
+     // Getter for seq_nr
+    inline int GetSeqNr() {
+        return seq_nr;
+    }
+
+    // Setter for seq_nr
+    inline void SetSeqNr(uint8_t value) {
+        seq_nr = value;
+    }
 
     template <typename T>
     // Cast message to type

@@ -94,6 +94,7 @@ bool Socket::Poll() {
         log::error("failed to import packet to buffer");
         result = false;
     } else {
+        pack.ReadSession();
         pack.origin = recv->addr;
         SDLNet_RefAddress(recv->addr);
         result = true;

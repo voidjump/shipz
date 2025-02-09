@@ -2,23 +2,33 @@
 #include "packet.h"
 #include "AES.h"
 #include "log.h"
+#include "session.h"
 
 AES aes_g(AESKeyLength::AES_256); 
 std::random_device rand_dev_g;
 
+Packet::Packet() {
+    this->Write16(NO_SHIPZ_SESSION);
+    this->session = NO_SHIPZ_SESSION;
+}
+
+Packet::Packet(ShipzSessionID session_id) {
+    this->Write16(session_id);
+    this->session = session_id;
+}
 
 // Register a callback function
 //
 // The callbacks are registered on the full header, with the exclusion of
 // The reliability bit
 // So the reliable and unreliable message will both call the same message
-void MessageHandler::RegisterHandler(std::function<void(Message*)> callback, Uint16 header) {
+void MessageHandler::RegisterHandler(std::function<void(std::shared_ptr<Message>)> callback, Uint16 header) {
     header = header & ~RELIABLE_MASK;
     this->registry[header] = callback;
 }
 
 // Register a default callback function
-void MessageHandler::RegisterDefault(std::function<void(Message*)> callback) {
+void MessageHandler::RegisterDefault(std::function<void(std::shared_ptr<Message>)> callback) {
     this->default_callback = callback;
 }
 
@@ -41,7 +51,7 @@ SDLNet_Address * MessageHandler::CurrentOrigin() {
 void MessageHandler::HandlePacket(Packet &pack) {
     auto messages = pack.Read();
     this->current_origin = pack.origin;
-    for (Message *msg : messages) {
+    for (auto msg : messages) {
         Uint16 msg_type = msg->GetFullType();
         // Check if the registry contains a handler for this message type
         if(this->registry.count(msg_type) == 0) {
@@ -57,6 +67,8 @@ void MessageHandler::HandlePacket(Packet &pack) {
     this->current_origin = NULL;
 }
 
+// TODO: Handle all messages in a SessionMessageHandler
+
 // Delete the packet
 Packet::~Packet() {
     // log::debug("packet destroyed");
@@ -65,11 +77,11 @@ Packet::~Packet() {
 }
 
 // Return a list of messages
-std::list<Message*> Packet::Read() {
-    std::list<Message*> messages;
-    this->Seek(0);
+std::list<std::shared_ptr<Message>> Packet::Read() {
+    std::list<std::shared_ptr<Message>> messages;
+    this->Seek(PACKET_HEADER_SIZE);
     while(true) {
-        Message * msg = Message::Deserialize(static_cast<Buffer&>(*this));
+        std::shared_ptr<Message> msg = Message::Deserialize(static_cast<Buffer&>(*this));
         if( msg == NULL) {
             break;
         }
