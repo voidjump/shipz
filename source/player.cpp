@@ -6,6 +6,7 @@
 #include <SDL3/SDL.h>
 
 #include "types.h"
+#include "session.h"
 #include "gfx.h"
 #include "sound.h"
 #include "other.h"
@@ -17,11 +18,11 @@
 #include "log.h"
 
 // all instances
-std::map<ClientID, Player*> Player::instances;
+std::map<PlayerID, Player*> Player::instances;
 
 // Allocate new clientID
-ClientID Player::GenerateClientID() {
-    for(ClientID id = 1; id < std::numeric_limits<ClientID>::max(); id++)  {
+PlayerID Player::GeneratePlayerID() {
+    for(PlayerID id = 1; id < std::numeric_limits<PlayerID>::max(); id++)  {
 		if (instances.find(id) == instances.end()) {
 			return id;
 		}
@@ -30,18 +31,20 @@ ClientID Player::GenerateClientID() {
 	return 0;
 }
 
-Player::Player() {
-	this->client_id = GenerateClientID();
-	instances[this->client_id] = this;
+Player::Player(ShipzSession *session) {
+	this->session = session;
+	this->player_id = GeneratePlayerID();
+	instances[this->player_id] = this;
 }
 
 Player::Player(uint16_t id) {
-	this->client_id = id;
-	instances[this->client_id] = this;
+	this->session = nullptr;
+	this->player_id = id;
+	instances[this->player_id] = this;
 }
 
 Player::~Player() {
-	instances.erase(this->client_id);
+	instances.erase(this->player_id);
 }
 
 // Retrieve a player instance by their ID
@@ -194,7 +197,6 @@ void Player::Empty()
 	this->y_bmp = 0;
 	this->x_bmp = 0;
 	this->self_sustaining = 0;
-	this->playaddr = NULL;
 
 	this->Init();
 }

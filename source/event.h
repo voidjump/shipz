@@ -5,9 +5,11 @@
  
 #undef BASE_CLASS_NAME
 #undef BASE_CLASS_HEADER
+#undef BASE_DEFAULT_RELIABLE
 #undef MESSAGE_CLASS_LIST
 #define BASE_CLASS_NAME Event
 #define BASE_CLASS_HEADER EVENT
+#define BASE_DEFAULT_RELIABLE true
 
 /* Event messages
  * 

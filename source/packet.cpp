@@ -1,10 +1,11 @@
 #include <random>
-#include "packet.h"
+
 #include "AES.h"
+#include "packet.h"
 #include "log.h"
 #include "session.h"
 
-AES aes_g(AESKeyLength::AES_256); 
+AES aes_g(AESKeyLength::AES_256);
 std::random_device rand_dev_g;
 
 Packet::Packet() {
@@ -17,72 +18,21 @@ Packet::Packet(ShipzSessionID session_id) {
     this->session = session_id;
 }
 
-// Register a callback function
-//
-// The callbacks are registered on the full header, with the exclusion of
-// The reliability bit
-// So the reliable and unreliable message will both call the same message
-void MessageHandler::RegisterHandler(std::function<void(std::shared_ptr<Message>)> callback, Uint16 header) {
-    header = header & ~RELIABLE_MASK;
-    this->registry[header] = callback;
-}
-
-// Register a default callback function
-void MessageHandler::RegisterDefault(std::function<void(std::shared_ptr<Message>)> callback) {
-    this->default_callback = callback;
-}
-
-// Delete a packet handler
-void MessageHandler::DeleteHandler(Uint16 msg_sub_type) {
-    this->registry.erase(msg_sub_type);
-}
-
-// Clear all callbacks
-void MessageHandler::Clear() {
-    this->registry.clear();
-}
-
-// Retrieve the current origion
-SDLNet_Address * MessageHandler::CurrentOrigin() {
-    return this->current_origin;
-}
-
-// Handle all messages in a packet
-void MessageHandler::HandlePacket(Packet &pack) {
-    auto messages = pack.Read();
-    this->current_origin = pack.origin;
-    for (auto msg : messages) {
-        Uint16 msg_type = msg->GetFullType();
-        // Check if the registry contains a handler for this message type
-        if(this->registry.count(msg_type) == 0) {
-            // log::debug("handler not registered");
-            // Call default handler
-            this->default_callback(msg);
-            continue;
-        }
-        // Call registered callback
-        // log::debug("calling registered handler");
-        this->registry[msg_type](msg);
-    }
-    this->current_origin = NULL;
-}
-
-// TODO: Handle all messages in a SessionMessageHandler
 
 // Delete the packet
 Packet::~Packet() {
     // log::debug("packet destroyed");
-    // TODO: Find out why this doesn't work 
+    // TODO: Find out why this doesn't work
     // if(this->origin) SDLNet_UnrefAddress(this->origin);
 }
 
 // Return a list of messages
-std::list<std::shared_ptr<Message>> Packet::Read() {
-    std::list<std::shared_ptr<Message>> messages;
+MessageList Packet::Read() {
+    MessageList messages;
     this->Seek(PACKET_HEADER_SIZE);
-    while(true) {
-        std::shared_ptr<Message> msg = Message::Deserialize(static_cast<Buffer&>(*this));
-        if( msg == NULL) {
+    while (true) {
+        MessagePtr msg = Message::Deserialize(static_cast<Buffer &>(*this));
+        if (msg == NULL) {
             break;
         }
         messages.push_back(msg);
@@ -100,30 +50,27 @@ void Packet::RandomizeIV() {
 
 // Encrypt the underlying data using a preshared 256 bit symmetric AES key
 // For padding, use PKCS#7
-void Packet::Encrypt(Uint8 * key) {
-
-    Uint8 padding = (AES_BLOCKSIZE-(this->length % AES_BLOCKSIZE)) % AES_BLOCKSIZE;
-    for(int i = 0; i < padding; i++) {
+void Packet::Encrypt(Uint8 *key) {
+    Uint8 padding =
+        (AES_BLOCKSIZE - (this->length % AES_BLOCKSIZE)) % AES_BLOCKSIZE;
+    for (int i = 0; i < padding; i++) {
         this->Write8(padding);
     }
     this->RandomizeIV();
 
-    unsigned char* encrypted_payload = aes_g.EncryptCBC((const unsigned char*) this->data, 
-                                                        (unsigned int) this->length, 
-                                                        (const unsigned char*) key, 
-                                                        (const unsigned char*) &this->iv);
+    unsigned char *encrypted_payload = aes_g.EncryptCBC(
+        (const unsigned char *)this->data, (unsigned int)this->length,
+        (const unsigned char *)key, (const unsigned char *)&this->iv);
     memcpy((void *)this->data, (void *)encrypted_payload, this->length);
     delete encrypted_payload;
 }
 
 // Decrypt the underlying data using a preshared 256 bit symmetric AES key
 // For padding, expect PKCS#7
-void Packet::Decrypt(Uint8 * key) {
-
-    unsigned char* decrypted_data = aes_g.DecryptCBC((const unsigned char*) this->data, 
-                                                     (unsigned int) this->length, 
-                                                     (const unsigned char*) key, 
-                                                     (const unsigned char*) &this->iv);
+void Packet::Decrypt(Uint8 *key) {
+    unsigned char *decrypted_data = aes_g.DecryptCBC(
+        (const unsigned char *)this->data, (unsigned int)this->length,
+        (const unsigned char *)key, (const unsigned char *)&this->iv);
     memcpy((void *)this->data, (void *)decrypted_data, this->length);
     delete decrypted_data;
 }

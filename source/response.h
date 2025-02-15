@@ -10,9 +10,11 @@
 
 #undef BASE_CLASS_NAME
 #undef BASE_CLASS_HEADER
+#undef BASE_DEFAULT_RELIABLE
 #undef MESSAGE_CLASS_LIST
 #define BASE_CLASS_NAME Response 
 #define BASE_CLASS_HEADER RESPONSE
+#define BASE_DEFAULT_RELIABLE true
 
 #define MESSAGE_CLASS_LIST(class_handler) \
     class_handler(ServerInformation,    SERVER_INFO) \

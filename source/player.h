@@ -2,11 +2,12 @@
 #define SHIPZPLAYER_H
 
 #include <map>
-#include "types.h"
-#include "sync.h"
 #include "base.h"
+#include "session.h"
+#include "sync.h"
+#include "types.h"
 
-using ClientID = uint16_t;
+using PlayerID = uint16_t;
 
 enum PLAYER_STATUS {
  DEAD,
@@ -31,9 +32,11 @@ enum PLAYER_WEAPON {
 class Player
 {
 	public:
-		static std::map<ClientID, Player*> instances;
+		static std::map<PlayerID, Player*> instances;
 
-		ClientID client_id;
+		PlayerID player_id;
+		// The session associated with this player
+		ShipzSession * session;
 
 		// the player name
 		std::string name;
@@ -55,8 +58,6 @@ class Player
 		float crossx, crossy; 
 		// is the player local or remote?
 		bool self_sustaining; 
-		SDLNet_Address * playaddr;
-		Uint16 port;
 
 		// is the player typing a message?
 		// TODO: this could be a bitflag in the player state
@@ -69,12 +70,14 @@ class Player
 		// last time player shot a bullet
 		float lastshottime;
 
+	// Client side
 	Player(uint16_t id);
-	Player();
+	// Server side
+	Player(ShipzSession * session);
 	~Player();
 
 	void HandleUpdate(SyncPlayerState *sync);
-	ClientID GenerateClientID();
+	PlayerID GeneratePlayerID();
 
 	// Retrieve a player instance by their ID
 	static Player * GetByID(uint16_t search_id);

@@ -6,7 +6,7 @@
 
 #include <SDL3_mixer/SDL_mixer.h>
 #include <SDL3_ttf/SDL_ttf.h>
-#define SHIPZ_VERSION 113
+#define SHIPZ_VERSION 114
 
 // gfx
 #define XRES 640
@@ -71,5 +71,7 @@ struct Explosion
 
 
 extern Explosion explosions[NUMBEROFEXPLOSIONS];
+
+using ShipzSessionID = uint16_t;
 
 #endif

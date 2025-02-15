@@ -109,11 +109,15 @@
                 FIELDS_##CLASS_NAME(MESSAGE_FIELD_ARGUMENT_LIST))) {         \
             this->SetMessageType(MessageType::BASE_CLASS_HEADER);            \
             this->SetMessageSubType(HEADER);                                 \
+            this->SetReliability(BASE_DEFAULT_RELIABLE);                     \
             FIELDS_##CLASS_NAME(MESSAGE_FIELD_INIT)                          \
         }                                                                    \
                                                                              \
         /* Serialize Message */                                              \
         bool Serialize(Buffer *buffer);                                      \
+                                                                             \
+        /* Size of Message */                                                \
+        int Size() const override;                                           \
                                                                              \
         /* debug Message */                                                  \
         void LogDebug();                                                     \
@@ -173,6 +177,12 @@
         /* assign seq_nr */                                              \
         _instance->SetSeqNr(_seq_nr);                                    \
         return _instance;                                                \
+    }
+
+// Implement Message::Size()
+#define MESSAGE_CLASS_SIZE_FUNCTION(CLASS_NAME, HEADER)            \
+    int EXPAND_CONCAT(BASE_CLASS_NAME, CLASS_NAME)::Size() const { \
+        return (FIELDS_##CLASS_NAME(SUM_REQUIRED_FIELD_SIZE) 0);   \
     }
 
 // Implement debug methods
@@ -241,6 +251,7 @@
     BASE_CLASS_DESERIALIZATION_IMPLEMENTATION                   \
     MESSAGE_CLASS_LIST(MESSAGE_CLASS_SERIALIZATION_FUNCTIONS)   \
     MESSAGE_CLASS_LIST(MESSAGE_CLASS_DESERIALIZATION_FUNCTIONS) \
-    MESSAGE_CLASS_LIST(MESSAGE_CLASS_DEBUG_FUNCTIONS)
+    MESSAGE_CLASS_LIST(MESSAGE_CLASS_DEBUG_FUNCTIONS)           \
+    MESSAGE_CLASS_LIST(MESSAGE_CLASS_SIZE_FUNCTION)
 
 #endif

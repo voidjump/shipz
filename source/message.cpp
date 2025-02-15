@@ -37,8 +37,8 @@ bool Message::Serialize(Buffer &buffer) {
     return true;
 }
 
-std::shared_ptr<Message> Message::Deserialize(Buffer &buffer) {
-    std::shared_ptr<Message> message = NULL;
+MessagePtr Message::Deserialize(Buffer &buffer) {
+    MessagePtr message = NULL;
     Uint8 header;
 
     if (buffer.AvailableRead() < 1) {

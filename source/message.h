@@ -2,11 +2,18 @@
 #define SHIPZ_MESSAGE_H
 #include <SDL3/SDL.h>
 
+#include <bitset>
+#include <list>
+#include <string>
 #include "net.h"
 
 // Bitmask constants
-
+class Message;
+using MessagePtr = std::shared_ptr<Message>;
+using MessageList = std::list<MessagePtr>;
 using MessageSequenceID = uint8_t;
+
+constexpr int MAX_MESSAGE_SEQUENCE_ID = 2^(8*sizeof(MessageSequenceID));
 constexpr Uint8 MESSAGE_SUBTYPE_MASK =
     0b00001111;                                  // 4 bits for message subtype
 constexpr Uint8 MESSAGE_TYPE_MASK = 0b01110000;  // 3 bits for message type
@@ -58,10 +65,14 @@ class Message {
    public:
     virtual ~Message() = default;  // virtual destructor to enable RTTI
 
+    // return byte size
+    virtual int Size() const = 0;
+
     // Serialize this message into a buffer
     bool Serialize(Buffer &buffer);
+
     // Deserialize current buffer position into a message
-    static std::shared_ptr<Message> Deserialize(Buffer &buffer);
+    static MessagePtr Deserialize(Buffer &buffer);
 
     inline void SetMessageSubType(Uint8 msg_type) {
         this->header = this->header & ~MESSAGE_SUBTYPE_MASK;  // clear bits
@@ -90,10 +101,10 @@ class Message {
     }
 
     inline void SetReliability(bool reliability) {
-        this->header = (this->header & ~RELIABLE_MASK) | (reliability << 8);
+        this->header = (this->header & ~RELIABLE_MASK) | (reliability << 7);
     }
 
-    inline bool GetReliability() { return (bool)header & RELIABLE_MASK; }
+    inline bool GetReliability() { return (bool)(header & RELIABLE_MASK); }
 
      // Getter for seq_nr
     inline int GetSeqNr() {
@@ -109,6 +120,10 @@ class Message {
     // Cast message to type
     inline T *As() {
         return dynamic_cast<T *>(this);
+    }
+
+    inline std::string DebugHeader() {
+        return std::bitset<8>(header).to_string();
     }
 };
 

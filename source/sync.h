@@ -12,9 +12,11 @@
 
 #undef BASE_CLASS_NAME
 #undef BASE_CLASS_HEADER
+#undef BASE_DEFAULT_RELIABLE
 #undef MESSAGE_CLASS_LIST
 #define BASE_CLASS_NAME Sync 
 #define BASE_CLASS_HEADER SYNC
+#define BASE_DEFAULT_RELIABLE false
 
 #define MESSAGE_CLASS_LIST(class_handler) \
     class_handler(PlayerState,           PLAYER_STATE) \
@@ -34,6 +36,7 @@
     field_handler(FIELD_UINT16,   vx) \
     field_handler(FIELD_UINT16,   vy)
 
+// This should be an event
 #define FIELDS_ObjectSpawn(field_handler) \
     field_handler(FIELD_UINT16,         id) \
     field_handler(FIELD_UINT8,        type) \
@@ -45,6 +48,7 @@
     field_handler(FIELD_UINT8,        size) \
     field_handler(FIELD_OCTETS,       data)
 
+// This should be an event
 #define FIELDS_ObjectDestroy(field_handler) \
     field_handler(FIELD_UINT16,         id)
 

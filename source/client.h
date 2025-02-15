@@ -1,6 +1,7 @@
 #ifndef SHIPZCLIENT_H
 #define SHIPZCLIENT_H
 #include <sstream>
+#include "message_handler.h"
 #include "net.h"
 #include "packet.h"
 #include "player.h"
@@ -8,6 +9,21 @@
 #include "socket.h"
 #include "types.h"
 #include "chat.h"
+
+enum ClientState {
+    S_ERROR, 
+    S_INITIAL,
+    S_REQUEST_INFO,
+    S_AWAITING_INFO,
+    S_RECEIVED_INFO,
+    S_JOINING_SERVER,
+    S_AWAITING_JOIN,
+    S_SERVER_FULL,
+    S_ACCEPTED,
+    S_DENIED,
+    S_VERSION_MISMATCH,
+    S_TIMEOUT
+};
 
 class Client {
    private:
@@ -18,7 +34,7 @@ class Client {
     Uint16 listen_port;           // The port this listens on
 
     // networking state
-    ShipzSessionID session;
+    ShipzSession *session;
     SDLNet_Address* server_address;  // The server
     Socket socket;
     MessageHandler handler;
@@ -30,6 +46,9 @@ class Client {
     Uint16 client_id;
     bool done;
     ChatConsole console;
+
+    // client state
+    int state;
 
     // UI
     const bool* keys;
@@ -46,8 +65,7 @@ class Client {
     void Init();
 
     // Connect to a server
-    // This should probably return some levelinfo
-    ShipzSessionID Connect();
+    ShipzSession* Connect();
 
     // Leave the game
     void Leave();
@@ -62,7 +80,7 @@ class Client {
     void GameLoop();
 
     // Join a server
-    bool Join();
+    bool JoinLoop();
 
     // Handle keyboard inputs
     void HandleInputs();
@@ -88,20 +106,27 @@ class Client {
     // Add a player to the game
     void AddPlayer(Uint16 id, std::string player_name, Uint8 team);
 
-    // Set up message handling callbacks
+    // Set up message handling callbacks (gameloop)
     void SetupCallbacks();
+
+    // Set up message handling callbacks (join)
+    void SetupJoinCallsbacks();
     
     // Packet handlers
-    void HandleKicked(std::shared_ptr<Message> msg);
-    void HandleChat(std::shared_ptr<Message> msg);
-    void HandlePlayerJoins(std::shared_ptr<Message> msg);
-    void HandlePlayerLeaves(std::shared_ptr<Message> msg);
-    void HandleUnknownMessage(std::shared_ptr<Message> msg);
-    void HandleObjectSpawn(std::shared_ptr<Message> msg);
-    void HandleObjectUpdate(std::shared_ptr<Message> msg);
-    void HandleObjectDestroy(std::shared_ptr<Message> msg);
-    void HandlePlayerState(std::shared_ptr<Message> msg);
-    void HandleTeamStates(std::shared_ptr<Message> msg);
+    void HandleKicked(MessagePtr msg, ShipzSession* session);
+    void HandleChat(MessagePtr msg, ShipzSession* session);
+    void HandlePlayerJoins(MessagePtr msg, ShipzSession* session);
+    void HandlePlayerLeaves(MessagePtr msg, ShipzSession* session);
+    void HandleUnknownMessage(MessagePtr msg, ShipzSession* session);
+    void HandleObjectSpawn(MessagePtr msg, ShipzSession* session);
+    void HandleObjectUpdate(MessagePtr msg, ShipzSession* session);
+    void HandleObjectDestroy(MessagePtr msg, ShipzSession* session);
+    void HandlePlayerState(MessagePtr msg, ShipzSession* session);
+    void HandleTeamStates(MessagePtr msg, ShipzSession*session);
+    void HandleServerInfo(MessagePtr msg, ShipzSession* session);
+    void HandleAcceptJoin(MessagePtr msg, ShipzSession* session);
+    void HandleDenyJoin(MessagePtr msg, ShipzSession* session);
+    void HandlePlayerInfo(MessagePtr msg, ShipzSession* session);
 };
 
 #endif

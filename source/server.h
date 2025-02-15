@@ -3,6 +3,7 @@
 
 #include "chat.h"
 #include "event.h"
+#include "message_handler.h"
 #include "net.h"
 #include "packet.h"
 #include "player.h"
@@ -16,7 +17,7 @@
 #define SERVER_RUNSTATE_QUIT 3
 
 #define IDLETIMEBEFOREDROP 2000
-
+#define MAX_SESSION_AGE 10 * 1000
 
 class Server {
    private:
@@ -27,21 +28,28 @@ class Server {
     Socket socket;
     MessageHandler handler;
     ChatConsole console;
+    std::vector<ShipzSession*> active_sessions;
 
    public:
     // Start server
     Server(std::string level_name, uint16_t port, uint max_clients);
     ~Server();
-    void HandleUnknownMessage(std::shared_ptr<Message> msg);
     void SetupCallbacks();
-    void HandleJoin(std::shared_ptr<Message> msg);
-    void HandleInfo(std::shared_ptr<Message> msg);
-    void CreateSession(std::shared_ptr<Message> msg);
+
+    void HandleUnknownMessage(MessagePtr msg, ShipzSession* session);
+    void HandleJoin(MessagePtr msg, ShipzSession* session);
+    void HandleInfo(MessagePtr msg, ShipzSession* session);
+    void HandleCreateSession(MessagePtr msg, ShipzSession* session);
+
+    void PurgeStaleSessions();
+    ShipzSession* CreateSessionForClient(SDLNet_Address *addr, uint16_t port);
 
     void Run();
     void Init();
     bool Load();
     void GameLoop();
+    void HandleInboundMessages();
+    void SendOutboundMessages();
 };
 
 #endif

@@ -28,7 +28,7 @@
 #include "types.h"
 
 // Construct a client
-Client::Client(const char *server_hostname, const char *player_name,
+Client::Client(const char* server_hostname, const char* player_name,
                Uint16 listen_port, Uint16 server_port)
     : socket(listen_port) {
     this->server_hostname = server_hostname;
@@ -40,8 +40,8 @@ Client::Client(const char *server_hostname, const char *player_name,
 // Run the game
 void Client::Run() {
     this->Init();
-    if ((this->session = this->Connect()) == NO_SHIPZ_SESSION) return;
-    if (!this->Join()) return;
+    if ((this->session = this->Connect()) == nullptr) return;
+    if (!this->JoinLoop()) return;
     if (!this->Load()) return;
     this->GameLoop();
 }
@@ -49,8 +49,10 @@ void Client::Run() {
 // Initialize client
 void Client::Init() {
     // Explicitly wrap std::bind with std::function
-    this->handler.RegisterDefault(std::function<void(std::shared_ptr<Message>)>(
-        std::bind(&Client::HandleUnknownMessage, this, std::placeholders::_1)));
+    this->handler.RegisterDefault(
+        std::function<void(MessagePtr, ShipzSession*)>(
+            std::bind(&Client::HandleUnknownMessage, this,
+                      std::placeholders::_1, std::placeholders::_2)));
     // Setup chat console
     this->console.SetHeight(3);
 }
@@ -58,6 +60,7 @@ void Client::Init() {
 // Run client game loop
 void Client::GameLoop() {
     done = false;
+    this->handler.Clear();
     this->SetupCallbacks();
     while (!done) {
         HandleInputs();
@@ -83,7 +86,7 @@ void Client::GameLoop() {
 }
 
 // Connect to the Server
-ShipzSessionID Client::Connect() {
+ShipzSession* Client::Connect() {
     Socket::ResolveHostname(this->server_hostname.c_str(),
                             &this->server_address);
     int attempts = 0;
@@ -93,12 +96,12 @@ ShipzSessionID Client::Connect() {
     SessionRequestSession request(SHIPZ_VERSION, this->listen_port);
     pack.Append(request);
 
-    ShipzSessionID session_id = NO_SHIPZ_SESSION;
     log::info("querying server status..");
 
     while (true) {
         socket.Send(pack, this->server_address, PORT_SERVER);
-        SDL_Delay(500);
+        // Wait a bit for a reply to not spam the server with session requests
+        SDL_Delay(300);
 
         if (socket.Poll()) {
             auto recieved_packet = socket.GetPacket();
@@ -106,24 +109,14 @@ ShipzSessionID Client::Connect() {
             for (auto msg : messages) {
                 if (msg->IsTypes(MessageType::SESSION, PROVIDE_SESSION)) {
                     log::info("obtained session...");
-                    SessionProvideSession *session =
+                    SessionProvideSession* session_msg =
                         msg->As<SessionProvideSession>();
-                    session->LogDebug();
-                    session_id = session->session_id;
-                }
-                if (msg->IsTypes(MessageType::RESPONSE, SERVER_INFO)) {
-                    log::info("server responded...");
-                    ResponseServerInformation *info =
-                        msg->As<ResponseServerInformation>();
-                    info->LogDebug();
+                    session_msg->LogDebug();
 
-                    if (info->shipz_version != SHIPZ_VERSION) {
-                        log::error("server is running shipz version:",
-                                   info->shipz_version);
-                        return 0;
-                    }
-                    lvl.SetFile(info->level_filename);
-                    return session_id;
+                    // Create new session from provide session message
+                    return new ShipzSession(this->server_address,
+                                            this->server_port,
+                                            session_msg->session_id);
                 }
             }
         }
@@ -137,52 +130,72 @@ ShipzSessionID Client::Connect() {
 }
 
 // Join a server
-bool Client::Join() {
-    log::info("joining...");
+bool Client::JoinLoop() {
+    state = S_INITIAL;
+    auto time = SDL_GetTicks();
+    int attempts = 1;
 
-    // Create a join request
-    Packet pack(this->session);
-    RequestJoinGame req(name, this->listen_port);
-    pack.Append(req);
+    this->handler.Clear();
+    SetupJoinCallsbacks();
 
-    int attempts = 0;
-    bool accepted = false;
+    while (!(state == S_ACCEPTED || state == S_SERVER_FULL || state == S_TIMEOUT ||
+            state == S_ERROR || state == S_DENIED || state == S_VERSION_MISMATCH)) {
+        switch(state) {
+            case S_INITIAL:
+                log::debug("Requesting server information");
+                // We request information from the server
+                session->Write<RequestGetServerInfo>(SHIPZ_VERSION);
+                time = SDL_GetTicks();
+                state = S_AWAITING_INFO;
+                break;
+            case S_RECEIVED_INFO:
+                attempts = 0;
+                time = SDL_GetTicks();
+                state = S_JOINING_SERVER;
+                break;
+            case S_JOINING_SERVER:
+                // Request to join the game
+                log::debug("Requesting to join game");
+                session->Write<RequestJoinGame>(name);
+                time = SDL_GetTicks();
+                state = S_AWAITING_JOIN;
+                break;
+            // retry after 500 ms
+            case S_AWAITING_INFO:
+                if ((SDL_GetTicks() - time) > 500) {
+                    log::debug("No response for info, retrying");
+                    attempts++;
+                    state = (attempts > 5) ? S_TIMEOUT : S_INITIAL;
+                }
+                break;
+            case S_AWAITING_JOIN:
+                if ((SDL_GetTicks() - time) > 500) {
+                    log::debug("No response for join, retrying");
+                    attempts++;
+                    state = (attempts > 5) ? S_TIMEOUT : S_JOINING_SERVER;
+                }
+                break;
+            default:
+                break;
+        }
 
-    while (!accepted) {
+        // Send any outbound messages
+        if( session->LastSendGreaterThan(80)) {
+            auto packet = session->manager->CraftSendPacket();
+            if (packet != nullptr) {
+                this->socket.Send(*packet, session->endpoint, session->port);
+                session->SendTick();
+            }
+        }   
+
+        // Check socket
         if (socket.Poll()) {
             auto recieved_packet = socket.GetPacket();
-            auto messages = recieved_packet->Read();
-            for (auto msg : messages) {
-                if (msg->IsTypes(MessageType::RESPONSE, ACCEPT_JOIN)) {
-                    log::info("join accepted...");
-                    auto info = msg->As<ResponseAcceptJoin>();
-                    info->LogDebug();
-                    self = new Player(info->client_id);
-                    self->name = name;
-                    self->self_sustaining = false;
-                    this->players.push_back(self);
-                    accepted = true;
-                }
-                if (msg->IsTypes(MessageType::RESPONSE, PLAYER_INFO)) {
-                    log::info("player info");
-                    auto info = msg->As<ResponsePlayerInformation>();
-                    info->LogDebug();
-                    auto player = new Player(info->client_id);
-                    player->team = info->team;
-                    player->name = info->player_name;
-                    player->self_sustaining = true;
-                    this->players.push_back(self);
-                }
-            }
+            session->manager->HandleReceivedPacket(*recieved_packet);
         }
-        socket.Send(pack, server_address, server_port);
-        SDL_Delay(400);
-        attempts++;
-        if (attempts > 5) {
-            return false;
-        }
+        handler.HandleMessageList(session->manager->Read(), session);
     }
-    return true;
+    return state == S_ACCEPTED;
 }
 
 void Client::HandleInputs() {
@@ -275,7 +288,7 @@ void Client::HandleInputs() {
 
 // Update all players
 void Client::UpdatePlayers() {
-    for (auto &player : players) {
+    for (auto& player : players) {
         player->Update();
     }
 }
@@ -287,72 +300,101 @@ void Client::Tick() {
     deltatime = newtime - oldtime;
 }
 
+// Set up all callbacks used during join loop
+void Client::SetupJoinCallsbacks() {
+    this->handler.RegisterHandler(
+        std::function<void(MessagePtr, ShipzSession*)>(
+            std::bind(&Client::HandleServerInfo, this, std::placeholders::_1,
+                      std::placeholders::_2)),
+    ConstructHeader(MessageType::RESPONSE, SERVER_INFO));
+    this->handler.RegisterHandler(
+        std::function<void(MessagePtr, ShipzSession*)>(
+            std::bind(&Client::HandleAcceptJoin, this, std::placeholders::_1,
+                      std::placeholders::_2)),
+    ConstructHeader(MessageType::RESPONSE, ACCEPT_JOIN));
+    this->handler.RegisterHandler(
+        std::function<void(MessagePtr, ShipzSession*)>(
+            std::bind(&Client::HandleDenyJoin, this, std::placeholders::_1,
+                      std::placeholders::_2)),
+    ConstructHeader(MessageType::RESPONSE, DENY_JOIN));
+    this->handler.RegisterHandler(
+        std::function<void(MessagePtr, ShipzSession*)>(
+            std::bind(&Client::HandlePlayerInfo, this, std::placeholders::_1,
+                      std::placeholders::_2)),
+    ConstructHeader(MessageType::RESPONSE, PLAYER_INFO));
+}
+
 // Set all callbacks used during the game loop
 void Client::SetupCallbacks() {
     this->handler.RegisterHandler(
-        std::function<void(std::shared_ptr<Message>)>(
-            std::bind(&Client::HandleKicked, this, std::placeholders::_1)),
-        PLAYER_KICKED);
+        std::function<void(MessagePtr, ShipzSession*)>(
+            std::bind(&Client::HandleKicked, this, std::placeholders::_1,
+                      std::placeholders::_2)),
+    ConstructHeader(MessageType::EVENT, PLAYER_KICKED));
     this->handler.RegisterHandler(
-        std::function<void(std::shared_ptr<Message>)>(
-            std::bind(&Client::HandlePlayerJoins, this, std::placeholders::_1)),
-        PLAYER_JOINS);
+        std::function<void(MessagePtr, ShipzSession*)>(
+            std::bind(&Client::HandlePlayerJoins, this, std::placeholders::_1,
+                      std::placeholders::_2)),
+    ConstructHeader(MessageType::EVENT, PLAYER_JOINS));
     this->handler.RegisterHandler(
-        std::function<void(std::shared_ptr<Message>)>(std::bind(
-            &Client::HandlePlayerLeaves, this, std::placeholders::_1)),
-        PLAYER_LEAVES);
+        std::function<void(MessagePtr, ShipzSession*)>(
+            std::bind(&Client::HandlePlayerLeaves, this, std::placeholders::_1,
+                      std::placeholders::_2)),
+    ConstructHeader(MessageType::EVENT, PLAYER_LEAVES));
     this->handler.RegisterHandler(
-        std::function<void(std::shared_ptr<Message>)>(
-            std::bind(&Client::HandleChat, this, std::placeholders::_1)),
-        CHAT_ALL);
+        std::function<void(MessagePtr, ShipzSession*)>(
+            std::bind(&Client::HandlePlayerInfo, this, std::placeholders::_1,
+                      std::placeholders::_2)),
+    ConstructHeader(MessageType::RESPONSE, PLAYER_INFO));
     this->handler.RegisterHandler(
-        std::function<void(std::shared_ptr<Message>)>(
-            std::bind(&Client::HandleObjectSpawn, this, std::placeholders::_1)),
-        OBJECT_SPAWN);
+        std::function<void(MessagePtr, ShipzSession*)>(
+            std::bind(&Client::HandleChat, this, std::placeholders::_1,
+                      std::placeholders::_2)),
+    ConstructHeader(MessageType::EVENT, CHAT_ALL));
     this->handler.RegisterHandler(
-        std::function<void(std::shared_ptr<Message>)>(std::bind(
-            &Client::HandleObjectUpdate, this, std::placeholders::_1)),
-        OBJECT_UPDATE);
+        std::function<void(MessagePtr, ShipzSession*)>(
+            std::bind(&Client::HandleObjectSpawn, this, std::placeholders::_1,
+                      std::placeholders::_2)),
+    ConstructHeader(MessageType::SYNC, OBJECT_SPAWN));
     this->handler.RegisterHandler(
-        std::function<void(std::shared_ptr<Message>)>(std::bind(
-            &Client::HandleObjectDestroy, this, std::placeholders::_1)),
-        OBJECT_DESTROY);
+        std::function<void(MessagePtr, ShipzSession*)>(
+            std::bind(&Client::HandleObjectUpdate, this, std::placeholders::_1,
+                      std::placeholders::_2)),
+    ConstructHeader(MessageType::SYNC, OBJECT_UPDATE));
     this->handler.RegisterHandler(
-        std::function<void(std::shared_ptr<Message>)>(
-            std::bind(&Client::HandlePlayerState, this, std::placeholders::_1)),
-        PLAYER_STATE);
+        std::function<void(MessagePtr, ShipzSession*)>(
+            std::bind(&Client::HandleObjectDestroy, this, std::placeholders::_1,
+                      std::placeholders::_2)),
+    ConstructHeader(MessageType::SYNC, OBJECT_DESTROY));
     this->handler.RegisterHandler(
-        std::function<void(std::shared_ptr<Message>)>(
-            std::bind(&Client::HandleTeamStates, this, std::placeholders::_1)),
-        TEAM_STATES);
+        std::function<void(MessagePtr, ShipzSession*)>(
+            std::bind(&Client::HandlePlayerState, this, std::placeholders::_1,
+                      std::placeholders::_2)),
+    ConstructHeader(MessageType::SYNC, PLAYER_STATE));
+    this->handler.RegisterHandler(
+        std::function<void(MessagePtr, ShipzSession*)>(
+            std::bind(&Client::HandleTeamStates, this, std::placeholders::_1,
+                      std::placeholders::_2)),
+    ConstructHeader(MessageType::SYNC, TEAM_STATES));
 }
 
 // Send a state update to the server
 // This contains both our position, state and the bullets we've fired
 // TODO: We can add chat messages to this later
 void Client::SendUpdate() {
-    Packet pack(this->session);
-    SyncPlayerState sync(self->client_id, self->status, self->typing,
+    session->Write<SyncPlayerState>(self->player_id, self->status, self->typing,
                          self->angle, self->x, self->y, self->vx, self->vy);
-    pack.Append(sync);
-
-    for (auto &bullet : this->bullets_shot) {
-        pack.Append(bullet);
-    }
-
-    socket.Send(pack, this->server_address, PORT_SERVER);
-
     lastsendtime = SDL_GetTicks();
+    auto packet = session->manager->CraftSendPacket();
+    if (packet != nullptr) {
+        this->socket.Send(*packet, session->endpoint, session->port);
+    }
 }
 
 // Notify the server that we are leaving
 void Client::Leave() {
-    // Create a request
-    Packet pack(this->session);
-    RequestLeaveGame request(this->client_id);
-    pack.Append(request);
-    socket.Send(pack, this->server_address, PORT_SERVER);
-    // TODO: Send reliable, wait for ack with timeout
+    session->Write<RequestLeaveGame>(this->client_id);
+    // TODO: Wait for ack
     done = true;
 }
 
@@ -489,15 +531,9 @@ void Client::Shoot() {
 // This is called when a player presses return
 // It transmits the current chat entered in the chat buffer to the server.
 void Client::SendChatLine() {
-    Packet pack(this->session);
-    EventChat event(this->type_buffer.c_str(), this->client_id, 0);
-
-    pack.Append(event);
-    socket.Send(pack, this->server_address, PORT_SERVER);
-
+    session->Write<EventChat>(this->type_buffer.c_str(), this->client_id, 0);
     // Clear typing buffer
     type_buffer.clear();
-
     self->typing = false;
 }
 
@@ -506,19 +542,21 @@ void Client::SendChatLine() {
 ///////////////////////////////////////////////////////////////////////////////
 
 // Handle an unknown message
-void Client::HandleUnknownMessage(std::shared_ptr<Message> msg) {
+void Client::HandleUnknownMessage(MessagePtr msg, ShipzSession* session) {
     log::debug("received unknown message type");
-    // TODO: Should we output the content of the message?
+    log::debug("subtype", int64_t(msg->GetMessageSubType()));
+    log::debug("type", int64_t(msg->GetMessageType()));
+    log::debug("rel", int64_t(msg->GetReliability()));
 }
 
 // Handle chat message
-void Client::HandleChat(std::shared_ptr<Message> msg) {
+void Client::HandleChat(MessagePtr msg, ShipzSession* session) {
     auto event = msg->As<EventChat>();
     console.AddFromMessage(event);
 }
 
 // Handle a player join event
-void Client::HandlePlayerJoins(std::shared_ptr<Message> msg) {
+void Client::HandlePlayerJoins(MessagePtr msg, ShipzSession* session) {
     auto event = msg->As<EventPlayerJoins>();
     AddPlayer(event->client_id, event->player_name, event->team);
     log::info("player ", event->player_name, " joined the server");
@@ -526,7 +564,7 @@ void Client::HandlePlayerJoins(std::shared_ptr<Message> msg) {
 
 // Add a player to the game
 void Client::AddPlayer(Uint16 id, std::string player_name, Uint8 team) {
-    Player *new_player = new Player(id);
+    Player* new_player = new Player(id);
     new_player->Init();
 
     // Indicate that this updates coordinates by server
@@ -541,7 +579,7 @@ void Client::AddPlayer(Uint16 id, std::string player_name, Uint8 team) {
 // Remove a player from the game
 void Client::RemovePlayer(Uint16 id, std::string reason) {
     for (auto p = players.begin(); p != players.end();) {
-        if ((*p)->client_id == id) {
+        if ((*p)->player_id == id) {
             // Delete player object
             delete (*p);
             // Erase reference
@@ -552,13 +590,13 @@ void Client::RemovePlayer(Uint16 id, std::string reason) {
     }
 }
 
-void Client::HandlePlayerLeaves(std::shared_ptr<Message> msg) {
+void Client::HandlePlayerLeaves(MessagePtr msg, ShipzSession* session) {
     auto event = msg->As<EventPlayerLeaves>();
     RemovePlayer(event->client_id, event->leave_reason);
 }
 
 // Handle a message that a player was kicked
-void Client::HandleKicked(std::shared_ptr<Message> msg) {
+void Client::HandleKicked(MessagePtr msg, ShipzSession* session) {
     auto event = msg->As<EventPlayerKicked>();
     if (event->client_id == client_id) {
         log::info("kicked by server");
@@ -569,14 +607,14 @@ void Client::HandleKicked(std::shared_ptr<Message> msg) {
 }
 
 // An object is spawned
-void Client::HandleObjectSpawn(std::shared_ptr<Message> msg) {
+void Client::HandleObjectSpawn(MessagePtr msg, ShipzSession* session) {
     auto obj_spawn = msg->As<SyncObjectSpawn>();
 
     Object::HandleSpawn(obj_spawn);
 }
 
 // An object is updated
-void Client::HandleObjectUpdate(std::shared_ptr<Message> msg) {
+void Client::HandleObjectUpdate(MessagePtr msg, ShipzSession* session) {
     auto obj_update = msg->As<SyncObjectUpdate>();
 
     auto obj_instance = Object::GetByID(obj_update->id);
@@ -584,7 +622,7 @@ void Client::HandleObjectUpdate(std::shared_ptr<Message> msg) {
 }
 
 // An object is destroyed
-void Client::HandleObjectDestroy(std::shared_ptr<Message> msg) {
+void Client::HandleObjectDestroy(MessagePtr msg, ShipzSession* session) {
     auto obj_destroy = msg->As<SyncObjectDestroy>();
 
     auto obj_instance = Object::GetByID(obj_destroy->id);
@@ -592,7 +630,7 @@ void Client::HandleObjectDestroy(std::shared_ptr<Message> msg) {
 }
 
 // Update a player
-void Client::HandlePlayerState(std::shared_ptr<Message> msg) {
+void Client::HandlePlayerState(MessagePtr msg, ShipzSession* session) {
     auto player_state = msg->As<SyncPlayerState>();
     auto player = Player::GetByID(player_state->client_id);
     if (!player) {
@@ -604,6 +642,55 @@ void Client::HandlePlayerState(std::shared_ptr<Message> msg) {
 }
 
 // Update the team state, including the bases
-void Client::HandleTeamStates(std::shared_ptr<Message> msg) {
+void Client::HandleTeamStates(MessagePtr msg, ShipzSession* session) {
     auto sync = msg->As<SyncTeamStates>();
+}
+
+void Client::HandleServerInfo(MessagePtr msg, ShipzSession* session) {
+    auto info = msg->As<ResponseServerInformation>();
+    log::info("server responded...");
+    info->LogDebug();
+
+    if (info->shipz_version != SHIPZ_VERSION) {
+        log::error("server is running shipz version:",
+                    info->shipz_version);
+        state = S_ERROR;
+        return;
+    }
+    if (info->max_players == info->number_of_players) {
+        log::info("server is full!");
+        state = S_SERVER_FULL;
+        return;
+
+    }
+    lvl.SetFile(info->level_filename);
+    state = S_RECEIVED_INFO;
+}
+
+void Client::HandleAcceptJoin(MessagePtr msg, ShipzSession* session) {
+    auto accept = msg->As<ResponseAcceptJoin>();
+    log::info("join accepted...");
+    accept->LogDebug();
+    self = new Player(accept->client_id);
+    self->name = name;
+    self->self_sustaining = false;
+    this->players.push_back(self);
+    state = S_ACCEPTED; 
+}
+
+void Client::HandleDenyJoin(MessagePtr msg, ShipzSession* session) {
+    auto deny = msg->As<ResponseDenyJoin>();
+    log::info("Server denied join, reason: ", deny->reason);
+    state = S_DENIED;
+}
+
+void Client::HandlePlayerInfo(MessagePtr msg, ShipzSession* session) {
+    log::info("player info");
+    auto info = msg->As<ResponsePlayerInformation>();
+    info->LogDebug();
+    auto player = new Player(info->client_id);
+    player->team = info->team;
+    player->name = info->player_name;
+    player->self_sustaining = true;
+    this->players.push_back(self);
 }
