@@ -106,7 +106,7 @@ void Server::HandleInboundMessages() {
 void Server::SendOutboundMessages() {
     // Send out all inbound traffic
     for (auto session : active_sessions) {
-        if(session->LastSendGreaterThan(80)) {
+        if (session->LastSendGreaterThan(80)) {
             auto packet = session->manager->CraftSendPacket();
             if (packet != nullptr) {
                 this->socket.Send(*packet, session->endpoint, session->port);
@@ -216,11 +216,11 @@ void Server::HandleCreateSession(MessagePtr msg, ShipzSession* session) {
 
     auto new_session =
         CreateSessionForClient(this->handler.CurrentOrigin(), info->port);
-    SessionProvideSession provide_session_message(new_session->session_id);
     if (new_session == nullptr) {
         log::error("Session request dropped");
         return;
     }
+    SessionProvideSession provide_session_message(new_session->session_id);
 
     // Send Info; Note this has no session header
     Packet pack;
@@ -236,7 +236,21 @@ void Server::PurgeStaleSessions() {
         if (time - (*it)->last_active > MAX_SESSION_AGE) {
             log::info("Dropping stale session ", (*it)->session_id);
             delete (*it);
+            // Also remove any player with this session
+            for (auto player : Player::instances) {
+                if (player.second->session == *it) {
+                    log::debug("removing associated player ",
+                               player.second->name);
+                    delete player.second;
+                    Player::instances.erase(player.first);
+                    // TODO, send kick->event to all clients
+                    // WriteAll(KickEvent(blabla))
+
+                    break;
+                }
+            }
             it = active_sessions.erase(it);
+
         } else {
             ++it;
         }

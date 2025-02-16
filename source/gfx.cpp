@@ -70,13 +70,26 @@ void DrawIMG(SDL_Surface *img, int x, int y,
 }
 
 // Initialize video and hide the cursor
-void InitVid()
+void InitVid(bool fullscreen)
 {
-	if( !SDL_CreateWindowAndRenderer("shipz", 0, 0, SDL_WINDOW_FULLSCREEN, &sdlWindow, &sdlRenderer))
+	uint64_t window;
+	if(fullscreen) { 
+		window = SDL_WINDOW_FULLSCREEN ;
+
+	} else {
+		window = SDL_WINDOW_RESIZABLE;
+	}
+	if( !SDL_CreateWindowAndRenderer("shipz", 0, 0, fullscreen, &sdlWindow, &sdlRenderer))
 	{
 		std::cout << "Unable to create window and renderer" << std::endl << SDL_GetError() << std::endl;
 		exit(1);
 	}
+	if(!fullscreen) {
+		if(!SDL_SetWindowSize(sdlWindow, XRES, YRES)) {
+			log::error(SDL_GetError());
+		}
+	}
+
 	if ( sdlWindow == NULL || sdlRenderer == NULL )
 	{
 		std::cout << "Unable to create window and renderer" << std::endl << SDL_GetError() << std::endl;

@@ -27,7 +27,7 @@ PlayerID Player::GeneratePlayerID() {
 			return id;
 		}
 	}
-	throw new std::runtime_error("no free client ID slots available");
+	throw new std::runtime_error("no free player ID slots available");
 	return 0;
 }
 

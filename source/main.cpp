@@ -19,6 +19,7 @@
 
 void ConfigureParser(cli::Parser& parser) {
     parser.set_optional<bool>("s", "server", false, "Run as server");
+    parser.set_optional<bool>("F", "fullscreen", false, "Run fullscreen (client)");
     parser.set_optional<std::string>("f", "filename", "rusty.json",
                                      "Which level to run");
 
@@ -37,7 +38,7 @@ void RunMode(cli::Parser& parser) {
         Server server(filename, PORT_SERVER, MAXPLAYERS);
         server.Run();
     } else {
-        InitVid();
+        InitVid(parser.get<bool>("F"));
         auto listen_port = parser.get<uint16_t>("l");
         auto address = parser.get<std::string>("a");
         auto nickname = parser.get<std::string>("n");

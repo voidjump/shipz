@@ -13,7 +13,7 @@ void Sulock(SDL_Surface *screen);
 void DrawIMG(SDL_Surface *img, int x, int y);
 void DrawIMG(SDL_Surface *img, int x, int y,
                                 int w, int h, int x2, int y2);
-void InitVid();
+void InitVid(bool fullscreen);
 void DrawPlayer( SDL_Surface * src, Player * play );
 void DrawExplosions();
 void UpdateScreen();

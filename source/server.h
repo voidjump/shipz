@@ -17,7 +17,7 @@
 #define SERVER_RUNSTATE_QUIT 3
 
 #define IDLETIMEBEFOREDROP 2000
-#define MAX_SESSION_AGE 10 * 1000
+#define MAX_SESSION_AGE 2500
 
 class Server {
    private:
