@@ -126,7 +126,7 @@ void DrawPlayer( SDL_Surface * src, Player * play )
 				(int(play->y + play->crossy - 4 - viewporty)));
 		}
 	}
-	if( play->status != PLAYER_STATUS::DEAD && play->status != PLAYER_STATUS::RESPAWN )
+	if( play->status != PLAYER_STATUS::DEAD )
 	{
 		if( play->typing == 1 ) // player is typing, show the cartoony text cloud
 		{

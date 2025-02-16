@@ -72,7 +72,7 @@ void Client::GameLoop() {
             handler.HandlePacket(*recieved_packet);
         }
 
-        UpdatePlayers();
+        Player::UpdateAll(deltatime);
         // TODO: Fix this
         // UpdateBullets(players);
         ClearOldExplosions();
@@ -208,6 +208,7 @@ void Client::HandleInputs() {
             if (event.key.key == SDLK_ESCAPE) {
                 done = true;
             }
+
             if (event.key.key == SDLK_TAB && !self->typing) {
                 switch (self->weapon) {
                     case WEAPON_BULLET:
@@ -223,7 +224,9 @@ void Client::HandleInputs() {
                 PlaySound(weaponswitch);
             }
 
-            GetTyping(type_buffer, event.key.key, event.key.mod);
+            if(self->typing) {
+                GetTyping(type_buffer, event.key.key, event.key.mod);
+            }
 
             if (event.key.key == SDLK_RETURN) {
                 if (self->typing) {
@@ -231,6 +234,19 @@ void Client::HandleInputs() {
                 } else {
                     this->type_buffer.clear();
                     self->typing = true;
+                }
+            }
+
+            if (event.key.key == SDLK_UP) {
+                if (self->IsLanded()) {
+                    SendAction(PA_LIFTOFF);
+                }
+            }
+        
+            if (event.key.key == SDLK_SPACE) {
+                if (!self->typing && !self->IsAlive()) {
+                    log::info("trying to spawn");
+                    SendAction(PA_SPAWN);
                 }
             }
         }
@@ -256,42 +272,15 @@ void Client::HandleInputs() {
         }
     }
 
-    if (keys[SDL_SCANCODE_UP]) {
-        if (self->status == PLAYER_STATUS::LANDED ||
-            self->status == PLAYER_STATUS::LANDEDBASE) {
-            self->status = PLAYER_STATUS::LIFTOFF;
-            self->y -= 10;
-            self->lastliftofftime = SDL_GetTicks();
-        }
-        if (self->status == PLAYER_STATUS::LANDEDRESPAWN) {
-            // no bullet delay after respawn, so don't reset lastliftofftime
-            self->status = PLAYER_STATUS::LIFTOFF;
-            self->y -= 10;
-        }
-    }
-    if (self->status == PLAYER_STATUS::DEAD) {
-        if (keys[SDL_SCANCODE_SPACE] && !self->typing) {
-            // respawn
-            self->status = PLAYER_STATUS::RESPAWN;
-        }
-    }
 
-    if (!self->typing) {
-        if (keys[SDL_SCANCODE_X]) {
-            if (self->status != PLAYER_STATUS::DEAD &&
-                self->status != PLAYER_STATUS::RESPAWN) {
-                self->status = PLAYER_STATUS::SUICIDE;
-            }
-        }
-    }
 }
 
-// Update all players
-void Client::UpdatePlayers() {
-    for (auto& player : players) {
-        player->Update();
-    }
+// Request to do an action from the server
+// These are influential state changes such as respawning, lifting off, etc.
+void Client::SendAction(uint16_t action) {
+    session->Write<RequestAction>(action);
 }
+
 
 // Increase timer tick
 void Client::Tick() {
@@ -326,11 +315,6 @@ void Client::SetupJoinCallsbacks() {
 
 // Set all callbacks used during the game loop
 void Client::SetupCallbacks() {
-    this->handler.RegisterHandler(
-        std::function<void(MessagePtr, ShipzSession*)>(
-            std::bind(&Client::HandleKicked, this, std::placeholders::_1,
-                      std::placeholders::_2)),
-    ConstructHeader(MessageType::EVENT, PLAYER_KICKED));
     this->handler.RegisterHandler(
         std::function<void(MessagePtr, ShipzSession*)>(
             std::bind(&Client::HandlePlayerJoins, this, std::placeholders::_1,
@@ -427,9 +411,9 @@ void Client::Draw() {
 
     Object::DrawAll();
 
-    for (auto player : players) {
-        player->Draw();
-    }
+    // for (auto player : players) {
+    //     player->Draw();
+    // }
 
     DrawExplosions();
 
@@ -558,6 +542,7 @@ void Client::HandleChat(MessagePtr msg, ShipzSession* session) {
 // Handle a player join event
 void Client::HandlePlayerJoins(MessagePtr msg, ShipzSession* session) {
     auto event = msg->As<EventPlayerJoins>();
+    // TODO: Implement
     AddPlayer(event->client_id, event->player_name, event->team);
     log::info("player ", event->player_name, " joined the server");
 }
@@ -568,26 +553,16 @@ void Client::AddPlayer(Uint16 id, std::string player_name, Uint8 team) {
     new_player->Init();
 
     // Indicate that this updates coordinates by server
-    new_player->self_sustaining = 1;
+    new_player->self_sustaining = true;
 
     new_player->team = team;
     new_player->name = player_name;
-
-    this->players.push_back(new_player);
 }
 
 // Remove a player from the game
 void Client::RemovePlayer(Uint16 id, std::string reason) {
-    for (auto p = players.begin(); p != players.end();) {
-        if ((*p)->player_id == id) {
-            // Delete player object
-            delete (*p);
-            // Erase reference
-            players.erase(p);
-            log::info("player ", id, " left the server: ", reason);
-            return;
-        }
-    }
+    Player::Remove(id);
+    log::info("player ", id, " left the server: ", reason);
 }
 
 void Client::HandlePlayerLeaves(MessagePtr msg, ShipzSession* session) {
@@ -595,20 +570,9 @@ void Client::HandlePlayerLeaves(MessagePtr msg, ShipzSession* session) {
     RemovePlayer(event->client_id, event->leave_reason);
 }
 
-// Handle a message that a player was kicked
-void Client::HandleKicked(MessagePtr msg, ShipzSession* session) {
-    auto event = msg->As<EventPlayerKicked>();
-    if (event->client_id == client_id) {
-        log::info("kicked by server");
-        done = true;
-    } else {
-        RemovePlayer(event->client_id, "Kicked by server");
-    }
-}
-
 // An object is spawned
 void Client::HandleObjectSpawn(MessagePtr msg, ShipzSession* session) {
-    auto obj_spawn = msg->As<SyncObjectSpawn>();
+    auto obj_spawn = msg->As<EventObjectSpawn>();
 
     Object::HandleSpawn(obj_spawn);
 }
@@ -623,7 +587,7 @@ void Client::HandleObjectUpdate(MessagePtr msg, ShipzSession* session) {
 
 // An object is destroyed
 void Client::HandleObjectDestroy(MessagePtr msg, ShipzSession* session) {
-    auto obj_destroy = msg->As<SyncObjectDestroy>();
+    auto obj_destroy = msg->As<EventObjectDestroy>();
 
     auto obj_instance = Object::GetByID(obj_destroy->id);
     obj_instance->HandleDestroy(obj_destroy);
@@ -674,7 +638,6 @@ void Client::HandleAcceptJoin(MessagePtr msg, ShipzSession* session) {
     self = new Player(accept->client_id);
     self->name = name;
     self->self_sustaining = false;
-    this->players.push_back(self);
     state = S_ACCEPTED; 
 }
 
@@ -688,9 +651,5 @@ void Client::HandlePlayerInfo(MessagePtr msg, ShipzSession* session) {
     log::info("player info");
     auto info = msg->As<ResponsePlayerInformation>();
     info->LogDebug();
-    auto player = new Player(info->client_id);
-    player->team = info->team;
-    player->name = info->player_name;
-    player->self_sustaining = true;
-    this->players.push_back(self);
+    AddPlayer(info->client_id, info->player_name, info->team);
 }

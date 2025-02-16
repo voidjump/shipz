@@ -9,6 +9,7 @@
 #include "socket.h"
 #include "types.h"
 #include "chat.h"
+#include "event.h"
 
 enum ClientState {
     S_ERROR, 
@@ -41,8 +42,7 @@ class Client {
 
     // Game related
     Player* self;
-    std::vector<Player*> players;
-    std::vector<SyncObjectSpawn*> bullets_shot;
+    std::vector<EventObjectSpawn*> bullets_shot;
     Uint16 client_id;
     bool done;
     ChatConsole console;
@@ -97,9 +97,6 @@ class Client {
     // Update timers
     void Tick();
 
-    // Update other players
-    void UpdatePlayers();
-
     // Remove a player from the game
     void RemovePlayer(Uint16 id, std::string reason);
 
@@ -111,9 +108,11 @@ class Client {
 
     // Set up message handling callbacks (join)
     void SetupJoinCallsbacks();
+
+    // Request an action from the server
+    void SendAction(uint16_t action);
     
     // Packet handlers
-    void HandleKicked(MessagePtr msg, ShipzSession* session);
     void HandleChat(MessagePtr msg, ShipzSession* session);
     void HandlePlayerJoins(MessagePtr msg, ShipzSession* session);
     void HandlePlayerLeaves(MessagePtr msg, ShipzSession* session);

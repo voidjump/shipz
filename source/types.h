@@ -73,5 +73,6 @@ struct Explosion
 extern Explosion explosions[NUMBEROFEXPLOSIONS];
 
 using ShipzSessionID = uint16_t;
+using ClientID = uint16_t;
 
 #endif

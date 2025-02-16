@@ -91,6 +91,9 @@ class ShipzSession {
     uint64_t last_sent;
     // The session ID
     ShipzSessionID session_id;
+    // The client ID (note we reuse the player ID for this)
+    ClientID client_id;
+
     // The endpoint of the counterparty
     SDLNet_Address *endpoint;
     uint16_t port;

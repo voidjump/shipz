@@ -20,7 +20,8 @@
 #define MESSAGE_CLASS_LIST(class_handler) \
     class_handler(GetServerInfo,    GET_SERVER_INFO) \
     class_handler(JoinGame,         JOIN_GAME) \
-    class_handler(LeaveGame,        LEAVE_GAME)
+    class_handler(LeaveGame,        LEAVE_GAME) \
+    class_handler(Action,        REQUEST_ACTION)
 
 // Request server information
 #define FIELDS_GetServerInfo(field_handler) \
@@ -33,6 +34,10 @@
 // Notify that we are quitting
 #define FIELDS_LeaveGame(field_handler) \
     field_handler(FIELD_UINT8, client_id) 
+
+// Request to spawn
+#define FIELDS_Action(field_handler) \
+    field_handler(FIELD_UINT16, action_id)
 
 MESSAGE_FACTORY_HEADER
 

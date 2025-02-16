@@ -15,8 +15,8 @@ class Bullet : public Object, public Renderable {
 	float x, y, angle; // coordinates and angle (bullets always have same speed)
 	Uint16 owner; // number of player who shot the bullet
 
-    Bullet(SyncObjectSpawn *sync);
-    static SyncObjectSpawn * Shoot(Player *self);
+    Bullet(EventObjectSpawn *sync);
+    static EventObjectSpawn * Shoot(Player *self);
     void Update(float delta);
     void Draw() override;
 };
@@ -30,8 +30,8 @@ class Rocket : public Object, public Renderable {
     
 
     void TurnToNearest(Player *nearest, float delta);
-    Rocket(SyncObjectSpawn *sync);
-    static SyncObjectSpawn * Shoot(Player *self);
+    Rocket(EventObjectSpawn *sync);
+    static EventObjectSpawn * Shoot(Player *self);
     void Update(float delta);
     void Sync(SyncObjectUpdate *sync);
     void Draw() override;
@@ -42,8 +42,8 @@ class Mine : public Object, public Renderable {
 	float x, y; // coordinates
 	float minelaidtime;
 
-    Mine(SyncObjectSpawn *sync);
-    static SyncObjectSpawn * Shoot(Player *self);
+    Mine(EventObjectSpawn *sync);
+    static EventObjectSpawn * Shoot(Player *self);
     void Draw() override;
 };
 

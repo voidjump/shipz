@@ -4,6 +4,7 @@
 #include <vector>
 #include "types.h"
 #include "object.h"
+#include "event.h"
 #include "renderable.h"
 
 #define STARTING_BASE_HEALTH 1000
@@ -18,7 +19,7 @@ class Base : public Object, public Renderable {
 		static std::vector<Base*> all_bases;
 
 		Base(uint16_t owner, uint16_t x, uint32_t y);
-		Base(SyncObjectSpawn * sync);
+		Base(EventObjectSpawn * sync);
 
 		void Sync(SyncObjectUpdate *sync);
 		void Draw();

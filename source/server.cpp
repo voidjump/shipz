@@ -48,9 +48,17 @@ bool Server::Load() {
     return true;
 }
 
+// update timers
+void Server::Tick() {
+    uint64_t current = SDL_GetTicks();
+    tick_time = last_tick_time - current;
+    last_tick_time = current;
+}
+
 // Run the game loop; Start listening
 void Server::GameLoop() {
     log::info("starting server ", GetCurrentTime());
+
     SDL_Event event;
     while (!done) {
         while (SDL_PollEvent(&event)) {
@@ -88,6 +96,8 @@ void Server::GameLoop() {
         // TODO: Game update functions
         // Updating object statuses, detecting collisions,
         // state machines etc.
+        Tick();
+        Player::UpdateAll(tick_time);
 
         // Send messages to clients
         SendOutboundMessages();
@@ -128,6 +138,9 @@ void Server::HandleUnknownMessage(MessagePtr msg, ShipzSession* session) {
 }
 
 // A player wants to join
+// TODO: Each client should have a unique client ID that is unrelated to the
+// Session ID. This is the ID that players will carry between games and is
+// Basically like their AccountID
 void Server::HandleJoin(MessagePtr msg, ShipzSession* session) {
     if (session == nullptr) {
         // Not allowed without session
@@ -148,6 +161,8 @@ void Server::HandleJoin(MessagePtr msg, ShipzSession* session) {
 
     log::debug("Added new client id# ", new_player->player_id);
     new_player->name = join->player_name;
+
+    session->client_id = new_player->player_id;
 
     session->Write<ResponseAcceptJoin>(new_player->player_id, new_player->team);
 
@@ -257,6 +272,31 @@ void Server::PurgeStaleSessions() {
     }
 }
 
+////////////////////// GAME ACTIONS /////////////////////
+
+// Player requests to do an action
+void Server::HandleAction(MessagePtr msg, ShipzSession* session) {
+    if (session == nullptr) {
+        // Not allowed without session
+        return;
+    }
+    auto info = msg->As<RequestAction>();
+    log::debug("session ", session->session_id, " requests action");
+
+    if(session->client_id == 0) {
+        log::error("client is not playing");
+    }
+    else {
+        auto player = Player::GetByID(session->client_id);
+        if(player == nullptr) {
+            log::error("client ID invalid, not an active player");
+        }
+        player->HandleAction(msg->As<RequestAction>()->action_id);
+    }
+
+    return;
+}
+
 // Setup message handling callbacks
 void Server::SetupCallbacks() {
     // Client wants to initiate a session
@@ -279,4 +319,11 @@ void Server::SetupCallbacks() {
             std::bind(&Server::HandleJoin, this, std::placeholders::_1,
                       std::placeholders::_2)),
         ConstructHeader(MessageType::REQUEST, JOIN_GAME));
+
+    // Client wants to join game
+    this->handler.RegisterHandler(
+        std::function<void(MessagePtr, ShipzSession*)>(
+            std::bind(&Server::HandleAction, this, std::placeholders::_1,
+                      std::placeholders::_2)),
+        ConstructHeader(MessageType::REQUEST, REQUEST_ACTION));
 }

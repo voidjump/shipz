@@ -7,6 +7,7 @@
 #include <map>
 #include <memory>
 #include <functional>
+#include "event.h"
 #include "sync.h"
 
 constexpr uint16_t SERVER_SHOULD_DEFINE_ID = 0;
@@ -61,10 +62,10 @@ class Object {
         virtual ~Object() {} 
 
         // Spawn an object based on remote description
-        static void HandleSpawn(SyncObjectSpawn *sync);
+        static void HandleSpawn(EventObjectSpawn *sync);
 
         // Destroy this object, calling Destroy callback
-        void HandleDestroy(SyncObjectDestroy *sync);
+        void HandleDestroy(EventObjectDestroy *sync);
 
         // Handle update packet, calling Sync callback
         void HandleSync(SyncObjectUpdate *sync);

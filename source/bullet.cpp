@@ -13,7 +13,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 // Construct a bullet from a spawn message
-Bullet::Bullet(SyncObjectSpawn *sync) : Object(sync->id, OBJECT_TYPE::BULLET) {
+Bullet::Bullet(EventObjectSpawn *sync) : Object(sync->id, OBJECT_TYPE::BULLET) {
 	x = NetToUnsignedFloat(pop_uint16(sync->data));
 	y = NetToUnsignedFloat(pop_uint16(sync->data));
 	angle = NetToUnsignedFloat(pop_uint16(sync->data));
@@ -31,13 +31,13 @@ void Bullet::Update(float delta) {
 
 
 // Shoot a bullet
-SyncObjectSpawn * Bullet::Shoot(Player *self) {
+EventObjectSpawn * Bullet::Shoot(Player *self) {
 	std::vector<Uint8> data;
 	append_to_object(data, self->angle);
 	append_to_object(data, self->x);
 	append_to_object(data, self->y);
 
-	SyncObjectSpawn *sync = new SyncObjectSpawn(SERVER_SHOULD_DEFINE_ID,
+	EventObjectSpawn *sync = new EventObjectSpawn(SERVER_SHOULD_DEFINE_ID,
 												OBJECT_TYPE::BULLET,
 												6,
 												data);
@@ -53,13 +53,13 @@ void Bullet::Draw() {
 ///////////////////////////////////////////////////////////////////////////////
 
 // Shoot a rocket
-SyncObjectSpawn * Rocket::Shoot(Player *self) {
+EventObjectSpawn * Rocket::Shoot(Player *self) {
 	std::vector<Uint8> data;
 	append_to_object(data, self->angle);
 	append_to_object(data, self->x);
 	append_to_object(data, self->y);
 
-	SyncObjectSpawn *sync = new SyncObjectSpawn(SERVER_SHOULD_DEFINE_ID,
+	EventObjectSpawn *sync = new EventObjectSpawn(SERVER_SHOULD_DEFINE_ID,
 												OBJECT_TYPE::ROCKET,
 												6,
 												data);
@@ -67,7 +67,7 @@ SyncObjectSpawn * Rocket::Shoot(Player *self) {
 }
 
 // Construct a rocket from a spawn message
-Rocket::Rocket(SyncObjectSpawn *sync) : Object(sync->id, OBJECT_TYPE::ROCKET) {
+Rocket::Rocket(EventObjectSpawn *sync) : Object(sync->id, OBJECT_TYPE::ROCKET) {
 	x = NetToUnsignedFloat(pop_uint16(sync->data));
 	y = NetToUnsignedFloat(pop_uint16(sync->data));
 	angle = NetToUnsignedFloat(pop_uint16(sync->data));
@@ -146,12 +146,12 @@ void Rocket::Draw() {
 ///////////////////////////////////////////////////////////////////////////////
 
 // Shoot a mine
-SyncObjectSpawn * Mine::Shoot(Player *self) {
+EventObjectSpawn * Mine::Shoot(Player *self) {
 	std::vector<Uint8> data;
 	append_to_object(data, self->x);
 	append_to_object(data, self->y);
 
-	SyncObjectSpawn *sync = new SyncObjectSpawn(SERVER_SHOULD_DEFINE_ID,
+	EventObjectSpawn *sync = new EventObjectSpawn(SERVER_SHOULD_DEFINE_ID,
 												OBJECT_TYPE::MINE,
 												4,
 												data);
@@ -159,7 +159,7 @@ SyncObjectSpawn * Mine::Shoot(Player *self) {
 }
 
 // Spawn a mine from a sync message
-Mine::Mine(SyncObjectSpawn *sync) : Object(sync->id, OBJECT_TYPE::MINE) {
+Mine::Mine(EventObjectSpawn *sync) : Object(sync->id, OBJECT_TYPE::MINE) {
 	x = NetToUnsignedFloat(pop_uint16(sync->data));
 	y = NetToUnsignedFloat(pop_uint16(sync->data));
     this->sync_callback = nullptr;

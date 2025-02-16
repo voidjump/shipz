@@ -30,6 +30,10 @@ class Server {
     ChatConsole console;
     std::vector<ShipzSession*> active_sessions;
 
+    // Frame time stuff
+    uint64_t last_tick_time;
+    uint64_t tick_time;
+
    public:
     // Start server
     Server(std::string level_name, uint16_t port, uint max_clients);
@@ -41,9 +45,12 @@ class Server {
     void HandleInfo(MessagePtr msg, ShipzSession* session);
     void HandleCreateSession(MessagePtr msg, ShipzSession* session);
 
+    void HandleAction(MessagePtr msg, ShipzSession* session);
+
     void PurgeStaleSessions();
     ShipzSession* CreateSessionForClient(SDLNet_Address *addr, uint16_t port);
 
+    void Tick();
     void Run();
     void Init();
     bool Load();

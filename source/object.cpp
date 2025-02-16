@@ -21,7 +21,7 @@ Object::Object(ObjectType type) {
 }
  
  // Handle spawn message
-void Object::HandleSpawn(SyncObjectSpawn *sync) {
+void Object::HandleSpawn(EventObjectSpawn *sync) {
     auto it = instances.find(sync->id);
     if (it != instances.end()) {
         log::error("Refusing to spawn object with id ", sync->id, " as it alreayd exists;");
@@ -44,7 +44,7 @@ void Object::HandleSpawn(SyncObjectSpawn *sync) {
 }
 
 // Handle destroy message
-void Object::HandleDestroy(SyncObjectDestroy *sync) {
+void Object::HandleDestroy(EventObjectDestroy *sync) {
     auto instance = Object::GetByID(sync->id) ;
     if(!instance) {
         return;

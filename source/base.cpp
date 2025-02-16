@@ -41,7 +41,7 @@ Base::Base(uint16_t owner, uint16_t x, uint32_t y) : Object(OBJECT_TYPE::BASE) {
 }
 
 // Construct a base from a spawn message
-Base::Base(SyncObjectSpawn * sync) : Object(sync->id, OBJECT_TYPE::BASE) {
+Base::Base(EventObjectSpawn * sync) : Object(sync->id, OBJECT_TYPE::BASE) {
 	owner = pop_uint16(sync->data);
 	x = pop_uint16(sync->data);
 	y = pop_uint16(sync->data);
