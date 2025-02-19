@@ -10,6 +10,7 @@
 #include "response.h"
 #include "session.h"
 #include "sync.h"
+#include "timer.h"
 
 Server::Server(std::string level_name, const uint16_t listen_port,
                uint max_clients)
@@ -24,7 +25,18 @@ Server::~Server() {}
 void Server::Run() {
     Init();
     if (!Load()) return;
+    SpawnObjects();
     GameLoop();
+}
+
+// Spawn all default objects
+void Server::SpawnObjects() {
+    // Create base objects
+    // Can't this be done by the level class?
+    for( auto base_def : lvl.m_bases ) {
+        auto b = new Base(base_def.owner, base_def.x, base_def.y);
+    }
+    GameState::Update();
 }
 
 // Initialize the server
@@ -48,17 +60,27 @@ bool Server::Load() {
     return true;
 }
 
-// update timers
-void Server::Tick() {
-    uint64_t current = SDL_GetTicks();
-    tick_time = last_tick_time - current;
-    last_tick_time = current;
+// Update game state for clients periodically
+void Server::WriteUpdates() {
+    // Notify all players and send new player their information
+    
+    for (auto recipient : Player::instances) {
+        // This is not very scalable
+        // Emit all player states to recipient
+        Player::EmitStates(recipient.second->session);
+        // Team::EmitState(recipient.second->session);
+        // Object::EmitStates(recipient.second->session);
+    }
 }
 
 // Run the game loop; Start listening
 void Server::GameLoop() {
     log::info("starting server ", GetCurrentTime());
 
+    Timer update(std::function<void()>(std::bind(&Server::WriteUpdates, this)),
+                 100, true);
+    Timer cleanup_stale_sessions(std::function<void()>(std::bind(&Server::PurgeStaleSessions, this)),
+                 1000, true);
     SDL_Event event;
     while (!done) {
         while (SDL_PollEvent(&event)) {
@@ -68,13 +90,10 @@ void Server::GameLoop() {
             }
         }
 
-        // TODO: Stick this in some sort of timer
-        PurgeStaleSessions();
-
         if (socket.Poll()) {
             auto recieved_packet = socket.GetPacket();
             auto session_id = recieved_packet->SessionID();
-            log::debug("received a packet for session ", session_id);
+            // log::debug("received a packet for session ", session_id);
 
             if (ShipzSession::IsNoneID(session_id)) {
                 // This is not a known session, so we directly handle the
@@ -96,8 +115,8 @@ void Server::GameLoop() {
         // TODO: Game update functions
         // Updating object statuses, detecting collisions,
         // state machines etc.
-        Tick();
-        Player::UpdateAll(tick_time);
+        auto tick = Timer::Tick();
+        Player::UpdateAll(tick);
 
         // Send messages to clients
         SendOutboundMessages();
@@ -132,9 +151,7 @@ void Server::SendOutboundMessages() {
 
 // Handle an unknown message
 void Server::HandleUnknownMessage(MessagePtr msg, ShipzSession* session) {
-    log::debug("received unknown message type:",
-               static_cast<int>(msg->GetMessageType()),
-               " session:", session->session_id);
+    log::debug("received unknown message: ", msg->AsDebugStr());
 }
 
 // A player wants to join
@@ -180,6 +197,7 @@ void Server::HandleJoin(MessagePtr msg, ShipzSession* session) {
 
         id_player.second->session->manager->Write(new_join_event);
     }
+
 }
 
 // Client requests server information
@@ -246,6 +264,7 @@ void Server::HandleCreateSession(MessagePtr msg, ShipzSession* session) {
 
 // Purge all stale sessions older than MAX_SESSION_AGE
 void Server::PurgeStaleSessions() {
+    // log::debug("purging stale sessions..");
     uint64_t time = SDL_GetTicks();
     for (auto it = active_sessions.begin(); it != active_sessions.end();) {
         if (time - (*it)->last_active > MAX_SESSION_AGE) {
@@ -280,21 +299,55 @@ void Server::HandleAction(MessagePtr msg, ShipzSession* session) {
         // Not allowed without session
         return;
     }
-    auto info = msg->As<RequestAction>();
+    auto action = msg->As<RequestAction>();
     log::debug("session ", session->session_id, " requests action");
 
-    if(session->client_id == 0) {
+    if (session->client_id == 0) {
         log::error("client is not playing");
-    }
-    else {
+    } else {
         auto player = Player::GetByID(session->client_id);
-        if(player == nullptr) {
+        if (player == nullptr) {
             log::error("client ID invalid, not an active player");
+            return;
         }
-        player->HandleAction(msg->As<RequestAction>()->action_id);
+        // Handle the event
+        switch (action->action_id) {
+        case PA_LIFTOFF:
+            if(player->LiftOff()) {
+                // Send Liftoff event to player
+                for(auto recipient : active_sessions) {
+                    recipient->Write<EventPlayerLiftOff>(player->player_id);
+                }
+            }
+            break;
+
+        case PA_SPAWN:
+            if(player->Spawn()) {
+                // Send Spawn event to all players
+                auto base_id = Base::GetRandomRespawnBase(player->team);
+                for(auto recipient : active_sessions) {
+                    recipient->Write<EventPlayerSpawn>(player->player_id,
+                                                         base_id);
+                }
+            }
+        
+            break;
+        default:
+            break;
+    }
     }
 
     return;
+}
+
+void Server::HandleSyncWorld(MessagePtr msg, ShipzSession* session) {
+    if (session == nullptr) {
+        // Not allowed without session
+        return;
+    }
+    for (auto base : Base::all_bases) {
+        session->manager->Write(base->EmitSpawnMessage());
+    }
 }
 
 // Setup message handling callbacks
@@ -326,4 +379,11 @@ void Server::SetupCallbacks() {
             std::bind(&Server::HandleAction, this, std::placeholders::_1,
                       std::placeholders::_2)),
         ConstructHeader(MessageType::REQUEST, REQUEST_ACTION));
+
+    // Client wants to sync world
+    this->handler.RegisterHandler(
+        std::function<void(MessagePtr, ShipzSession*)>(
+            std::bind(&Server::HandleSyncWorld, this, std::placeholders::_1,
+                      std::placeholders::_2)),
+        ConstructHeader(MessageType::REQUEST, SYNC_WORLD));
 }

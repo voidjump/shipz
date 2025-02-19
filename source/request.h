@@ -21,7 +21,8 @@
     class_handler(GetServerInfo,    GET_SERVER_INFO) \
     class_handler(JoinGame,         JOIN_GAME) \
     class_handler(LeaveGame,        LEAVE_GAME) \
-    class_handler(Action,        REQUEST_ACTION)
+    class_handler(Action,        REQUEST_ACTION) \
+    class_handler(SyncWorld,        SYNC_WORLD)
 
 // Request server information
 #define FIELDS_GetServerInfo(field_handler) \
@@ -38,6 +39,10 @@
 // Request to spawn
 #define FIELDS_Action(field_handler) \
     field_handler(FIELD_UINT16, action_id)
+
+// Request to spawn
+#define FIELDS_SyncWorld(field_handler) \
+    field_handler(FIELD_UINT16, team_id)
 
 MESSAGE_FACTORY_HEADER
 

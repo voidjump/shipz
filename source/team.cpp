@@ -1,12 +1,6 @@
+#include <map>
 #include "team.h"
 
-Team red_team;
-Team blue_team;
-
-Team::Team() {
-    players = 0;
-    frags = 0;
-
-    // TODO: this should be a dynamic property?
-    bases = 0;
-}
+uint16_t GameState::blue_bases;
+uint16_t GameState::red_bases;
+uint16_t GameState::neutral_bases;

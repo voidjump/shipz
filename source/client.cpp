@@ -62,6 +62,7 @@ void Client::GameLoop() {
     done = false;
     this->handler.Clear();
     this->SetupCallbacks();
+    session->Write<RequestSyncWorld>(self->team);
     while (!done) {
         HandleInputs();
 
@@ -69,12 +70,15 @@ void Client::GameLoop() {
 
         if (socket.Poll()) {
             auto recieved_packet = socket.GetPacket();
-            handler.HandlePacket(*recieved_packet);
+            if(recieved_packet->SessionID() != session->session_id) {
+                log::error("received packet with wrong session ID");
+            } else {
+                session->manager->HandleReceivedPacket(*recieved_packet);
+                handler.HandleMessageList(session->manager->Read(), session);
+            }
         }
 
         Player::UpdateAll(deltatime);
-        // TODO: Fix this
-        // UpdateBullets(players);
         ClearOldExplosions();
 
         if ((SDL_GetTicks() - lastsendtime) > SEND_DELAY) {
@@ -339,7 +343,7 @@ void Client::SetupCallbacks() {
         std::function<void(MessagePtr, ShipzSession*)>(
             std::bind(&Client::HandleObjectSpawn, this, std::placeholders::_1,
                       std::placeholders::_2)),
-    ConstructHeader(MessageType::SYNC, OBJECT_SPAWN));
+    ConstructHeader(MessageType::EVENT, OBJECT_SPAWN));
     this->handler.RegisterHandler(
         std::function<void(MessagePtr, ShipzSession*)>(
             std::bind(&Client::HandleObjectUpdate, this, std::placeholders::_1,
@@ -349,7 +353,7 @@ void Client::SetupCallbacks() {
         std::function<void(MessagePtr, ShipzSession*)>(
             std::bind(&Client::HandleObjectDestroy, this, std::placeholders::_1,
                       std::placeholders::_2)),
-    ConstructHeader(MessageType::SYNC, OBJECT_DESTROY));
+    ConstructHeader(MessageType::EVENT, OBJECT_DESTROY));
     this->handler.RegisterHandler(
         std::function<void(MessagePtr, ShipzSession*)>(
             std::bind(&Client::HandlePlayerState, this, std::placeholders::_1,
@@ -360,6 +364,16 @@ void Client::SetupCallbacks() {
             std::bind(&Client::HandleTeamStates, this, std::placeholders::_1,
                       std::placeholders::_2)),
     ConstructHeader(MessageType::SYNC, TEAM_STATES));
+    this->handler.RegisterHandler(
+        std::function<void(MessagePtr, ShipzSession*)>(
+            std::bind(&Client::HandleSpawnEvent, this, std::placeholders::_1,
+                      std::placeholders::_2)),
+    ConstructHeader(MessageType::EVENT, PLAYER_SPAWN));
+    this->handler.RegisterHandler(
+        std::function<void(MessagePtr, ShipzSession*)>(
+            std::bind(&Client::HandleLiftOffEvent, this, std::placeholders::_1,
+                      std::placeholders::_2)),
+    ConstructHeader(MessageType::EVENT, PLAYER_LIFTOFF));
 }
 
 // Send a state update to the server
@@ -411,9 +425,9 @@ void Client::Draw() {
 
     Object::DrawAll();
 
-    // for (auto player : players) {
-    //     player->Draw();
-    // }
+    for (auto player : Player::instances) {
+        player.second->Draw();
+    }
 
     DrawExplosions();
 
@@ -426,19 +440,12 @@ void Client::Draw() {
 
     DrawIMG(scores, 0, YRES - 19);
     char tempstr[10];
-    // draw blue frags:
-    snprintf(tempstr, 10, "%i", blue_team.frags);
-    DrawFont(sansbold, tempstr, 4, YRES - 17, FONT_COLOR::WHITE);
     // draw blue bases:
-    snprintf(tempstr, 10, "%i", blue_team.bases);
+    snprintf(tempstr, 10, "%i", GameState::blue_bases);
     DrawFont(sansbold, tempstr, 29, YRES - 17, FONT_COLOR::WHITE);
 
-    // draw red frags:
-    snprintf(tempstr, 10, "%i", red_team.frags);
-    DrawFont(sansbold, tempstr, 54, YRES - 17, FONT_COLOR::WHITE);
-
     // draw red bases:
-    snprintf(tempstr, 10, "%i", red_team.bases);
+    snprintf(tempstr, 10, "%i", GameState::red_bases);
     DrawFont(sansbold, tempstr, 79, YRES - 17, FONT_COLOR::WHITE);
 
     switch (self->weapon) {
@@ -527,10 +534,7 @@ void Client::SendChatLine() {
 
 // Handle an unknown message
 void Client::HandleUnknownMessage(MessagePtr msg, ShipzSession* session) {
-    log::debug("received unknown message type");
-    log::debug("subtype", int64_t(msg->GetMessageSubType()));
-    log::debug("type", int64_t(msg->GetMessageType()));
-    log::debug("rel", int64_t(msg->GetReliability()));
+    log::debug("received unknown message type: ", msg->AsDebugStr());
 }
 
 // Handle chat message
@@ -573,8 +577,12 @@ void Client::HandlePlayerLeaves(MessagePtr msg, ShipzSession* session) {
 // An object is spawned
 void Client::HandleObjectSpawn(MessagePtr msg, ShipzSession* session) {
     auto obj_spawn = msg->As<EventObjectSpawn>();
+    log::debug("called for obj with id ", obj_spawn->id);
 
     Object::HandleSpawn(obj_spawn);
+    if(obj_spawn->type == OBJECT_TYPE::BASE) {
+        GameState::Update();
+    }
 }
 
 // An object is updated
@@ -652,4 +660,26 @@ void Client::HandlePlayerInfo(MessagePtr msg, ShipzSession* session) {
     auto info = msg->As<ResponsePlayerInformation>();
     info->LogDebug();
     AddPlayer(info->client_id, info->player_name, info->team);
+}
+
+void Client::HandleSpawnEvent(MessagePtr msg, ShipzSession* session) {
+    auto spawn = msg->As<EventPlayerSpawn>();
+    log::info("spawning at base ", spawn->base_id);
+    // TODO: IMPLEMENT FOR OTHER PLAYERS !!!!!!
+    // TODO: IMPLEMENT FOR OTHER PLAYERS !!!!!!
+    // TODO: IMPLEMENT FOR OTHER PLAYERS !!!!!!
+    // TODO: IMPLEMENT FOR OTHER PLAYERS !!!!!!
+    // TODO: IMPLEMENT FOR OTHER PLAYERS !!!!!!
+    // Update coordinates to base
+    
+    auto obj = Object::GetByID(spawn->base_id);
+    auto base = std::dynamic_pointer_cast<Base>(obj);
+    self->x = base->x;
+    self->y = base->y;
+}
+
+void Client::HandleLiftOffEvent(MessagePtr msg, ShipzSession* session) {
+    log::info("liftoff event");
+    auto liftoff = msg->As<EventPlayerLiftOff>();
+    // Do nothing?
 }

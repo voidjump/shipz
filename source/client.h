@@ -126,6 +126,8 @@ class Client {
     void HandleAcceptJoin(MessagePtr msg, ShipzSession* session);
     void HandleDenyJoin(MessagePtr msg, ShipzSession* session);
     void HandlePlayerInfo(MessagePtr msg, ShipzSession* session);
+    void HandleSpawnEvent(MessagePtr msg, ShipzSession* session);
+    void HandleLiftOffEvent(MessagePtr msg, ShipzSession* session);
 };
 
 #endif

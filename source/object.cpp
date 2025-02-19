@@ -18,15 +18,23 @@ Object::Object(ObjectID id, ObjectType type) {
 Object::Object(ObjectType type) {
     this->id = Object::GetFreeID();
     this->type = type;
+    std::shared_ptr<Object> sharedPtr(this);
+    instances[this->id] = sharedPtr;
 }
  
  // Handle spawn message
 void Object::HandleSpawn(EventObjectSpawn *sync) {
     auto it = instances.find(sync->id);
     if (it != instances.end()) {
-        log::error("Refusing to spawn object with id ", sync->id, " as it alreayd exists;");
+        log::error("Refusing to spawn object with id ", sync->id, " as it already exists;");
         return;
     }
+
+    // log::debug("handling spawn");
+    // sync->LogDebug();
+    // PrintRawBytes((char*)&sync->data[0], sync->size);
+    // log::debug("/");
+
     // Call appropriate constructor based on object type
     switch(sync->type) {
         case OBJECT_TYPE::BULLET:
@@ -38,8 +46,11 @@ void Object::HandleSpawn(EventObjectSpawn *sync) {
         case OBJECT_TYPE::MINE:
             instances[sync->id] = std::make_shared<Mine>(sync);
             break;
+        case OBJECT_TYPE::BASE:
+            instances[sync->id] = std::make_shared<Base>(sync);
+            break;
         default:
-            log::debug("Cannot spawn unknown object type ", sync->type);
+            log::debug("Cannot spawn unknown object type ", (uint16_t)sync->type);
     }
 }
 

@@ -46,11 +46,14 @@ class Server {
     void HandleCreateSession(MessagePtr msg, ShipzSession* session);
 
     void HandleAction(MessagePtr msg, ShipzSession* session);
+    void HandleSyncWorld(MessagePtr msg, ShipzSession* session);
 
+    void WriteUpdates();
     void PurgeStaleSessions();
     ShipzSession* CreateSessionForClient(SDLNet_Address *addr, uint16_t port);
 
-    void Tick();
+    void SpawnObjects();
+
     void Run();
     void Init();
     bool Load();

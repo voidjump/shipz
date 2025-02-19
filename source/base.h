@@ -11,15 +11,25 @@
 
 class Base : public Object, public Renderable {
 	public:
-		int owner; // RED, BLUE or NEUTRAL
-		int x;
-		int y;
-		int health;
+		uint16_t owner; // RED, BLUE or NEUTRAL
+		uint16_t x;
+		uint16_t y;
+		uint16_t health;
 
 		static std::vector<Base*> all_bases;
 
-		Base(uint16_t owner, uint16_t x, uint32_t y);
+		static uint16_t GetTeamCount(TeamID team_id);
+
+		Base(uint16_t owner, uint16_t x, uint16_t y);
 		Base(EventObjectSpawn * sync);
+
+		std::shared_ptr<EventObjectSpawn> EmitSpawnMessage();
+
+		// Get number of bases owned by a team
+		static int BasesOwned(int owning_team);
+
+		// Get random base
+		static ObjectID GetRandomRespawnBase(int owning_team);
 
 		void Sync(SyncObjectUpdate *sync);
 		void Draw();

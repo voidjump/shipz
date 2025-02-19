@@ -9,7 +9,7 @@ void MessageHandler::RegisterHandler(
     std::function<void(MessagePtr, ShipzSession *)> callback, Uint16 header) {
     log::debug("registering handler for ", header);
     header = header & ~RELIABLE_MASK;
-    log::debug("registering handler for ", header);
+    log::debug("after mask removed: ", header);
     this->registry[header] = callback;
 }
 

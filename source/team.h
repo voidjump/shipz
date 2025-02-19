@@ -1,8 +1,7 @@
 #ifndef SHIPZ_TEAM_H
 #define SHIPZ_TEAM_H
 
-// #include "player.h"
-
+#include "base.h"
 
 // teams/bases ownership:
 enum SHIPZ_TEAM {
@@ -11,17 +10,19 @@ enum SHIPZ_TEAM {
     BLUE,
 };
 
-class Team
-{
+
+class GameState {
     public:
-        int players; // number of players on the Team
-        int bases; // number of bases a team has 
-        int frags;
+        static uint16_t blue_bases;
+        static uint16_t red_bases;
+        static uint16_t neutral_bases;
 
-    Team();
-};	
+        static void Update() {
+            blue_bases = Base::GetTeamCount(blue_bases);
+            red_bases = Base::GetTeamCount(red_bases);
+            neutral_bases = Base::GetTeamCount(neutral_bases);
+        }
+};
 
-extern Team red_team;
-extern Team blue_team;
 
 #endif

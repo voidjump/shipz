@@ -57,7 +57,7 @@ bool Socket::Send(Buffer &buffer, SDLNet_Address *address, Uint16 port) {
         log::error("cannot send, empty buffer");
         return false;
     }
-    log::debug("sending buffer:", buffer.AsHexString());
+    // log::debug("sending buffer:", buffer.AsHexString());
     if (!SDLNet_SendDatagram(this->udpsock, address, port, (void *)buffer.data,
                              buffer.length)) {
         log::error("can't send buffer to address: ",
@@ -99,7 +99,7 @@ bool Socket::Poll() {
         SDLNet_RefAddress(recv->addr);
         result = true;
     }
-    log::debug("received buffer:", pack.AsHexString());
+    // log::debug("received buffer:", pack.AsHexString());
     in_queue.Push(std::make_unique<Packet>(std::move(pack)));
 
     SDLNet_DestroyDatagram(recv);

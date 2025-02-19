@@ -22,12 +22,14 @@
     class_handler(PlayerJoins,   PLAYER_JOINS) \
     class_handler(PlayerLeaves,  PLAYER_LEAVES) \
     class_handler(PlayerKicked,  PLAYER_KICKED) \
-    class_handler(Chat,       CHAT_ALL) \
+    class_handler(Chat,          CHAT_ALL) \
     class_handler(TeamWins,      TEAM_WINS) \
     class_handler(LevelChanges,  LEVEL_CHANGE) \
     class_handler(ServerQuits,   SERVER_QUIT) \
     class_handler(ObjectSpawn,           OBJECT_SPAWN) \
-    class_handler(ObjectDestroy,         OBJECT_DESTROY)
+    class_handler(ObjectDestroy,         OBJECT_DESTROY) \
+    class_handler(PlayerLiftOff,         PLAYER_LIFTOFF) \
+    class_handler(PlayerSpawn,         PLAYER_SPAWN)
 
 // Another player has joined
 #define FIELDS_PlayerJoins(field_handler) \
@@ -63,16 +65,26 @@
 #define FIELDS_ServerQuits(field_handler) \
     field_handler(FIELD_STRING, message)
 
+// An object is being created
 #define FIELDS_ObjectSpawn(field_handler) \
     field_handler(FIELD_UINT16,         id) \
     field_handler(FIELD_UINT8,        type) \
     field_handler(FIELD_UINT8,        size) \
     field_handler(FIELD_OCTETS,       data)
 
+// An object is being destroyed
 #define FIELDS_ObjectDestroy(field_handler) \
     field_handler(FIELD_UINT16,         id)
 
-MESSAGE_FACTORY_HEADER
+// A player respawns at a base
+#define FIELDS_PlayerLiftOff(field_handler) \
+    field_handler(FIELD_UINT16,         client_id) 
 
+// A player respawns at a base
+#define FIELDS_PlayerSpawn(field_handler) \
+    field_handler(FIELD_UINT16,         client_id) \
+    field_handler(FIELD_UINT16,         base_id)
+
+MESSAGE_FACTORY_HEADER
 
 #endif

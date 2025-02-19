@@ -125,6 +125,9 @@ class Message {
     inline std::string DebugHeader() {
         return std::bitset<8>(header).to_string();
     }
+
+    // Get a message as a debug string
+    virtual std::string AsDebugStr() = 0;
 };
 
 #endif

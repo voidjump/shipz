@@ -73,9 +73,7 @@ class Player {
 
     void HandleUpdate(SyncPlayerState* sync);
     ClientID GeneratePlayerID();
-
-	// Serverside, handle an action by the player
-	void HandleAction(uint16_t action_id);
+    static void EmitStates(ShipzSession *session);
 
 	// Is the player currently landed?
 	bool IsLanded();
@@ -84,10 +82,16 @@ class Player {
 	// Is the player flying?
 	bool IsFlying();
 
+    // Lift off a player
+    bool LiftOff();
+    // Spawn a player
+    bool Spawn();
+
     // Retrieve a player instance by their ID
     static Player* GetByID(uint16_t search_id);
+    static uint16_t GetTeamCount(TeamID team_id);
+    TeamID GetBalancedTeam();
     void Init();
-    void Empty();
     void Update(uint64_t delta);
     void Respawn();
     void Rotate(bool clockwise);
@@ -104,17 +108,20 @@ inline int ConvertAngle(float angle) {
     if (temp_angle > 359) temp_angle -= 360;
     return temp_angle;
 }
-void TestColmaps();
-const char* GetStatusString(int status);
-void GetCollisionMaps(bool** levelcolmap);
+
 bool PlayerCollideWithLevel(Player* play, bool** levelcolmap);
 int PlayerCollideWithBullet(Player* play, int playernum, Player* players);
 int PlayerCollideWithBase(Player* play);
+
+void TestColmaps();
+const char* GetStatusString(int status);
+void GetCollisionMaps(bool** levelcolmap);
 void AdjustViewport(Player* play);
+
 Player* GetNearestEnemyPlayer(int x, int y, int team);
 int GetNearestEnemyPlayer(Player* plyrs, int x, int y, int pteam);
+
 Uint16 ShootBullet(Player* play, int owner);
-Base* FindRespawnBase(int rspwnteam);
-void UpdateBullets(Player* plyrs);
+
 void CheckBulletCollides(bool** colmap);
 #endif

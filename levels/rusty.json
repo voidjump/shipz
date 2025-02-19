@@ -16,11 +16,6 @@
       "y": 900
     },
     {
-      "team": "red",
-      "x": 1020,
-      "y": 900
-    },
-    {
       "team": "neutral",
       "x": 400,
       "y": 482
@@ -39,6 +34,11 @@
       "team": "neutral",
       "x": 100,
       "y": 292
+    },
+    {
+      "team": "red",
+      "x": 1020,
+      "y": 900
     }
   ],
   "author": "Steve van Bennekom",

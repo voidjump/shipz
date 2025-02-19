@@ -12,16 +12,16 @@ SessionMessageManager::SessionMessageManager(ShipzSession *session) {
 
 // Write a message to an outbound queue
 void SessionMessageManager::Write(MessagePtr msg) {
-    log::debug(":: header: ", msg->DebugHeader());
+    // log::debug(":: header: ", msg->DebugHeader());
 
     if (msg->GetReliability()) {
         msg->SetSeqNr(id_counter);
         id_counter = (id_counter + 1) % MAX_MESSAGE_SEQUENCE_ID;
         this->out_reliable.push_front(msg);
-        log::debug("Pushing msg to out_reliable ", out_reliable.size());
+        log::debug("@", session->session_id, " ==> ",  msg->AsDebugStr(), " ", out_reliable.size() );
     } else {
         this->out_lossy.push_front(msg);
-        log::debug("Pushing msg to out_lossy ", out_lossy.size());
+        log::debug("@", session->session_id, " --> ",  msg->AsDebugStr(), " ", out_lossy.size() );
     }
 }
 
@@ -38,13 +38,12 @@ void SessionMessageManager::HandleReceivedPacket(Packet &pack) {
     auto messages = pack.Read();
     uint8_t reliable_count = 0;
     this->session->last_active = SDL_GetTicks();
-    log::debug("handling packet for session ", this->session->session_id, ":",
-               messages.size());
+    // log::debug("handling packet for session ", this->session->session_id, ":",
+    //            messages.size());
 
     MessageSequenceID last_seen = this->last_seen_id;
     for (auto msg : messages) {
         if (msg->GetReliability()) {
-            log::debug("reliable");
             if (!is_new_message(msg->GetSeqNr(), this->last_seen_id)) {
                 continue;
             }
@@ -57,11 +56,13 @@ void SessionMessageManager::HandleReceivedPacket(Packet &pack) {
             if (msg->GetMessageSubType() == ACKNOWLEDGE) {
                 // Drop all messages from the outbound queue that are
                 // Older than this ACK
-                ProcessAck(msg->As<SessionAck>()->last_seq_no);
+                auto ack = msg->As<SessionAck>();
+                log::debug("@", session->session_id, " <-- ACK ", (uint16_t)ack->last_seq_no);
+                ProcessAck(ack->last_seq_no);
             }
             // Note all other session messages are ignored!
         } else {
-            log::debug("pushing to inbound");
+            log::debug("@", session->session_id, " <-- ", msg->AsDebugStr());
             this->inbound.push_back(msg);
         }
     }

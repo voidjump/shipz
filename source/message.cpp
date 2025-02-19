@@ -49,23 +49,18 @@ MessagePtr Message::Deserialize(Buffer &buffer) {
     Uint8 msg_type = buffer.Peek8();
     switch (GetMessageTypeFromHeader(msg_type)) {
         case MessageType::EVENT:
-            log::debug("reading EVENT");
             message = std::dynamic_pointer_cast<Message>(Event::Deserialize(&buffer));
             break;
         case MessageType::REQUEST:
-            log::debug("reading REQUEST");
             message = std::dynamic_pointer_cast<Message>(Request::Deserialize(&buffer));
             break;
         case MessageType::RESPONSE:
-            log::debug("reading RESPONSE");
             message = std::dynamic_pointer_cast<Message>(Response::Deserialize(&buffer));
             break;
         case MessageType::SYNC:
-            log::debug("reading SYNC");
             message = std::dynamic_pointer_cast<Message>(Sync::Deserialize(&buffer));
             break;
         case MessageType::SESSION:
-            log::debug("reading SESSION");
             message = std::dynamic_pointer_cast<Message>(Session::Deserialize(&buffer));
             break;
         default:

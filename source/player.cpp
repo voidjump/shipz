@@ -66,105 +66,43 @@ bool Player::IsAlive() { return this->status != PLAYER_STATUS::DEAD; }
 // Is the player flying
 bool Player::IsFlying() { return this->status != PLAYER_STATUS::FLYING; }
 
-// May be called serverside only
-// Handle an action by the player (changin their state)
-void Player::HandleAction(uint16_t action_id) {
-    switch (action_id) {
-        case PA_LIFTOFF:
-            if (this->IsLanded()) {
-                log::info("player ", this->name, " is lifting off");
-                this->status = PLAYER_STATUS::FLYING;
-                this->y -= 10;
-            }
-            break;
-
-        case PA_SPAWN:
-            if (!this->IsAlive()) {
-                log::info("player ", this->name, " is respawning");
-                this->status = PLAYER_STATUS::LANDED;
-                // Choose a random base to respawn.
-            }
-            break;
-        default:
-            break;
+// Lift Off a player, return true if succesful
+// Serverside
+// TODO: Add serverside assertion
+bool Player::LiftOff() {
+    if (this->IsLanded()) {
+        log::info("player ", this->name, " is lifting off");
+        this->status = PLAYER_STATUS::FLYING;
+        this->y -= 10;
+        return true;
     }
+    return false;
+}
+
+// Spawn a player, return true if succesful
+// Serverside
+// TODO: Add serverside assertion
+bool Player::Spawn() {
+    if (!this->IsAlive()) {
+        log::info("player ", this->name, " is respawning");
+        this->status = PLAYER_STATUS::LANDED;
+        return true;
+    }
+    return false;
 }
 
 void Player::HandleUpdate(SyncPlayerState *sync) {
-    // uint16_t temp_status = sync->status_bits;
-    // if( this->self_sustaining ) {
-    // 	this->typing = sync->typing;
-    // 	this->x = sync->x;
-    // 	this->y = sync->y;
-    // 	this->vx = sync->vx;
-    // 	this->vy = sync->vy;
-
-    // 	if (temp_status == PLAYER_STATUS::FLYING &&
-    // 		(this->status == PLAYER_STATUS::LANDED || this->status ==
-    // PLAYER_STATUS::LANDEDBASE)) { 		this->lastliftofftime = SDL_GetTicks();
-    // 	}
-    // 	if (temp_status == PLAYER_STATUS::DEAD && this->status !=
-    // PLAYER_STATUS::DEAD) { 		NewExplosion(int(this->x), int(this->y));
-    // 	}
-    // 	this->status = temp_status;
-    // } else {
-    // 	if (temp_status == PLAYER_STATUS::DEAD && this->status ==
-    // PLAYER_STATUS::SUICIDE) { 		log::debug("we have just suicided!");
-    // 		NewExplosion(int(this->x), int(this->y));
-    // 		this->status = PLAYER_STATUS::DEAD;
-    // 	}
-    // 	if (temp_status == PLAYER_STATUS::JUSTCOLLIDEDROCK && this->status ==
-    // PLAYER_STATUS::FLYING) { 		log::debug("we just collided with a rock!");
-    // 		NewExplosion(int(this->x), int(this->y));
-    // 		this->status = PLAYER_STATUS::DEAD;
-    // 	}
-    // 	if (temp_status == PLAYER_STATUS::JUSTCOLLIDEDBASE && this->status ==
-    // PLAYER_STATUS::FLYING) { 		log::debug("we just collided with base!");
-    // 		NewExplosion(int(this->x), int(this->y));
-    // 		this->status = PLAYER_STATUS::DEAD;
-    // 	}
-    // 	if (temp_status == PLAYER_STATUS::JUSTSHOT && this->status ==
-    // PLAYER_STATUS::FLYING) { 		log::debug("we were just shot!");
-    // 		NewExplosion(int(this->x), int(this->y));
-    // 		this->status = PLAYER_STATUS::DEAD;
-    // 	}
-    // 	if (temp_status == PLAYER_STATUS::LANDEDRESPAWN && this->status ==
-    // PLAYER_STATUS::RESPAWN) { 		log::debug("server said we could respawn!");
-    // 		Base * tmpbs = FindRespawnBase(this->team);
-
-    // 		// Base found, reset the player's speed etc.
-    // 		this->Respawn();
-    // 		this->Update();
-    // 		// mount /dev/player /mnt/Base
-    // 		this->x = tmpbs->x;
-    // 		this->y = tmpbs->y - 26;
-
-    // 		this->status = PLAYER_STATUS::LANDEDRESPAWN;
-    // 	}
-    // 	if (temp_status == PLAYER_STATUS::FLYING && this->status ==
-    // PLAYER_STATUS::LIFTOFF) { 		log::debug("we are flying!"); 		this->status =
-    // PLAYER_STATUS::FLYING;
-    // 	}
-    // 	if (temp_status == PLAYER_STATUS::LANDED && this->status ==
-    // PLAYER_STATUS::FLYING) { 		log::debug("we have landed!"); 		this->status =
-    // PLAYER_STATUS::LANDED; 		this->vx = 0; 		this->vy = 0; 		this->engine_on = 0;
-    // 		this->flamestate = 0;
-    // 	}
-    // 	if (temp_status == PLAYER_STATUS::LANDEDBASE && this->status ==
-    // PLAYER_STATUS::FLYING) { 		log::debug("we have landed on a base!"); 		Base
-    // *tmpbase = GetNearestBase(int(this->x), int(this->y));
-
-    // 		this->y = tmpbase->y - 26;
-    // 		this->angle = 0;
-    // 		this->shipframe = 0;
-    // 		this->status = PLAYER_STATUS::LANDEDBASE;
-    // 		this->vx = 0;
-    // 		this->vy = 0;
-    // 		this->engine_on = 0;
-    // 		this->flamestate = 0;
-    // 		this->Update();
-    // 	}
-    // }
+    uint16_t temp_status = sync->status_bits;
+    if (this->self_sustaining) {
+        this->status = sync->status_bits;
+        this->typing = sync->typing;
+        this->x = sync->x;
+        this->y = sync->y;
+        this->vx = sync->vx;
+        this->vy = sync->vy;
+    } else {
+        this->status = sync->status_bits;
+    }
 }
 
 const char *GetStatusString(int status) {
@@ -195,7 +133,7 @@ const char *GetStatusString(int status) {
     return "UNDEFINED";
 }
 
-// For legacy reasons, currently a separate function from `Empty`
+// Initialize fields on a player
 void Player::Init() {
     this->shipframe = 0;
     this->flamestate = 0;
@@ -214,21 +152,22 @@ void Player::Init() {
     this->status = PLAYER_STATUS::DEAD;
     this->weapon = WEAPON_BULLET;
     this->typing = false;
-}
-
-// Fully clear all fields on a player instance
-void Player::Empty() {
-    // empties a player array slot, so it's ready to accept a new player without
-    // problems.
     this->lastliftofftime = -LIFTOFFSHOOTDELAY;
     this->lastshottime = 0;
-    this->team = 0;
+    this->team = Player::GetBalancedTeam();
     this->name.clear();
     this->y_bmp = 0;
     this->x_bmp = 0;
     this->self_sustaining = 0;
+}
 
-    this->Init();
+TeamID Player::GetBalancedTeam() {
+    if (Player::GetTeamCount(SHIPZ_TEAM::RED) <=
+        Player::GetTeamCount(SHIPZ_TEAM::BLUE)) {
+        return SHIPZ_TEAM::RED;
+    } else {
+        return SHIPZ_TEAM::BLUE;
+    }
 }
 
 void Player::Update(uint64_t delta) {
@@ -296,6 +235,18 @@ void Player::Remove(ClientID id) {
     }
     log::error("could not remove player with ID ", id,
                ", player does not exist");
+}
+
+// Write a playerstate message for every player instance to a session
+void Player::EmitStates(ShipzSession *session) {
+    for (auto it : Player::instances) {
+        auto player = it.second;
+        session->Write<SyncPlayerState>(
+            player->player_id, player->status, player->typing,
+            SignedFloatToNet(player->angle), UnsignedFloatToNet(player->x),
+            UnsignedFloatToNet(player->y), SignedFloatToNet(player->vx),
+            SignedFloatToNet(player->vy));
+    }
 }
 
 void Player::Respawn() {
@@ -424,7 +375,8 @@ int PlayerCollideWithBullet(Player *play, int playernum, Player *players) {
     // WEAPON_BULLET)
     // 		{
     // 			// first check if the bullet even is in the ships
-    // clipping rectangle, this saves time. 			if( bullets[cb].x > ( play->x - 1 )
+    // clipping rectangle, this saves time. 			if(
+    // bullets[cb].x > ( play->x - 1 )
     // && bullets[cb].x < ( play->x + 29 )
     // 			&& bullets[cb].y > ( play->y - 1 ) && bullets[cb].y < (
     // play->y + 29 ))
@@ -452,7 +404,8 @@ int PlayerCollideWithBullet(Player *play, int playernum, Player *players) {
     // 							// return the bullet
     // number, so the main function can use
     // 							// it to tag the bullet
-    // etc. same for the next 2 returns. 							return cb;
+    // etc. same for the next 2 returns.
+    // return cb;
     // 						}
     // 					}
     // 					if( dy < 27 )	// same here..
@@ -512,9 +465,9 @@ int PlayerCollideWithBase(Player *play) {
     // 			for( int b = 0; b < 28; b++)
     // 			{
     // 				if( int(play->x)+a-14 > bases[i].x - 21 &&
-    // int(play->x)+a-14 < bases[i].x + 22 && 				    int(play->y)+b-14 > bases[i].y -
-    // 18 && int(play->y)+b-14 < bases[i].y - 7 &&
-    // 					shipcolmap[play->shipframe][a][b] )
+    // int(play->x)+a-14 < bases[i].x + 22 &&
+    // int(play->y)+b-14 > bases[i].y - 18 && int(play->y)+b-14 < bases[i].y - 7
+    // && shipcolmap[play->shipframe][a][b] )
     // 				{
     // 					//player collided with level
     // 					return i; // return the number of the
@@ -624,13 +577,15 @@ void CheckBulletCollides(bool **colmap) {
     // )
     // 			{
     // 				// std::cout << "bullet collided x" <<
-    // std::endl; 				bullets[i].collide = true; 				continue;
+    // std::endl; 				bullets[i].collide = true;
+    // continue;
     // 			}
     // 			if( bullets[i].y > (lvl.m_height - 1) || bullets[i]. y <
     // 0 )
     // 			{
     // 				// std::cout << "bullet collided y" <<
-    // std::endl; 				bullets[i].collide = true; 				continue;
+    // std::endl; 				bullets[i].collide = true;
+    // continue;
     // 			}
     // 			if( colmap[ int( bullets[i].x ) ][ int( bullets[i].y ) ]
     // == true )
@@ -640,25 +595,29 @@ void CheckBulletCollides(bool **colmap) {
     // 				// std::cout << bullets[i].x << " " <<
     // bullets[i].y << std::endl;
     // 				// std::cout << int(bullets[i].x) << " " <<
-    // int(bullets[i].y) << std::endl; 				bullets[i].collide = true; 				continue;
+    // int(bullets[i].y) << std::endl;
+    // bullets[i].collide = true; 				continue;
     // 			}
     // 			if( colmap[ int( bullets[i].x ) + 1 ][ int( bullets[i].y
     // ) ] == true )
     // 			{
     // 				// std::cout << "bullet collided colmap 2" <<
-    // std::endl; 				bullets[i].collide = true; 				continue;
+    // std::endl; 				bullets[i].collide = true;
+    // continue;
     // 			}
     // 			if( colmap[ int( bullets[i].x ) ][ int( bullets[i].y ) +
     // 1 ] == true )
     // 			{
     // 				// std::cout << "bullet collided colmap 3" <<
-    // std::endl; 				bullets[i].collide = true; 				continue;
+    // std::endl; 				bullets[i].collide = true;
+    // continue;
     // 			}
     // 			if( colmap[ int( bullets[i].x ) + 1 ][ int( bullets[i].y
     // ) + 1 ] == true )
     // 			{
     // 				// std::cout << "bullet collided colmap 4" <<
-    // std::endl; 				bullets[i].collide = true; 				continue;
+    // std::endl; 				bullets[i].collide = true;
+    // continue;
     // 			}
     // 		}
     // 		if( bullets[i].type == WEAPON_MINE )
@@ -673,39 +632,30 @@ void CheckBulletCollides(bool **colmap) {
     // }
 }
 
-Base *FindRespawnBase(int rspwnteam) {
-    int i, rndint, tmpctr = 0;
-    Base *chosen = NULL;
-    srand(SDL_GetTicks());
-
-    // Select a random index
-    if (rspwnteam == SHIPZ_TEAM::BLUE)
-        rndint = int(rand()) % int(blue_team.bases) + 1;
-    else
-        rndint = int(rand()) % int(red_team.bases) + 1;
-
-    // Find the index-th base of this team
-    for (auto base : Base::all_bases) {
-        if (base->owner == rspwnteam) {
-            tmpctr++;
-            if (tmpctr == rndint) {
-                return base;
-            }
-        }
-    }
-    // if the function arrives here, something is definately wrong...
-    return NULL;
-}
-
 // Draw a player
 void Player::Draw() {
-    if (this->status != PLAYER_STATUS::DEAD) {
-        // Move to player
-        if (this->team == SHIPZ_TEAM::RED) {
+    if (this->status == PLAYER_STATUS::DEAD) {
+        return;
+    }
+
+    // Move to player
+    switch (this->team) {
+        case SHIPZ_TEAM::RED:
             DrawPlayer(shipred, this);
-        }
-        if (this->team == SHIPZ_TEAM::BLUE) {
+            return;
+        case SHIPZ_TEAM::BLUE:
             DrawPlayer(shipblue, this);
+            return;
+    }
+}
+
+// Return how many players there are in a given team
+uint16_t Player::GetTeamCount(TeamID team_id) {
+    uint16_t count = 0;
+    for (auto player : instances) {
+        if (player.second->team == team_id) {
+            count++;
         }
     }
+    return count;
 }

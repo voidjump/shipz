@@ -6,6 +6,7 @@
 
 #include <SDL3/SDL.h>
 
+#include <sstream>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -122,6 +123,9 @@
         /* debug Message */                                                  \
         void LogDebug();                                                     \
                                                                              \
+        /* Get a message as a debug string */                                \
+        virtual std::string AsDebugStr() override;                           \
+                                                                             \
         /* Deserialize Message*/                                             \
         static std::shared_ptr<BASE_CLASS_NAME> Deserialize(Buffer *buffer); \
     };
@@ -186,9 +190,19 @@
     }
 
 // Implement debug methods
-#define MESSAGE_CLASS_DEBUG_FUNCTIONS(CLASS_NAME, HEADER)         \
-    void EXPAND_CONCAT(BASE_CLASS_NAME, CLASS_NAME)::LogDebug() { \
-        FIELDS_##CLASS_NAME(DEBUG_LOG_FIELDS)                     \
+#define MESSAGE_CLASS_DEBUG_FUNCTIONS(CLASS_NAME, HEADER)          \
+    void EXPAND_CONCAT(BASE_CLASS_NAME, CLASS_NAME)::LogDebug(){   \
+        FIELDS_##CLASS_NAME(DEBUG_LOG_FIELDS)                      \
+    }                                                              \
+    /* Debug string method */                                      \
+    std::string                                                    \
+        EXPAND_CONCAT(BASE_CLASS_NAME, CLASS_NAME)::AsDebugStr() { \
+        std::stringstream _out; \
+        _out << EXPAND_STRINGIFY(BASE_CLASS_NAME); \
+        _out << ":"; \
+        _out << STRINGIFY(CLASS_NAME); \
+        _out << "(" << this->GetSeqNr() << ")"; \
+        return _out.str(); \
     }
 
 // Implement Deserialization from base class
