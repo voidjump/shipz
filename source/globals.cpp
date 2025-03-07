@@ -14,10 +14,6 @@ int viewporty = 0;
 
 bool shipcolmap[36][28][28];
 float look_sin[360],
-       look_cos[360],
-       newtime = 0,
-       oldtime = 0,
-       deltatime = 0,
-       lastsendtime = 0;
+       look_cos[360];
  
 Explosion explosions[NUMBEROFEXPLOSIONS];

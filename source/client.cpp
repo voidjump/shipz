@@ -26,6 +26,7 @@
 #include "sync.h"
 #include "team.h"
 #include "types.h"
+#include "timer.h"
 
 // Construct a client
 Client::Client(const char* server_hostname, const char* player_name,
@@ -57,16 +58,26 @@ void Client::Init() {
     this->console.SetHeight(3);
 }
 
+void Client::Debug() {
+    log::debug("x: ", self->x, " y: ", self->y);
+    log::debug("vx: ", self->vx, " vy: ", self->vy);
+    log::debug("fx: ", self->fx, " fy: ", self->fy);
+}
+
 // Run client game loop
 void Client::GameLoop() {
     done = false;
+    Timer t_fps(std::function<void()>(std::bind(&Client::Draw, this)),
+                 60.0, true);
+    Timer t_update(std::function<void()>(std::bind(&Client::SendUpdate, this)),
+                 10.0, true);
+    Timer t_debug(std::function<void()>(std::bind(&Client::Debug, this)),
+                 0.5, true);
     this->handler.Clear();
     this->SetupCallbacks();
     session->Write<RequestSyncWorld>(self->team);
     while (!done) {
         HandleInputs();
-
-        Tick();
 
         if (socket.Poll()) {
             auto recieved_packet = socket.GetPacket();
@@ -78,13 +89,10 @@ void Client::GameLoop() {
             }
         }
 
-        Player::UpdateAll(deltatime);
+        auto tick_time = Timer::Tick();
+        Player::UpdateAll(tick_time);
         ClearOldExplosions();
 
-        if ((SDL_GetTicks() - lastsendtime) > SEND_DELAY) {
-            SendUpdate();
-        }
-        Draw();
     }
     this->Leave();
 }
@@ -260,14 +268,14 @@ void Client::HandleInputs() {
     if (self->status == PLAYER_STATUS::FLYING) {
         if (keys[SDL_SCANCODE_RIGHT]) {
             // rotate player clockwise
-            self->Rotate(true);
+            self->Rotate(true, Timer::LastTick());
         }
         if (keys[SDL_SCANCODE_LEFT]) {
             // rotate player counterclockwise
-            self->Rotate(false);
+            self->Rotate(false, Timer::LastTick());
         }
         if (keys[SDL_SCANCODE_UP]) {
-            self->Thrust();
+            self->engine_on = true;
         }
         if (keys[SDL_SCANCODE_SPACE] && !self->typing) {
             if ((SDL_GetTicks() - self->lastliftofftime) > LIFTOFFSHOOTDELAY) {
@@ -283,14 +291,6 @@ void Client::HandleInputs() {
 // These are influential state changes such as respawning, lifting off, etc.
 void Client::SendAction(uint16_t action) {
     session->Write<RequestAction>(action);
-}
-
-
-// Increase timer tick
-void Client::Tick() {
-    oldtime = newtime;
-    newtime = float(SDL_GetTicks());
-    deltatime = newtime - oldtime;
 }
 
 // Set up all callbacks used during join loop
@@ -382,7 +382,6 @@ void Client::SetupCallbacks() {
 void Client::SendUpdate() {
     session->Write<SyncPlayerState>(self->player_id, self->status, self->typing,
                          self->angle, self->x, self->y, self->vx, self->vy);
-    lastsendtime = SDL_GetTicks();
     auto packet = session->manager->CraftSendPacket();
     if (packet != nullptr) {
         this->socket.Send(*packet, session->endpoint, session->port);
@@ -557,7 +556,7 @@ void Client::AddPlayer(Uint16 id, std::string player_name, Uint8 team) {
     new_player->Init();
 
     // Indicate that this updates coordinates by server
-    new_player->self_sustaining = true;
+    new_player->is_local = true;
 
     new_player->team = team;
     new_player->name = player_name;
@@ -645,7 +644,7 @@ void Client::HandleAcceptJoin(MessagePtr msg, ShipzSession* session) {
     accept->LogDebug();
     self = new Player(accept->client_id);
     self->name = name;
-    self->self_sustaining = false;
+    self->is_local = false;
     state = S_ACCEPTED; 
 }
 
@@ -675,11 +674,11 @@ void Client::HandleSpawnEvent(MessagePtr msg, ShipzSession* session) {
     auto obj = Object::GetByID(spawn->base_id);
     auto base = std::dynamic_pointer_cast<Base>(obj);
     self->x = base->x;
-    self->y = base->y;
+    self->y = base->y - BASE_SPAWN_Y_DELTA;
 }
 
 void Client::HandleLiftOffEvent(MessagePtr msg, ShipzSession* session) {
     log::info("liftoff event");
     auto liftoff = msg->As<EventPlayerLiftOff>();
-    // Do nothing?
+    self->status = PLAYER_STATUS::FLYING;
 }

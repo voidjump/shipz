@@ -47,6 +47,7 @@ class SessionMessageManager {
 
     // Outbound, reliable
     std::deque<MessagePtr> out_reliable;
+    MessageSequenceID last_acked_id;
 
     // Next ID
     MessageSequenceID id_counter;
@@ -61,8 +62,7 @@ class SessionMessageManager {
     bool is_new_message(MessageSequenceID msg_id, MessageSequenceID last_seen);
 
     // Decide whether a message has been acked
-    bool is_acked(uint8_t last_ack, uint8_t message_id,
-                                         uint8_t ack_id);
+    bool is_acked(uint8_t message_id, uint8_t ack_id);
     // Return which id is newest
     MessageSequenceID newest(MessageSequenceID a, MessageSequenceID b);
 

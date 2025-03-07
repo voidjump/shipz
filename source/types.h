@@ -20,11 +20,9 @@
 #define MAXPLAYERS 8
 
 // physics
-#define REALITYSCALE 0.0005
-#define SHIPMASS 20
-#define GRAVITY 8.00
+#define GRAVITY 40.00
 #define ROTATIONSPEED 400
-#define THRUST 784.8
+#define THRUST 250.0
 #define BULLETSPEED 100
 #define BULLETDELAY 200
 #define ROCKETDELAY 500

@@ -17,11 +17,7 @@ extern int viewporty;
 
 extern bool shipcolmap[36][28][28];
 extern float look_sin[360],
-       look_cos[360],
-       newtime,
-       oldtime,
-       deltatime,
-       lastsendtime;
+       look_cos[360];
  
  
 extern Explosion explosions[NUMBEROFEXPLOSIONS];

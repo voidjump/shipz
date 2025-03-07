@@ -45,6 +45,7 @@ void SessionMessageManager::HandleReceivedPacket(Packet &pack) {
     for (auto msg : messages) {
         if (msg->GetReliability()) {
             if (!is_new_message(msg->GetSeqNr(), this->last_seen_id)) {
+                log::debug("ignoring old message:", msg->AsDebugStr());
                 continue;
             }
             // This is a new message and we should ack it.
@@ -106,19 +107,17 @@ void SessionMessageManager::ProcessAck(MessageSequenceID ack_id) {
     while (message != out_reliable.end()) {
         uint8_t message_id = message->get()->GetSeqNr();  // Extract message ID
 
-        if (is_acked(last_seen_id, message_id, ack_id)) {
+        if (is_acked(message_id, ack_id)) {
             log::debug("Removing acknowledged message: ", (int)message_id);
             message = out_reliable.erase(message);  // Erase and move to next element
         } else {
             ++message;  // Move to the next message
         }
     }
-
-    last_seen_id = ack_id;  // Update last acknowledged message
 }
 
 // Function to determine if a message is acknowledged
-bool SessionMessageManager::is_acked(uint8_t last_ack, uint8_t message_id,
+bool SessionMessageManager::is_acked(uint8_t message_id,
                                      uint8_t ack_id) {
     int half_range = MAX_MESSAGE_SEQUENCE_ID / 2;
     int diff = (ack_id - message_id) % MAX_MESSAGE_SEQUENCE_ID;
@@ -144,6 +143,7 @@ std::unique_ptr<Packet> SessionMessageManager::CraftSendPacket() {
         if (packet) {
             if (packet->AvailableWrite() > message->Size()) {
                 packet->Append(message);  // Add message to packet
+                log::debug("appended(R)", message->AsDebugStr());
             }
         }
     }
@@ -151,6 +151,7 @@ std::unique_ptr<Packet> SessionMessageManager::CraftSendPacket() {
         if (packet) {
             if (packet->AvailableWrite() > message->Size()) {
                 packet->Append(message);  // Add message to packet
+                log::debug("appended(L)", message->AsDebugStr());
             }
         }
     }

@@ -49,7 +49,7 @@ class Player {
     // x and y of the crosshair
     float crossx, crossy;
     // is the player local or remote?
-    bool self_sustaining;
+    bool is_local;
 
     // is the player typing a message?
     // TODO: this could be a bitflag in the player state
@@ -68,7 +68,7 @@ class Player {
     Player(ShipzSession* session);
     ~Player();
 
-    static void UpdateAll(uint64_t delta);
+    static void UpdateAll(float delta);
     static void Remove(ClientID id); 
 
     void HandleUpdate(SyncPlayerState* sync);
@@ -92,11 +92,12 @@ class Player {
     static uint16_t GetTeamCount(TeamID team_id);
     TeamID GetBalancedTeam();
     void Init();
-    void Update(uint64_t delta);
+    void Update(float delta);
     void Respawn();
-    void Rotate(bool clockwise);
+    void Rotate(bool clockwise, float delta);
     void Thrust();
     void Draw();
+    void ResetForces();
 };
 
 inline int ConvertAngle(float angle) {

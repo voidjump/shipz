@@ -8,6 +8,7 @@
 #include "renderable.h"
 
 #define STARTING_BASE_HEALTH 1000
+#define BASE_SPAWN_Y_DELTA 26
 
 class Base : public Object, public Renderable {
 	public:

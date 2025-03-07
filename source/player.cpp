@@ -93,7 +93,7 @@ bool Player::Spawn() {
 
 void Player::HandleUpdate(SyncPlayerState *sync) {
     uint16_t temp_status = sync->status_bits;
-    if (this->self_sustaining) {
+    if (this->is_local) {
         this->status = sync->status_bits;
         this->typing = sync->typing;
         this->x = sync->x;
@@ -158,7 +158,7 @@ void Player::Init() {
     this->name.clear();
     this->y_bmp = 0;
     this->x_bmp = 0;
-    this->self_sustaining = 0;
+    this->is_local = 0;
 }
 
 TeamID Player::GetBalancedTeam() {
@@ -170,22 +170,24 @@ TeamID Player::GetBalancedTeam() {
     }
 }
 
-void Player::Update(uint64_t delta) {
+void Player::Update(float delta) {
     // updates both local and non-local players. updates positions, stati, etc.
-    // NOTE: this would be the perfect place for a recharge, like the laser
-    // battery ( ammo ) recharging
-    if (!this->self_sustaining) {
-        // this is the client himself ( a local player )
+    if (!this->is_local) {
         if (this->status != PLAYER_STATUS::LANDED) {
             this->shipframe = (int(this->angle) / 10);
             if (this->shipframe > 35) {
                 this->shipframe = 35;
             }
-            this->fy += float(GRAVITY * SHIPMASS);
-            this->vy += float(this->fy) * REALITYSCALE;
-            this->vx += float(this->fx) * REALITYSCALE;
-            this->x += this->vx * (delta / 1000);
-            this->y += this->vy * (delta / 1000);
+            // Add trust based on the angle
+            if(this->engine_on) {
+                this->Thrust();
+            }
+            this->vy = this->vy + (this->fy * delta);
+            this->vx = this->vx + (this->fx * delta);
+
+            this->vy = this->vy + (float(GRAVITY) * delta);
+            this->x += this->vx * delta;
+            this->y += this->vy * delta;
         }
     } else {
         // this is a remote player
@@ -193,11 +195,12 @@ void Player::Update(uint64_t delta) {
         this->y += this->vy * (delta / 1000);
 
         this->crossy =
-            look_sin[ConvertAngle(this->shipframe * 10)] * -CROSSHAIRDIST;
+            look_sin[ConvertAngle(this->angle)] * -CROSSHAIRDIST;
         this->crossx =
-            look_cos[ConvertAngle(this->shipframe * 10)] * -CROSSHAIRDIST;
+            look_cos[ConvertAngle(this->angle)] * -CROSSHAIRDIST;
     }
     if (this->engine_on) {
+        this->flamestate = (this->flamestate + 1) % 6;
         if (this->flamestate == 1) {
             this->y_bmp = 30;
         }
@@ -265,9 +268,10 @@ void Player::Respawn() {
 }
 
 // Update all player instances
-void Player::UpdateAll(uint64_t delta) {
+void Player::UpdateAll(float delta) {
     for (auto it : instances) {
         auto player = it.second;
+        // log::debug("Updating ", player->name);
         player->Update(delta);
     }
 }
@@ -505,16 +509,16 @@ void AdjustViewport(Player *play) {
 
 // rotates a player, scaled by the deltatime interval.
 // clockwise flag determines direction of rotation
-void Player::Rotate(bool clockwise) {
+void Player::Rotate(bool clockwise, float delta) {
     if (clockwise) {
-        this->angle += float(ROTATIONSPEED * (deltatime / 1000));
+        this->angle += ROTATIONSPEED * delta;
         if (this->angle > 359) {
             this->angle -= 360;
         }
         this->crossy = look_sin[ConvertAngle(this->angle)] * -CROSSHAIRDIST;
         this->crossx = look_cos[ConvertAngle(this->angle)] * -CROSSHAIRDIST;
     } else {
-        this->angle -= float(ROTATIONSPEED * (deltatime / 1000));
+        this->angle -= ROTATIONSPEED * delta;
         if (this->angle < 0) {
             this->angle += 360;
         }
@@ -523,18 +527,18 @@ void Player::Rotate(bool clockwise) {
     }
 }
 
-// thrusts a player forward
+// Apply thrust for a player
 void Player::Thrust() {
-    this->engine_on = 1;
-    this->flamestate++;
-    if (this->flamestate > 6) {
-        this->flamestate = 1;
-    }
-    this->fy -= look_sin[ConvertAngle(this->angle)] * THRUST;
-    this->fx -= look_cos[ConvertAngle(this->angle)] * THRUST;
+    this->fy = look_sin[ConvertAngle(this->angle)] * -THRUST;
+    this->fx = look_cos[ConvertAngle(this->angle)] * -THRUST;
 }
 
 Player *GetNearestEnemyPlayer(int x, int y, int team) { return NULL; }
+
+void Player::ResetForces() {
+    this->fx = 0;
+    this->fy = 0;
+}
 
 int GetNearestEnemyPlayer(Player *plyrs, int x, int y, int pteam) {
     // // returns a number to the enemy player nearest to x,y

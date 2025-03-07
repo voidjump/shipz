@@ -78,9 +78,9 @@ void Server::GameLoop() {
     log::info("starting server ", GetCurrentTime());
 
     Timer update(std::function<void()>(std::bind(&Server::WriteUpdates, this)),
-                 100, true);
+                 10.0, true);
     Timer cleanup_stale_sessions(std::function<void()>(std::bind(&Server::PurgeStaleSessions, this)),
-                 1000, true);
+                 1.0, true);
     SDL_Event event;
     while (!done) {
         while (SDL_PollEvent(&event)) {

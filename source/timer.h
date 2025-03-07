@@ -5,22 +5,23 @@
 
 #include <functional>
 #include <list>
+#include "log.h"
 
 class Timer {
    private:
-    // delta between current tick and last tick
-    static uint64_t delta;
-    // 'timestamp' of the previous tick
-    static uint64_t previous_tick_time;
-    // 'timestamp' of the current tick
-    static uint64_t current_tick_time;
+    // delta between current tick and last tick in seconds
+    static float delta;
+    // 'timestamp' of the previous tick in seconds
+    static float previous_tick_time;
+    // 'timestamp' of the current tick in seconds
+    static float current_tick_time;
 
     static std::list<Timer*> instances;
 
     std::function<void()> callback = nullptr;
 
-    uint64_t fire_time;
-    uint64_t period;
+    float fire_time;
+    float period;
     bool armed;
 
     // Execute function
@@ -39,7 +40,8 @@ class Timer {
     }
 
     // Create a timer that is armed
-    Timer(std::function<void()> cb, uint64_t wait, bool periodic) {
+    Timer(std::function<void()> cb, float frequency, bool periodic) {
+        float wait = 1.0/frequency;
         this->armed = true;
         this->fire_time = current_tick_time + wait;
         if(periodic) {
@@ -58,9 +60,9 @@ class Timer {
     }
 
     // Tick all timers, firing any triggered timers.
-    inline static uint64_t Tick() {
+    inline static float Tick() {
         previous_tick_time = current_tick_time;
-        current_tick_time = SDL_GetTicks();
+        current_tick_time = SDL_GetTicksNS() * 0.000000001;
         delta = current_tick_time - previous_tick_time;
         for (auto timer : instances) {
             if (!timer->armed) {
@@ -78,9 +80,13 @@ class Timer {
         return delta;
     }
     // Arm timer for x time in the future
-    inline void Arm(uint64_t arm_period) {
+    inline void Arm(float arm_period) {
         armed = true;
         fire_time = arm_period + current_tick_time;
+    }
+
+    static inline float LastTick() {
+        return delta;
     }
 };
 

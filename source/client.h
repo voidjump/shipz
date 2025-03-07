@@ -94,9 +94,6 @@ class Client {
     // Send an periodic update to the server
     void SendUpdate();
 
-    // Update timers
-    void Tick();
-
     // Remove a player from the game
     void RemovePlayer(Uint16 id, std::string reason);
 
@@ -111,6 +108,9 @@ class Client {
 
     // Request an action from the server
     void SendAction(uint16_t action);
+
+    // Print frame per second
+    void Debug();
     
     // Packet handlers
     void HandleChat(MessagePtr msg, ShipzSession* session);
