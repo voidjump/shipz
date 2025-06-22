@@ -1,5 +1,5 @@
 #include <map>
-#include "team.h"
+#include "common/team.h"
 
 uint16_t GameState::blue_bases;
 uint16_t GameState::red_bases;

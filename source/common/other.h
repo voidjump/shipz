@@ -3,9 +3,9 @@
 
 #include <SDL3/SDL.h>
 
-#include "net.h"
-#include "types.h"
-#include "base.h"
+#include "net/net.h"
+#include "common/types.h"
+#include "common/base.h"
 
 SDL_Surface * LoadIMG( const char * filename );
 

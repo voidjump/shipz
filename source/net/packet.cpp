@@ -1,9 +1,9 @@
 #include <random>
 
-#include "AES.h"
-#include "packet.h"
-#include "log.h"
-#include "session.h"
+#include "net/AES.h"
+#include "net/packet.h"
+#include "utils/log.h"
+#include "net/session.h"
 
 AES aes_g(AESKeyLength::AES_256);
 std::random_device rand_dev_g;

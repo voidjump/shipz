@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
-#include "net.h"
-#include "event.h"
-#include "team.h"
+#include "net/net.h"
+#include "messages/event.h"
+#include "common/team.h"
 
 TEST(Simple, TestEventPlayerJoinsRoundTrip) {
     Buffer buffer;

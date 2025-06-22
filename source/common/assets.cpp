@@ -1,8 +1,8 @@
 #include <iostream>
-#include "assets.h"
-#include "other.h"
-#include "font.h"
-#include "level.h"
+#include "common/assets.h"
+#include "common/other.h"
+#include "client/font.h"
+#include "common/level.h"
 
 // gfx
 SDL_Surface * crosshairred;

@@ -1,7 +1,7 @@
 #ifndef SHIPZ_EVENT_H
 #define SHIPZ_EVENT_H
 
-#include "message_factory.h"
+#include "net/message_factory.h"
  
 #undef BASE_CLASS_NAME
 #undef BASE_CLASS_HEADER

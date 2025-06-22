@@ -2,7 +2,7 @@
 #define SHIPZ_CHAT_H
 #include <iostream>
 #include <SDL3/SDL.h>
-#include "event.h"
+#include "messages/event.h"
 
 #define MAX_CHAT_LENGTH 79
 

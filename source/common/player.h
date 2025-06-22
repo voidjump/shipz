@@ -3,10 +3,10 @@
 
 #include <map>
 
-#include "base.h"
-#include "session.h"
-#include "sync.h"
-#include "types.h"
+#include "common/base.h"
+#include "net/session.h"
+#include "messages/sync.h"
+#include "common/types.h"
 
 enum PLAYER_STATUS {
     FLYING = 1,

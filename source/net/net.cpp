@@ -1,4 +1,4 @@
-#include "net.h"
+#include "net/net.h"
 
 #include <SDL3/SDL.h>
 #include <SDL3_net/SDL_net.h>
@@ -9,7 +9,7 @@
 #include <iostream>
 #include <sstream>
 
-#include "types.h"
+#include "common/types.h"
 
 // TODO rewrite this using c++ streams?
 // TODO write unit tests

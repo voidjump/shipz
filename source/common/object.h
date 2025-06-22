@@ -7,8 +7,8 @@
 #include <map>
 #include <memory>
 #include <functional>
-#include "event.h"
-#include "sync.h"
+#include "messages/event.h"
+#include "messages/sync.h"
 
 constexpr uint16_t SERVER_SHOULD_DEFINE_ID = 0;
 constexpr uint16_t NO_OBJECT_ID_AVAILABLE = UINT16_MAX;

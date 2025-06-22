@@ -1,16 +1,16 @@
-#include "server.h"
+#include "server/server.h"
 
 #include <SDL3_net/SDL_net.h>
 
-#include "event.h"
-#include "level.h"
-#include "log.h"
-#include "other.h"
-#include "request.h"
-#include "response.h"
-#include "session.h"
-#include "sync.h"
-#include "timer.h"
+#include "messages/event.h"
+#include "common/level.h"
+#include "utils/log.h"
+#include "common/other.h"
+#include "messages/request.h"
+#include "messages/response.h"
+#include "net/session.h"
+#include "messages/sync.h"
+#include "utils/timer.h"
 
 Server::Server(std::string level_name, const uint16_t listen_port,
                uint max_clients)

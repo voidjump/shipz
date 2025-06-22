@@ -10,12 +10,11 @@
 #include <fstream>
 #include <iostream>
 
-#include "client.h"
-#include "gfx.h"
-#include "globals.h"
-#include "menu.h"
-#include "other.h"
-#include "server.h"
+#include "client/client.h"
+#include "client/gfx.h"
+#include "common/globals.h"
+#include "common/other.h"
+#include "server/server.h"
 
 void ConfigureParser(cli::Parser& parser) {
     parser.set_optional<bool>("s", "server", false, "Run as server");

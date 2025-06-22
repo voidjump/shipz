@@ -2,10 +2,10 @@
 #define SHIPZ_BASE_H
 
 #include <vector>
-#include "types.h"
-#include "object.h"
-#include "event.h"
-#include "renderable.h"
+#include "common/types.h"
+#include "common/object.h"
+#include "messages/event.h"
+#include "client/renderable.h"
 
 #define STARTING_BASE_HEALTH 1000
 #define BASE_SPAWN_Y_DELTA 26

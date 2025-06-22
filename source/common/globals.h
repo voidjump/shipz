@@ -2,7 +2,7 @@
 #define SHIPZ_GLOBALS_H
 
 #include <SDL3/SDL.h>
-#include "types.h"
+#include "common/types.h"
 
 extern SDL_Window * sdlWindow;
 extern SDL_Renderer *sdlRenderer;

@@ -1,15 +1,15 @@
 #ifndef SHIPZCLIENT_H
 #define SHIPZCLIENT_H
 #include <sstream>
-#include "message_handler.h"
-#include "net.h"
-#include "packet.h"
-#include "player.h"
-#include "session.h"
-#include "socket.h"
-#include "types.h"
-#include "chat.h"
-#include "event.h"
+#include "net/message_handler.h"
+#include "net/net.h"
+#include "net/packet.h"
+#include "common/player.h"
+#include "net/session.h"
+#include "net/socket.h"
+#include "common/types.h"
+#include "common/chat.h"
+#include "messages/event.h"
 
 enum ClientState {
     S_ERROR, 

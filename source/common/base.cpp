@@ -1,10 +1,10 @@
-#include "base.h"
+#include "common/base.h"
 
 #include <random>
 
-#include "assets.h"
-#include "gfx.h"
-#include "team.h"
+#include "common/assets.h"
+#include "client/gfx.h"
+#include "common/team.h"
 
 // all instances
 std::vector<Base *> Base::all_bases;

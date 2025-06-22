@@ -4,12 +4,12 @@
 #include <SDL3/SDL_video.h>
 #include <iostream>
 
-#include "types.h"
-#include "player.h"
-#include "team.h"
-#include "base.h"
-#include "assets.h"
-#include "level.h"
+#include "common/types.h"
+#include "common/player.h"
+#include "common/team.h"
+#include "common/base.h"
+#include "common/assets.h"
+#include "common/level.h"
 
 // shipz drawing functions
 

@@ -1,7 +1,7 @@
 #ifndef SHIPZ_REQUEST_H
 #define SHIPZ_REQUEST_H
 
-#include "message_factory.h"
+#include "net/message_factory.h"
 
 /* 
  * Request message: A message that requires a response

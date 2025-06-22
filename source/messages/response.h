@@ -1,7 +1,7 @@
 #ifndef SHIPZ_RESPONSE_H
 #define SHIPZ_RESPONSE_H
 
-#include "message_factory.h"
+#include "net/message_factory.h"
 
 /*
  * Response message: An answer to a Request

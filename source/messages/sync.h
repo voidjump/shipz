@@ -1,7 +1,7 @@
 #ifndef SHIPZ_SYNC_H
 #define SHIPZ_SYNC_H
 
-#include "message_factory.h"
+#include "net/message_factory.h"
 
 /* 
  * Sync messages: Updates on game state

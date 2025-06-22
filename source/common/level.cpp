@@ -1,4 +1,4 @@
-#include "level.h"
+#include "common/level.h"
 
 #include <SDL3/SDL.h>
 
@@ -7,10 +7,10 @@
 #include <map>
 #include <nlohmann/json.hpp>
 
-#include "base.h"
-#include "log.h"
-#include "other.h"
-#include "team.h"
+#include "common/base.h"
+#include "utils/log.h"
+#include "common/other.h"
+#include "common/team.h"
 
 LevelData lvl;
 

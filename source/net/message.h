@@ -5,7 +5,7 @@
 #include <bitset>
 #include <list>
 #include <string>
-#include "net.h"
+#include "net/net.h"
 
 // Bitmask constants
 class Message;

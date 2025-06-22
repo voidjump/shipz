@@ -3,7 +3,7 @@
 #include <string>
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
-#include "packet.h"
+#include "net/packet.h"
 
 TEST(Simple, TestPacketEncryptionRoundTrip) {
     const char * test_string = "encryption payload";

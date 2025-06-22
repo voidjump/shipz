@@ -11,9 +11,9 @@
 #include <memory>
 #include <string>
 
-#include "log.h"
-#include "message.h"
-#include "net.h"
+#include "utils/log.h"
+#include "net/message.h"
+#include "net/net.h"
 
 // Expand field into type
 #define FIELD_UINT8_TYPE Uint8

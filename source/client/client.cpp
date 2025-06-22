@@ -1,4 +1,4 @@
-#include "client.h"
+#include "client/client.h"
 
 #include <SDL3/SDL.h>
 #include <SDL3_net/SDL_net.h>
@@ -7,26 +7,26 @@
 #include <iostream>
 #include <string>
 
-#include "assets.h"
-#include "base.h"
-#include "bullet.h"
-#include "event.h"
-#include "font.h"
-#include "gfx.h"
-#include "level.h"
-#include "log.h"
-#include "net.h"
-#include "other.h"
-#include "packet.h"
-#include "player.h"
-#include "request.h"
-#include "response.h"
-#include "session.h"
-#include "sound.h"
-#include "sync.h"
-#include "team.h"
-#include "types.h"
-#include "timer.h"
+#include "common/assets.h"
+#include "common/base.h"
+#include "common/bullet.h"
+#include "messages/event.h"
+#include "client/font.h"
+#include "client/gfx.h"
+#include "common/level.h"
+#include "utils/log.h"
+#include "net/net.h"
+#include "common/other.h"
+#include "net/packet.h"
+#include "common/player.h"
+#include "messages/request.h"
+#include "messages/response.h"
+#include "net/session.h"
+#include "client/sound.h"
+#include "messages/sync.h"
+#include "common/team.h"
+#include "common/types.h"
+#include "utils/timer.h"
 
 // Construct a client
 Client::Client(const char* server_hostname, const char* player_name,

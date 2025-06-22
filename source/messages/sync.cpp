@@ -1,4 +1,4 @@
-#include "sync.h"
+#include "messages/sync.h"
 
 
 MESSAGE_FACTORY_IMPLEMENTATION

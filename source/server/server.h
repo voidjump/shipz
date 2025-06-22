@@ -1,16 +1,16 @@
 #ifndef SHIPZSERVER_H
 #define SHIPZSERVER_H
 
-#include "chat.h"
-#include "event.h"
-#include "message_handler.h"
-#include "net.h"
-#include "packet.h"
-#include "player.h"
-#include "session.h"
-#include "socket.h"
-#include "team.h"
-#include "types.h"
+#include "common/chat.h"
+#include "messages/event.h"
+#include "net/message_handler.h"
+#include "net/net.h"
+#include "net/packet.h"
+#include "common/player.h"
+#include "net/session.h"
+#include "net/socket.h"
+#include "common/team.h"
+#include "common/types.h"
 
 #define SERVER_RUNSTATE_OK 1
 #define SERVER_RUNSTATE_FAIL 2

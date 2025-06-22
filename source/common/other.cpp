@@ -12,16 +12,16 @@
 #include <sstream>
 #include <map>
 
-#include "assets.h"
-#include "base.h"
-#include "level.h"
-#include "log.h"
-#include "net.h"
-#include "player.h"
-#include "sound.h"
-#include "team.h"
-#include "types.h"
-#include "chat.h"
+#include "common/assets.h"
+#include "common/base.h"
+#include "common/level.h"
+#include "utils/log.h"
+#include "net/net.h"
+#include "common/player.h"
+#include "client/sound.h"
+#include "common/team.h"
+#include "common/types.h"
+#include "common/chat.h"
 
 std::map<unsigned int, char> upper_case_keys = {
     {SDLK_PERIOD, '>'}, {SDLK_COMMA, '<'}, {SDLK_SEMICOLON, ':'},

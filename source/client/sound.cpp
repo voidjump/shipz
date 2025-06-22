@@ -1,7 +1,7 @@
 // sound.cpp
 #include <iostream>
 #include <SDL3_mixer/SDL_mixer.h>
-#include "types.h"
+#include "common/types.h"
 
 const SDL_AudioSpec AUDIO_SPEC = {
 	SDL_AUDIO_S16,

@@ -1,8 +1,8 @@
-#include "socket.h"
+#include "net/socket.h"
 
 #include <sstream>
 
-#include "log.h"
+#include "utils/log.h"
 
 /// @brief Resolve a hostname
 /// @param connect_address string representation of the hostname

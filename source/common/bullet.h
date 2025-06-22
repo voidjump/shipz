@@ -2,9 +2,9 @@
 #define SHIPZ_BULLET_H
 
 #include <SDL3/SDL.h>
-#include "object.h"
-#include "player.h"
-#include "renderable.h"
+#include "common/object.h"
+#include "common/player.h"
+#include "client/renderable.h"
 
 #define ROCKETRADARRADIUS 300
 #define MAXROCKETTURN 50

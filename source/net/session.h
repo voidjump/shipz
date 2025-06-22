@@ -6,10 +6,10 @@
 #include <unordered_set>
 #include <deque>
 #include <list>
-#include "message_factory.h"
-#include "message.h"
-#include "packet.h"
-#include "types.h"
+#include "net/message_factory.h"
+#include "net/message.h"
+#include "net/packet.h"
+#include "common/types.h"
 
 constexpr ShipzSessionID NO_SHIPZ_SESSION = 0;
 constexpr uint16_t MAX_SESSION_COUNT = 1024;

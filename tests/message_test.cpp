@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
-#include "net.h"
-#include "event.h"
-#include "message.h"
+#include "net/net.h"
+#include "messages/event.h"
+#include "net/message.h"
 
 TEST(Simple, TestMessageType) {
     auto event = new EventPlayerJoins(0, 0, ""); 

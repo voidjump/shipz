@@ -1,15 +1,15 @@
-#include "message.h"
+#include "net/message.h"
 
 #include <iostream>
 #include <memory>
 
-#include "event.h"
-#include "log.h"
-#include "net.h"
-#include "request.h"
-#include "response.h"
-#include "session.h"
-#include "sync.h"
+#include "messages/event.h"
+#include "utils/log.h"
+#include "net/net.h"
+#include "messages/request.h"
+#include "messages/response.h"
+#include "net/session.h"
+#include "messages/sync.h"
 
 // Serialize based on message type
 bool Message::Serialize(Buffer &buffer) {

@@ -1,5 +1,5 @@
 #include <SDL3/SDL.h>
-#include "types.h"
+#include "common/types.h"
 
 SDL_Window * sdlWindow;
 SDL_Renderer *sdlRenderer;

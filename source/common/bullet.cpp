@@ -1,12 +1,12 @@
 #include <functional>
-#include "sync.h"
-#include "bullet.h"
-#include "object.h"
-#include "types.h"
-#include "player.h"
-#include "log.h"
-#include "assets.h"
-#include "gfx.h"
+#include "messages/sync.h"
+#include "common/bullet.h"
+#include "common/object.h"
+#include "common/types.h"
+#include "common/player.h"
+#include "utils/log.h"
+#include "common/assets.h"
+#include "client/gfx.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 // BULLET

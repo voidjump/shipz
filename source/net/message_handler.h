@@ -3,9 +3,9 @@
 #include <functional>
 #include <map>
 
-#include "message.h"
-#include "log.h"
-#include "session.h"
+#include "net/message.h"
+#include "utils/log.h"
+#include "net/session.h"
 
 // Registry for callbacks that operate on messages
 class MessageHandler {

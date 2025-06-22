@@ -1,8 +1,8 @@
 #include <memory>
-#include "object.h"
-#include "log.h"
-#include "bullet.h"
-#include "renderable.h"
+#include "common/object.h"
+#include "utils/log.h"
+#include "common/bullet.h"
+#include "client/renderable.h"
 
 // all instances
 std::unordered_map<ObjectID, std::shared_ptr<Object>> Object::instances;

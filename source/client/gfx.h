@@ -4,8 +4,8 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_render.h>
 
-#include "types.h"
-#include "player.h"
+#include "common/types.h"
+#include "common/player.h"
 
 bool GetPixel(SDL_Surface *screen, int x, int y);
 void Slock(SDL_Surface *screen);

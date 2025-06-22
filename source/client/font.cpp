@@ -1,8 +1,8 @@
 #include <iostream>
 #include <SDL3_ttf/SDL_ttf.h>
-#include "types.h"
-#include "gfx.h"
-#include "font.h"
+#include "common/types.h"
+#include "client/gfx.h"
+#include "client/font.h"
 
 void InitFont()
 {

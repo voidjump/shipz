@@ -1,6 +1,6 @@
-#include "chat.h"
-#include "font.h"
-#include "assets.h"
+#include "common/chat.h"
+#include "client/font.h"
+#include "common/assets.h"
 
 ChatLine::ChatLine(std::string line, Uint8 client_id, Uint8 team) {
     this->line = line;

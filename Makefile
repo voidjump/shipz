@@ -9,7 +9,7 @@ DEBUG_FLAGS = -g -O0 -DDEBUG_BUILD
 
 # Source and object files
 SRC_DIR = source
-SRC = $(wildcard $(SRC_DIR)/*.cpp)
+SRC = $(shell find $(SRC_DIR) -name '*.cpp')
 SRC_NO_MAIN = $(filter-out source/main.cpp, $(SRC))
 OBJ = $(SRC:.cpp=.o)
 EXEC = shipz
@@ -28,7 +28,10 @@ $(EXEC): $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 	# export DYLD_LIBRARY_PATH=$(RPATH)
 
+# %.o: %.cpp
+# 	$(CXX) -c $(CXXFLAGS) $< -o $@
 %.o: %.cpp
+	@mkdir -p $(dir $@)
 	$(CXX) -c $(CXXFLAGS) $< -o $@
 
 # Debug build target

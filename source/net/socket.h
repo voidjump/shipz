@@ -4,7 +4,7 @@
 #include <queue>
 #include <string>
 
-#include "packet.h"
+#include "net/packet.h"
 
 // shared Socket for client and server
 // Wraps SDL socket

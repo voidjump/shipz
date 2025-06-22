@@ -1,4 +1,4 @@
-#include "player.h"
+#include "common/player.h"
 
 #include <SDL3/SDL.h>
 #include <math.h>
@@ -8,16 +8,16 @@
 #include <iostream>
 #include <limits>
 
-#include "assets.h"
-#include "base.h"
-#include "gfx.h"
-#include "level.h"
-#include "log.h"
-#include "other.h"
-#include "session.h"
-#include "sound.h"
-#include "team.h"
-#include "types.h"
+#include "common/assets.h"
+#include "common/base.h"
+#include "client/gfx.h"
+#include "common/level.h"
+#include "utils/log.h"
+#include "common/other.h"
+#include "net/session.h"
+#include "client/sound.h"
+#include "common/team.h"
+#include "common/types.h"
 
 // all instances
 std::map<ClientID, Player *> Player::instances;

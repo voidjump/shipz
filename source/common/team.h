@@ -1,7 +1,7 @@
 #ifndef SHIPZ_TEAM_H
 #define SHIPZ_TEAM_H
 
-#include "base.h"
+#include "common/base.h"
 
 // teams/bases ownership:
 enum SHIPZ_TEAM {

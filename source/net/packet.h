@@ -1,9 +1,9 @@
 #ifndef SHIPZ_PACKET_H
 #define SHIPZ_PACKET_H
-#include "message.h"
-#include "net.h"
-#include "log.h"
-#include "types.h"
+#include "net/message.h"
+#include "net/net.h"
+#include "utils/log.h"
+#include "common/types.h"
 
 #define AES_BLOCKSIZE 16
 
