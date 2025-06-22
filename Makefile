@@ -10,9 +10,17 @@ DEBUG_FLAGS = -g -O0 -DDEBUG_BUILD
 # Source and object files
 SRC_DIR = source
 SRC = $(shell find $(SRC_DIR) -name '*.cpp')
-SRC_NO_MAIN = $(filter-out source/main.cpp, $(SRC))
-OBJ = $(SRC:.cpp=.o)
-EXEC = shipz
+COMMON_SRC = $(filter-out source/main.cpp source/client_main.cpp source/server_main.cpp, $(SRC))
+COMMON_OBJ = $(COMMON_SRC:.cpp=.o)
+
+SERVER_OBJ = $(COMMON_OBJ) source/server_main.o
+CLIENT_OBJ = $(COMMON_OBJ) source/client_main.o
+
+SERVER_EXEC = server
+CLIENT_EXEC = client
+
+SRC_NO_MAIN = $(COMMON_SRC)
+OBJ = $(SERVER_OBJ) $(CLIENT_OBJ)
 
 # Test directory and test files
 TEST_DIR = tests
@@ -21,12 +29,14 @@ ALL_TEST_SRC = $(TESTSRC) $(SRC_NO_MAIN)
 TESTOBJ = $(ALL_TEST_SRC:.cpp=.o)
 TESTEXEC = test_program
 
-# Build target
-all: $(EXEC)
+# Build targets
+all: $(SERVER_EXEC) $(CLIENT_EXEC)
 
-$(EXEC): $(OBJ)
+$(SERVER_EXEC): $(SERVER_OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
-	# export DYLD_LIBRARY_PATH=$(RPATH)
+
+$(CLIENT_EXEC): $(CLIENT_OBJ)
+	$(CXX) -o $@ $^ $(LDFLAGS)
 
 # %.o: %.cpp
 # 	$(CXX) -c $(CXXFLAGS) $< -o $@
@@ -36,7 +46,7 @@ $(EXEC): $(OBJ)
 
 # Debug build target
 debug: CXXFLAGS += $(DEBUG_FLAGS)  # Add debug flags to CXXFLAGS
-debug: $(EXEC)
+debug: $(SERVER_EXEC) $(CLIENT_EXEC)
 
 # Compile and run all gtest files
 test: $(TESTOBJ) 
@@ -48,7 +58,7 @@ $(TESTDIR)/%.o: $(TESTDIR)/%.cpp
 
 # Clean up build files
 clean:
-	rm -f $(OBJ) $(EXEC) $(TESTOBJ) $(TESTEXEC)
+	        rm -f $(OBJ) $(SERVER_EXEC) $(CLIENT_EXEC) $(TESTOBJ) $(TESTEXEC)
 
 .PHONY: all clean
 
