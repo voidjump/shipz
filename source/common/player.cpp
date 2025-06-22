@@ -64,7 +64,7 @@ bool Player::IsLanded() { return this->status == PLAYER_STATUS::LANDED; }
 bool Player::IsAlive() { return this->status != PLAYER_STATUS::DEAD; }
 
 // Is the player flying
-bool Player::IsFlying() { return this->status != PLAYER_STATUS::FLYING; }
+bool Player::IsFlying() { return this->status == PLAYER_STATUS::FLYING; }
 
 // Lift Off a player, return true if succesful
 // Serverside
