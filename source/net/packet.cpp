@@ -21,7 +21,7 @@ Packet::Packet(ShipzSessionID session_id) {
 
 // Delete the packet
 Packet::~Packet() {
-    // log::debug("packet destroyed");
+    // logger::debug("packet destroyed");
     // TODO: Find out why this doesn't work
 }
 
@@ -36,7 +36,7 @@ MessageList Packet::Read() {
         }
         messages.push_back(msg);
     }
-    // log::debug("read ", messages.size(), " messages");
+    // logger::debug("read ", messages.size(), " messages");
     return messages;
 }
 

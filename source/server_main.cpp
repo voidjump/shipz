@@ -23,7 +23,7 @@ int main(int argc, char* argv[]) {
         Server server(filename, PORT_SERVER, MAXPLAYERS);
         server.Run();
     } catch (const std::runtime_error& e) {
-        log::error("a fatal error occured:", e.what());
+        logger::error("a fatal error occured:", e.what());
     }
 
     SDL_Quit();

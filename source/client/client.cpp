@@ -61,9 +61,9 @@ void Client::Init() {
 }
 
 void Client::Debug() {
-    log::debug("x: ", self->x, " y: ", self->y);
-    log::debug("vx: ", self->vx, " vy: ", self->vy);
-    log::debug("fx: ", self->fx, " fy: ", self->fy);
+    logger::debug("x: ", self->x, " y: ", self->y);
+    logger::debug("vx: ", self->vx, " vy: ", self->vy);
+    logger::debug("fx: ", self->fx, " fy: ", self->fy);
 }
 
 // Run client game loop
@@ -84,7 +84,7 @@ void Client::GameLoop() {
         if (socket.Poll()) {
             auto recieved_packet = socket.GetPacket();
             if(recieved_packet->SessionID() != session->session_id) {
-                log::error("received packet with wrong session ID");
+                logger::error("received packet with wrong session ID");
             } else {
                 session->manager->HandleReceivedPacket(*recieved_packet);
                 handler.HandleMessageList(session->manager->Read(), session);
@@ -109,7 +109,7 @@ ShipzSession* Client::Connect() {
     SessionRequestSession request(SHIPZ_VERSION, this->listen_port);
     pack.Append(request);
 
-    log::info("querying server status..");
+    logger::info("querying server status..");
 
     while (true) {
         socket.Send(pack, this->server_endpoint);
@@ -121,7 +121,7 @@ ShipzSession* Client::Connect() {
             auto messages = recieved_packet->Read();
             for (auto msg : messages) {
                 if (msg->IsTypes(MessageType::SESSION, PROVIDE_SESSION)) {
-                    log::info("obtained session...");
+                    logger::info("obtained session...");
                     SessionProvideSession* session_msg =
                         msg->As<SessionProvideSession>();
                     session_msg->LogDebug();
@@ -133,9 +133,9 @@ ShipzSession* Client::Connect() {
             }
         }
         attempts++;
-        log::info(".");
+        logger::info(".");
         if (attempts == 10) {
-            log::error("didn't receive response from server.");
+            logger::error("didn't receive response from server.");
             exit(1);
         }
     }
@@ -154,7 +154,7 @@ bool Client::JoinLoop() {
             state == S_ERROR || state == S_DENIED || state == S_VERSION_MISMATCH)) {
         switch(state) {
             case S_INITIAL:
-                log::debug("Requesting server information");
+                logger::debug("Requesting server information");
                 // We request information from the server
                 session->Write<RequestGetServerInfo>(SHIPZ_VERSION);
                 time = SDL_GetTicks();
@@ -167,7 +167,7 @@ bool Client::JoinLoop() {
                 break;
             case S_JOINING_SERVER:
                 // Request to join the game
-                log::debug("Requesting to join game");
+                logger::debug("Requesting to join game");
                 session->Write<RequestJoinGame>(name);
                 time = SDL_GetTicks();
                 state = S_AWAITING_JOIN;
@@ -175,14 +175,14 @@ bool Client::JoinLoop() {
             // retry after 500 ms
             case S_AWAITING_INFO:
                 if ((SDL_GetTicks() - time) > 500) {
-                    log::debug("No response for info, retrying");
+                    logger::debug("No response for info, retrying");
                     attempts++;
                     state = (attempts > 5) ? S_TIMEOUT : S_INITIAL;
                 }
                 break;
             case S_AWAITING_JOIN:
                 if ((SDL_GetTicks() - time) > 500) {
-                    log::debug("No response for join, retrying");
+                    logger::debug("No response for join, retrying");
                     attempts++;
                     state = (attempts > 5) ? S_TIMEOUT : S_JOINING_SERVER;
                 }
@@ -257,7 +257,7 @@ void Client::HandleInputs() {
         
             if (event.key.key == SDLK_SPACE) {
                 if (!self->typing && !self->IsAlive()) {
-                    log::info("trying to spawn");
+                    logger::info("trying to spawn");
                     SendAction(PA_SPAWN);
                 }
             }
@@ -397,7 +397,7 @@ void Client::Leave() {
 
 bool Client::Load() {
     if (!lvl.Load()) {
-        log::error("failed to load level");
+        logger::error("failed to load level");
         return false;
     }
 
@@ -531,7 +531,7 @@ void Client::SendChatLine() {
 
 // Handle an unknown message
 void Client::HandleUnknownMessage(MessagePtr msg, ShipzSession* session) {
-    log::debug("received unknown message type: ", msg->AsDebugStr());
+    logger::debug("received unknown message type: ", msg->AsDebugStr());
 }
 
 // Handle chat message
@@ -545,7 +545,7 @@ void Client::HandlePlayerJoins(MessagePtr msg, ShipzSession* session) {
     auto event = msg->As<EventPlayerJoins>();
     // TODO: Implement
     AddPlayer(event->client_id, event->player_name, event->team);
-    log::info("player ", event->player_name, " joined the server");
+    logger::info("player ", event->player_name, " joined the server");
 }
 
 // Add a player to the game
@@ -563,7 +563,7 @@ void Client::AddPlayer(Uint16 id, std::string player_name, Uint8 team) {
 // Remove a player from the game
 void Client::RemovePlayer(Uint16 id, std::string reason) {
     Player::Remove(id);
-    log::info("player ", id, " left the server: ", reason);
+    logger::info("player ", id, " left the server: ", reason);
 }
 
 void Client::HandlePlayerLeaves(MessagePtr msg, ShipzSession* session) {
@@ -574,7 +574,7 @@ void Client::HandlePlayerLeaves(MessagePtr msg, ShipzSession* session) {
 // An object is spawned
 void Client::HandleObjectSpawn(MessagePtr msg, ShipzSession* session) {
     auto obj_spawn = msg->As<EventObjectSpawn>();
-    log::debug("called for obj with id ", obj_spawn->id);
+    logger::debug("called for obj with id ", obj_spawn->id);
 
     Object::HandleSpawn(obj_spawn);
     if(obj_spawn->type == OBJECT_TYPE::BASE) {
@@ -604,7 +604,7 @@ void Client::HandlePlayerState(MessagePtr msg, ShipzSession* session) {
     auto player = Player::GetByID(player_state->client_id);
     if (!player) {
         return;
-        log::error("recieved state for player that does not exist");
+        logger::error("recieved state for player that does not exist");
     }
 
     player->HandleUpdate(player_state);
@@ -617,17 +617,17 @@ void Client::HandleTeamStates(MessagePtr msg, ShipzSession* session) {
 
 void Client::HandleServerInfo(MessagePtr msg, ShipzSession* session) {
     auto info = msg->As<ResponseServerInformation>();
-    log::info("server responded...");
+    logger::info("server responded...");
     info->LogDebug();
 
     if (info->shipz_version != SHIPZ_VERSION) {
-        log::error("server is running shipz version:",
+        logger::error("server is running shipz version:",
                     info->shipz_version);
         state = S_ERROR;
         return;
     }
     if (info->max_players == info->number_of_players) {
-        log::info("server is full!");
+        logger::info("server is full!");
         state = S_SERVER_FULL;
         return;
 
@@ -638,7 +638,7 @@ void Client::HandleServerInfo(MessagePtr msg, ShipzSession* session) {
 
 void Client::HandleAcceptJoin(MessagePtr msg, ShipzSession* session) {
     auto accept = msg->As<ResponseAcceptJoin>();
-    log::info("join accepted...");
+    logger::info("join accepted...");
     accept->LogDebug();
     self = new Player(accept->client_id);
     self->name = name;
@@ -648,12 +648,12 @@ void Client::HandleAcceptJoin(MessagePtr msg, ShipzSession* session) {
 
 void Client::HandleDenyJoin(MessagePtr msg, ShipzSession* session) {
     auto deny = msg->As<ResponseDenyJoin>();
-    log::info("Server denied join, reason: ", deny->reason);
+    logger::info("Server denied join, reason: ", deny->reason);
     state = S_DENIED;
 }
 
 void Client::HandlePlayerInfo(MessagePtr msg, ShipzSession* session) {
-    log::info("player info");
+    logger::info("player info");
     auto info = msg->As<ResponsePlayerInformation>();
     info->LogDebug();
     AddPlayer(info->client_id, info->player_name, info->team);
@@ -661,7 +661,7 @@ void Client::HandlePlayerInfo(MessagePtr msg, ShipzSession* session) {
 
 void Client::HandleSpawnEvent(MessagePtr msg, ShipzSession* session) {
     auto spawn = msg->As<EventPlayerSpawn>();
-    log::info("spawning at base ", spawn->base_id);
+    logger::info("spawning at base ", spawn->base_id);
     // TODO: IMPLEMENT FOR OTHER PLAYERS !!!!!!
     // TODO: IMPLEMENT FOR OTHER PLAYERS !!!!!!
     // TODO: IMPLEMENT FOR OTHER PLAYERS !!!!!!
@@ -676,7 +676,7 @@ void Client::HandleSpawnEvent(MessagePtr msg, ShipzSession* session) {
 }
 
 void Client::HandleLiftOffEvent(MessagePtr msg, ShipzSession* session) {
-    log::info("liftoff event");
+    logger::info("liftoff event");
     auto liftoff = msg->As<EventPlayerLiftOff>();
     self->status = PLAYER_STATUS::FLYING;
 }

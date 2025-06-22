@@ -33,7 +33,7 @@ int main(int argc, char* argv[]) {
         Client client(address.c_str(), nickname.c_str(), listen_port, PORT_SERVER);
         client.Run();
     } catch (const std::runtime_error& e) {
-        log::error("a fatal error occured:", e.what());
+        logger::error("a fatal error occured:", e.what());
     }
 
     SDL_Quit();

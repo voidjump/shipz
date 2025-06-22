@@ -86,7 +86,7 @@ void InitVid(bool fullscreen)
 	}
 	if(!fullscreen) {
 		if(!SDL_SetWindowSize(sdlWindow, XRES, YRES)) {
-			log::error(SDL_GetError());
+			logger::error(SDL_GetError());
 		}
 	}
 

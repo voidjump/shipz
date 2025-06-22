@@ -71,7 +71,7 @@ bool Player::IsFlying() { return this->status == PLAYER_STATUS::FLYING; }
 // TODO: Add serverside assertion
 bool Player::LiftOff() {
     if (this->IsLanded()) {
-        log::info("player ", this->name, " is lifting off");
+        logger::info("player ", this->name, " is lifting off");
         this->status = PLAYER_STATUS::FLYING;
         this->y -= 10;
         return true;
@@ -84,7 +84,7 @@ bool Player::LiftOff() {
 // TODO: Add serverside assertion
 bool Player::Spawn() {
     if (!this->IsAlive()) {
-        log::info("player ", this->name, " is respawning");
+        logger::info("player ", this->name, " is respawning");
         this->status = PLAYER_STATUS::LANDED;
         return true;
     }
@@ -236,7 +236,7 @@ void Player::Remove(ClientID id) {
             return;
         }
     }
-    log::error("could not remove player with ID ", id,
+    logger::error("could not remove player with ID ", id,
                ", player does not exist");
 }
 
@@ -271,7 +271,7 @@ void Player::Respawn() {
 void Player::UpdateAll(float delta) {
     for (auto it : instances) {
         auto player = it.second;
-        // log::debug("Updating ", player->name);
+        // logger::debug("Updating ", player->name);
         player->Update(delta);
     }
 }

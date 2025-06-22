@@ -43,7 +43,7 @@ std::map<unsigned int, char> lower_case_keys = {
 // Returns surface containing loaded image
 // TODO: Handle load failure?
 SDL_Surface *LoadIMG(const char *filename) {
-    log::debug("loading asset ", filename);
+    logger::debug("loading asset ", filename);
     // Append filename to path
     char tmppath[256];
     memset(tmppath, '\0', sizeof(tmppath));
@@ -93,7 +93,7 @@ void CreateGonLookup()  // create lookup tables for sin and cos
 
 void InitSDL() {
     if (!SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO)) {
-        log::error("Unable to init SDL:", SDL_GetError());
+        logger::error("Unable to init SDL:", SDL_GetError());
         exit(1);
     }
     // always do SDL_Quit, whatever happens.

@@ -58,7 +58,7 @@ int main(int argc, char* argv[]) {
     try {
         RunMode(parser);
     } catch (const std::runtime_error& e) {
-        log::error("a fatal error occured:", e.what());
+        logger::error("a fatal error occured:", e.what());
     }
 
     SDL_Quit();

@@ -12,16 +12,16 @@ SessionMessageManager::SessionMessageManager(ShipzSession *session) {
 
 // Write a message to an outbound queue
 void SessionMessageManager::Write(MessagePtr msg) {
-    // log::debug(":: header: ", msg->DebugHeader());
+    // logger::debug(":: header: ", msg->DebugHeader());
 
     if (msg->GetReliability()) {
         msg->SetSeqNr(id_counter);
         id_counter = (id_counter + 1) % MAX_MESSAGE_SEQUENCE_ID;
         this->out_reliable.push_front(msg);
-        log::debug("@", session->session_id, " ==> ",  msg->AsDebugStr(), " ", out_reliable.size() );
+        logger::debug("@", session->session_id, " ==> ",  msg->AsDebugStr(), " ", out_reliable.size() );
     } else {
         this->out_lossy.push_front(msg);
-        log::debug("@", session->session_id, " --> ",  msg->AsDebugStr(), " ", out_lossy.size() );
+        logger::debug("@", session->session_id, " --> ",  msg->AsDebugStr(), " ", out_lossy.size() );
     }
 }
 
@@ -38,14 +38,14 @@ void SessionMessageManager::HandleReceivedPacket(Packet &pack) {
     auto messages = pack.Read();
     uint8_t reliable_count = 0;
     this->session->last_active = SDL_GetTicks();
-    // log::debug("handling packet for session ", this->session->session_id, ":",
+    // logger::debug("handling packet for session ", this->session->session_id, ":",
     //            messages.size());
 
     MessageSequenceID last_seen = this->last_seen_id;
     for (auto msg : messages) {
         if (msg->GetReliability()) {
             if (!is_new_message(msg->GetSeqNr(), this->last_seen_id)) {
-                log::debug("ignoring old message:", msg->AsDebugStr());
+                logger::debug("ignoring old message:", msg->AsDebugStr());
                 continue;
             }
             // This is a new message and we should ack it.
@@ -58,12 +58,12 @@ void SessionMessageManager::HandleReceivedPacket(Packet &pack) {
                 // Drop all messages from the outbound queue that are
                 // Older than this ACK
                 auto ack = msg->As<SessionAck>();
-                log::debug("@", session->session_id, " <-- ACK ", (uint16_t)ack->last_seq_no);
+                logger::debug("@", session->session_id, " <-- ACK ", (uint16_t)ack->last_seq_no);
                 ProcessAck(ack->last_seq_no);
             }
             // Note all other session messages are ignored!
         } else {
-            log::debug("@", session->session_id, " <-- ", msg->AsDebugStr());
+            logger::debug("@", session->session_id, " <-- ", msg->AsDebugStr());
             this->inbound.push_back(msg);
         }
     }
@@ -108,7 +108,7 @@ void SessionMessageManager::ProcessAck(MessageSequenceID ack_id) {
         uint8_t message_id = message->get()->GetSeqNr();  // Extract message ID
 
         if (is_acked(message_id, ack_id)) {
-            log::debug("Removing acknowledged message: ", (int)message_id);
+            logger::debug("Removing acknowledged message: ", (int)message_id);
             message = out_reliable.erase(message);  // Erase and move to next element
         } else {
             ++message;  // Move to the next message
@@ -143,7 +143,7 @@ std::unique_ptr<Packet> SessionMessageManager::CraftSendPacket() {
         if (packet) {
             if (packet->AvailableWrite() > message->Size()) {
                 packet->Append(message);  // Add message to packet
-                log::debug("appended(R)", message->AsDebugStr());
+                logger::debug("appended(R)", message->AsDebugStr());
             }
         }
     }
@@ -151,7 +151,7 @@ std::unique_ptr<Packet> SessionMessageManager::CraftSendPacket() {
         if (packet) {
             if (packet->AvailableWrite() > message->Size()) {
                 packet->Append(message);  // Add message to packet
-                log::debug("appended(L)", message->AsDebugStr());
+                logger::debug("appended(L)", message->AsDebugStr());
             }
         }
     }

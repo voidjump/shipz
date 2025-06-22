@@ -31,7 +31,7 @@ TTF_Font * sansbold;
 TTF_Font * sansboldbig;
 
 void LoadAssets() {
-	log::info( "loading data" );
+	logger::info( "loading data" );
 	shipred = LoadIMG( "red.png" );
 	shipblue = LoadIMG( "blue.png" );
 	chatpixmap = LoadIMG( "chatting.png" );

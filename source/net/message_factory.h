@@ -46,11 +46,11 @@
 #define FIELD_STRING_DESERIALIZE ReadString()
 #define FIELD_OCTETS_DESERIALIZE ReadOctets(size)
 // Expand field into log message
-#define FIELD_UINT8_DEBUG(name, value) log::debug(name, ":", (uint16_t)value)
-#define FIELD_UINT16_DEBUG(name, value) log::debug(name, ":", value)
-#define FIELD_UINT32_DEBUG(name, value) log::debug(name, ":", value)
-#define FIELD_STRING_DEBUG(name, value) log::debug(name, ":", value)
-#define FIELD_OCTETS_DEBUG(name, value) log::debug(name, ":", value.size())
+#define FIELD_UINT8_DEBUG(name, value) logger::debug(name, ":", (uint16_t)value)
+#define FIELD_UINT16_DEBUG(name, value) logger::debug(name, ":", value)
+#define FIELD_UINT32_DEBUG(name, value) logger::debug(name, ":", value)
+#define FIELD_STRING_DEBUG(name, value) logger::debug(name, ":", value)
+#define FIELD_OCTETS_DEBUG(name, value) logger::debug(name, ":", value.size())
 
 // Indirection macro's
 #define CONCAT(a, b) a##b

@@ -54,7 +54,7 @@ Base::Base(EventObjectSpawn *sync) : Object(sync->id, OBJECT_TYPE::BASE) {
     this->update_callback = nullptr;
     this->sync_callback = std::bind(&Base::Sync, this, std::placeholders::_1);
 
-    log::debug("Spawned base at ", x, ",", y);
+    logger::debug("Spawned base at ", x, ",", y);
     all_bases.push_back(this);
 }
 
@@ -107,9 +107,9 @@ std::shared_ptr<EventObjectSpawn> Base::EmitSpawnMessage() {
 	append_to_object(data, this->y);
 	append_to_object(data, this->health);
 
-    log::debug("BASE WITH ID", this->id);
-    log::debug("x", this->x);
-    log::debug("y", this->y);
+    logger::debug("BASE WITH ID", this->id);
+    logger::debug("x", this->x);
+    logger::debug("y", this->y);
 	auto sync = std::make_shared<EventObjectSpawn>(this->id,
 												OBJECT_TYPE::BASE,
 												8,

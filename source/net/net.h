@@ -3,7 +3,9 @@
 
 #include <SDL3/SDL.h>
 #include <SDL3_net/SDL_net.h>
+#include <cmath>
 #include <string>
+#include <vector>
 #define MAXBUFSIZE 1024
 
 // Utilities for converting floating point precision to 16 bits:
