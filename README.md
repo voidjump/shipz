@@ -8,7 +8,7 @@ If you want to try to build it, there is a stable branch that I suggest you
 check out.
 
 here is a very old screenshot:
-![very old screenshot](https://raw.githubusercontent.com/voidjump/shipz/refs/heads/master/ss2.bmp)
+![very old screenshot](https://raw.githubusercontent.com/voidjump/shipz/refs/heads/master/screenshot.bmp)
 
 Shipz is licensed under the GNU Public License version 2
 or newer. For more details, see the LICENSE file that comes
