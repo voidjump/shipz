@@ -74,6 +74,9 @@ void Server::WriteUpdates() {
 // Run the game loop; Start listening
 void Server::GameLoop() {
     log::info("starting server ", GetCurrentTime());
+    
+    //initialize callback
+    socket.ReceiveUDP();
 
     Timer update(std::function<void()>(std::bind(&Server::WriteUpdates, this)),
                  10.0, true);

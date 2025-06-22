@@ -41,6 +41,8 @@ Client::Client(const char* server_hostname, const char* player_name,
 // Run the game
 void Client::Run() {
     this->Init();
+    // setup receive callback
+    this->socket.ReceiveUDP(); 
     if ((this->session = this->Connect()) == nullptr) return;
     if (!this->JoinLoop()) return;
     if (!this->Load()) return;

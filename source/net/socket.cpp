@@ -81,6 +81,8 @@ void Socket::ReceiveUDP() {
             if (!ec) {
                 std::cout << "received packet!" << std::endl;
                 receive_buffer.OutputDebug();
+                this->receive_buffer.Seek(0);
+                this->receive_buffer.length = bytes_received;
 
                 // import packet to new packet
                 Packet pack;
