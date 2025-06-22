@@ -75,12 +75,6 @@ void PrintRawBytes(const char *data, size_t length) {
               << std::endl;  // Switch back to decimal for any future output
 }
 
-// Log a datagram to stdout
-void DebugPackage(const char *debug_msg, SDLNet_Datagram *dgram) {
-    std::cout << debug_msg << " : ";
-    PrintRawBytes((const char *)dgram->buf, dgram->buflen);
-}
-
 Buffer::Buffer() {
     this->position = this->data;
     this->length = 0;

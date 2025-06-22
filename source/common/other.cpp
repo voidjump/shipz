@@ -96,11 +96,6 @@ void InitSDL() {
         log::error("Unable to init SDL:", SDL_GetError());
         exit(1);
     }
-    if (!SDLNet_Init()) {
-        log::error("failed to initialize SDLNet", SDL_GetError());
-        SDLNet_Quit();
-        exit(1);
-    }
     // always do SDL_Quit, whatever happens.
     atexit(SDL_Quit);
 }

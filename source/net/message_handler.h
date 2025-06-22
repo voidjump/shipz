@@ -2,10 +2,12 @@
 #define SHIPZ_MESSAGE_HANDLER_H
 #include <functional>
 #include <map>
+#include <asio.hpp>
 
 #include "net/message.h"
 #include "utils/log.h"
 #include "net/session.h"
+using asio::ip::udp;
 
 // Registry for callbacks that operate on messages
 class MessageHandler {
@@ -17,7 +19,7 @@ class MessageHandler {
         std::function<void(MessagePtr, ShipzSession*)> default_callback;
 
         // Holds the origin address when handling packets
-        SDLNet_Address * current_origin;
+        udp::endpoint current_origin;
     
         // Holds the current session ID we're handling
         ShipzSessionID current_session_id;
@@ -45,7 +47,7 @@ class MessageHandler {
         void HandleMessageList(MessageList msgs, ShipzSession* session);
 
         // Get the origin address for the current packet 
-        inline SDLNet_Address * CurrentOrigin() {
+        inline udp::endpoint CurrentOrigin() {
             return this->current_origin;
         }
 

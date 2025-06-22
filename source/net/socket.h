@@ -3,8 +3,10 @@
 
 #include <queue>
 #include <string>
+#include <asio.hpp>
 
 #include "net/packet.h"
+using asio::ip::udp;
 
 // shared Socket for client and server
 // Wraps SDL socket
@@ -36,20 +38,21 @@ class PacketQueue {
 
 class Socket {
    private:
-    SDLNet_DatagramSocket *udpsock;
     Uint16 listen_port;
     PacketQueue in_queue;
+    udp::socket * socket;
+    Buffer receive_buffer;
 
    public:
-    Socket(Uint16 listen_port);
+    Socket(asio::io_context &context, Uint16 listen_port);
+
+    void ReceiveUDP();
 
     // Resolve a hostname
-    static bool ResolveHostname(const char *connect_address,
-                                SDLNet_Address **resolve_target,
-                                uint timeout = 5);
+    static udp::endpoint ResolveHostname(asio::io_context &context, const char *connect_address, Uint16 port );
 
     // Send buffer-like obj to a remote address and port
-    bool Send(Buffer &buffer, SDLNet_Address *address, Uint16 port);
+    bool Send(Buffer &buffer, udp::endpoint endpoint);
 
     // Get packet off queue
     std::unique_ptr<Packet> GetPacket() { return in_queue.Pop(); }

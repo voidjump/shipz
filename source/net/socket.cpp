@@ -1,120 +1,109 @@
 #include "net/socket.h"
 
+#include <asio.hpp>
 #include <sstream>
 
 #include "utils/log.h"
+using asio::ip::udp;
 
 /// @brief Resolve a hostname
 /// @param connect_address string representation of the hostname
-/// @param resolve_target ip address to populate
-/// @param timeout max seconds to take
-/// @return whether resolved successfully
-bool Socket::ResolveHostname(const char *connect_address,
-                             SDLNet_Address **resolve_target, uint timeout) {
-    *resolve_target = SDLNet_ResolveHostname(connect_address);
-    if (resolve_target == NULL) {
-        goto fail;
-    }
+/// @return resolved endpoint
+udp::endpoint Socket::ResolveHostname(asio::io_context &context,
+                                      const char *connect_address,
+                                      Uint16 port) {
+    udp::resolver resolver(context);
+    char buffer[10];
 
-    // wait for the hostname to resolve:
+    // TODO implement timeout
+    snprintf(buffer, 9, "%i", PORT_SERVER);
     log::info("resolving hostname ", connect_address, " ...");
-    while (SDLNet_GetAddressStatus(*resolve_target) == 0) {
-        if (timeout == 0) {
-            goto fail;
-        }
-        log::info(".");
-        SDL_Delay(1000);
-        timeout--;
-    }
-    if (SDLNet_GetAddressStatus(*resolve_target) != 1) {
-        goto fail;
-    }
-
-    log::info("resolved server address: ",
-              SDLNet_GetAddressString(*resolve_target));
-    return true;
-
-fail:
-    log::error("could not resolve server address", connect_address);
-    return false;
+    udp::endpoint resolve_endpoint =
+        *resolver.resolve(udp::v4(), connect_address, buffer).begin();
+    resolve_endpoint.port(port);
+    log::info("resolved ", resolve_endpoint.address().to_string());
+    return resolve_endpoint;
 }
+
+// void Client::CreateUDPSocket() {
+//     this->socket = new udp::socket(io_context, udp::endpoint(udp::v4(),
+//     PORT_CLIENT));
+// 	// socket->open(udp::v4());
+// }
 
 /// @brief Send a buffer-like object as datagram
 /// @param buffer the buffer to send
 /// @param address the remote address
 /// @param port the remote port
 /// @return whether succesful
-bool Socket::Send(Buffer &buffer, SDLNet_Address *address, Uint16 port) {
-    if (!this->udpsock) {
-        log::error("cannot send, socket is not initialized");
+bool Socket::Send(Buffer &buffer, udp::endpoint endpoint) {
+    if (!this->socket || !this->socket->is_open()) {
+        log::error("cannot send, socket is not initialized or open");
         return false;
     }
-    if (!address) {
-        log::error("cannot send, null address");
+    if (endpoint.address().is_unspecified() || endpoint.port() == 0) {
+        log::error("cannot send, empty address");
         return false;
     }
+
     if (buffer.length == 0) {
         log::error("cannot send, empty buffer");
         return false;
     }
+
     // log::debug("sending buffer:", buffer.AsHexString());
-    if (!SDLNet_SendDatagram(this->udpsock, address, port, (void *)buffer.data,
-                             buffer.length)) {
-        log::error("can't send buffer to address: ",
-                   SDLNet_GetAddressString(address), port);
+    try {
+        this->socket->send_to(asio::buffer(buffer.data, buffer.length),
+                              endpoint);
+    } catch (const std::exception &e) {
+        log::error(e.what());
         return false;
     }
+
     return true;
 }
 
 /// @brief check if there are any available packets, adding them to queue
 /// @return whether any packets are waiting in queue
 bool Socket::Poll() {
-    bool result = false;
-    SDLNet_Datagram * recv;
-
-    if (!this->udpsock) {
-        log::error("socket is not initialized!");
-        return false;
-    }
-    if (!SDLNet_ReceiveDatagram(udpsock, &recv) || recv == NULL) {
-        // did not receive packet or it is invalid
-        return false;
-    }
-
-    if (recv->buflen == 0) {
-        log::debug("received packet is empty");
-        SDLNet_DestroyDatagram(recv);
-        return false;
-    }
-
-    // import packet to new packet
-    Packet pack;
-    if (!pack.ImportBytes(recv->buf, recv->buflen)) {
-        log::error("failed to import packet to buffer");
-        result = false;
-    } else {
-        pack.ReadSession();
-        pack.origin = recv->addr;
-        SDLNet_RefAddress(recv->addr);
-        result = true;
-    }
-    // log::debug("received buffer:", pack.AsHexString());
-    in_queue.Push(std::make_unique<Packet>(std::move(pack)));
-
-    SDLNet_DestroyDatagram(recv);
+    asio::io_context& ctx = static_cast<asio::io_context&>(this->socket->get_executor().context());
+    ctx.poll();
     return !in_queue.Empty();
+}
+
+void Socket::ReceiveUDP() {
+    this->receive_buffer.Clear();
+
+    static udp::endpoint remote_endpoint;
+    this->socket->async_receive_from(
+        asio::buffer(this->receive_buffer.data, MAXBUFSIZE), remote_endpoint,
+        [this](std::error_code ec, std::size_t bytes_received) {
+            if (!ec) {
+                std::cout << "received packet!" << std::endl;
+                receive_buffer.OutputDebug();
+
+                // import packet to new packet
+                Packet pack;
+                if (!pack.ImportBytes(receive_buffer.data,
+                                      receive_buffer.length)) {
+                    log::error("failed to import packet to buffer");
+                } else {
+                    pack.ReadSession();
+                    pack.origin = remote_endpoint;
+                }
+                // log::debug("received buffer:", pack.AsHexString());
+                in_queue.Push(std::make_unique<Packet>(std::move(pack)));
+
+                ReceiveUDP();
+            }
+        });
 }
 
 /// @brief Construct a socket
 /// @param listen_port the port to listen on
-Socket::Socket(Uint16 listen_port) {
+Socket::Socket(asio::io_context &context, Uint16 listen_port) {
+    this->socket =
+        new udp::socket(context, udp::endpoint(udp::v4(), listen_port));
     this->listen_port = listen_port;
-    this->udpsock = SDLNet_CreateDatagramSocket(NULL, this->listen_port);
-
-    if (this->udpsock == NULL) {
-        SDLNet_DestroyDatagramSocket(udpsock);
-        throw new std::runtime_error("failed to open socket");
-    }
-	log::debug("started listening on port ", listen_port);
+    log::debug("started listening on port ", listen_port);
 }

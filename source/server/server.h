@@ -1,6 +1,7 @@
 #ifndef SHIPZSERVER_H
 #define SHIPZSERVER_H
 
+#include <asio.hpp>
 #include "common/chat.h"
 #include "messages/event.h"
 #include "net/message_handler.h"
@@ -11,6 +12,7 @@
 #include "net/socket.h"
 #include "common/team.h"
 #include "common/types.h"
+using asio::ip::udp;
 
 #define SERVER_RUNSTATE_OK 1
 #define SERVER_RUNSTATE_FAIL 2
@@ -25,6 +27,7 @@ class Server {
 
     uint max_clients;
     std::string level_name;
+    asio::io_context io_context;
     Socket socket;
     MessageHandler handler;
     ChatConsole console;
@@ -50,7 +53,7 @@ class Server {
 
     void WriteUpdates();
     void PurgeStaleSessions();
-    ShipzSession* CreateSessionForClient(SDLNet_Address *addr, uint16_t port);
+    ShipzSession* CreateSessionForClient(udp::endpoint client_endpoint);
 
     void SpawnObjects();
 

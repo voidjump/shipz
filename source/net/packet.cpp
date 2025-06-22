@@ -23,7 +23,6 @@ Packet::Packet(ShipzSessionID session_id) {
 Packet::~Packet() {
     // log::debug("packet destroyed");
     // TODO: Find out why this doesn't work
-    // if(this->origin) SDLNet_UnrefAddress(this->origin);
 }
 
 // Return a list of messages

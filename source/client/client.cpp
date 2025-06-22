@@ -31,7 +31,7 @@
 // Construct a client
 Client::Client(const char* server_hostname, const char* player_name,
                Uint16 listen_port, Uint16 server_port)
-    : socket(listen_port) {
+    : socket(io_context, listen_port) {
     this->server_hostname = server_hostname;
     this->name = player_name;
     this->server_port = server_port;
@@ -99,8 +99,7 @@ void Client::GameLoop() {
 
 // Connect to the Server
 ShipzSession* Client::Connect() {
-    Socket::ResolveHostname(this->server_hostname.c_str(),
-                            &this->server_address);
+    this->server_endpoint = Socket::ResolveHostname(this->io_context, this->server_hostname.c_str(), PORT_SERVER);
     int attempts = 0;
 
     // Create a request
@@ -111,7 +110,7 @@ ShipzSession* Client::Connect() {
     log::info("querying server status..");
 
     while (true) {
-        socket.Send(pack, this->server_address, PORT_SERVER);
+        socket.Send(pack, this->server_endpoint);
         // Wait a bit for a reply to not spam the server with session requests
         SDL_Delay(300);
 
@@ -126,8 +125,7 @@ ShipzSession* Client::Connect() {
                     session_msg->LogDebug();
 
                     // Create new session from provide session message
-                    return new ShipzSession(this->server_address,
-                                            this->server_port,
+                    return new ShipzSession(this->server_endpoint,
                                             session_msg->session_id);
                 }
             }
@@ -195,7 +193,7 @@ bool Client::JoinLoop() {
         if( session->LastSendGreaterThan(80)) {
             auto packet = session->manager->CraftSendPacket();
             if (packet != nullptr) {
-                this->socket.Send(*packet, session->endpoint, session->port);
+                this->socket.Send(*packet, session->endpoint);
                 session->SendTick();
             }
         }   
@@ -384,7 +382,7 @@ void Client::SendUpdate() {
                          self->angle, self->x, self->y, self->vx, self->vy);
     auto packet = session->manager->CraftSendPacket();
     if (packet != nullptr) {
-        this->socket.Send(*packet, session->endpoint, session->port);
+        this->socket.Send(*packet, session->endpoint);
     }
 }
 
@@ -493,8 +491,6 @@ Client::~Client() {
     TTF_CloseFont(sansboldbig);
 
     TTF_Quit();
-
-    SDLNet_Quit();
 }
 
 // Spawn a bullet

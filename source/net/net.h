@@ -41,7 +41,6 @@ Uint32 Read32(void *area);
 void Write16(Uint16 value, void *area);
 void Write32(Uint32 value, void *area);
 void PrintRawBytes(const char* data, size_t length);
-void DebugPackage(const char* debug_msg, SDLNet_Datagram * dgram);
 
 enum SHIPZ_MESSAGE {
     CHAT,

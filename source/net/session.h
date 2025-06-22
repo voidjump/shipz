@@ -6,10 +6,13 @@
 #include <unordered_set>
 #include <deque>
 #include <list>
+#include <asio.hpp>
 #include "net/message_factory.h"
 #include "net/message.h"
 #include "net/packet.h"
 #include "common/types.h"
+
+using asio::ip::udp;
 
 constexpr ShipzSessionID NO_SHIPZ_SESSION = 0;
 constexpr uint16_t MAX_SESSION_COUNT = 1024;
@@ -95,16 +98,15 @@ class ShipzSession {
     ClientID client_id;
 
     // The endpoint of the counterparty
-    SDLNet_Address *endpoint;
+    udp::endpoint endpoint;
     uint16_t port;
 
     // Message manager for this session
     SessionMessageManager *manager;
 
     // Construct a session for an endpoint, allocating an ID
-    ShipzSession(SDLNet_Address *endpoint, uint16_t port) {
+    ShipzSession(udp::endpoint endpoint) {
         this->endpoint = endpoint;
-        this->port = port;
         this->last_active = SDL_GetTicks();
         this->session_id = _getFreeID();
         if (IsNoneID(this->session_id)) {
@@ -115,9 +117,8 @@ class ShipzSession {
     }
 
     // Construct a session for an endpoint, having a certian ID
-    ShipzSession(SDLNet_Address *endpoint, uint16_t port, ShipzSessionID session_id) {
+    ShipzSession(udp::endpoint endpoint, ShipzSessionID session_id) {
         this->endpoint = endpoint;
-        this->port = port;
         if (IsActiveID(session_id)) {
             throw std::runtime_error(
                 "Cannot start session, ID already in use.");
@@ -159,9 +160,9 @@ class ShipzSession {
     }
 
     // Does this address / port combination already have a session?
-    inline static bool Exists(SDLNet_Address * addr, uint16_t port) {
+    inline static bool Exists(udp::endpoint other) {
         for( auto it : by_id_map ) {
-            if( it.second->endpoint == addr && it.second->port == port ) {
+            if( it.second->endpoint == other ) {
                 return true;
             }
         }

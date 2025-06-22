@@ -36,7 +36,6 @@ void MessageHandler::HandlePacket(Packet &pack) {
     for (auto msg : messages) {
         HandleMessage(msg, session);
     }
-    this->current_origin = NULL;
 }
 
 // Handle message for a session

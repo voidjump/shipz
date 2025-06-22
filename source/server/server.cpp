@@ -1,7 +1,5 @@
 #include "server/server.h"
 
-#include <SDL3_net/SDL_net.h>
-
 #include "messages/event.h"
 #include "common/level.h"
 #include "utils/log.h"
@@ -14,7 +12,7 @@
 
 Server::Server(std::string level_name, const uint16_t listen_port,
                uint max_clients)
-    : socket(listen_port) {
+    : socket(io_context, listen_port) {
     this->level_name = level_name;
     this->max_clients = max_clients;
 }
@@ -138,7 +136,7 @@ void Server::SendOutboundMessages() {
         if (session->LastSendGreaterThan(80)) {
             auto packet = session->manager->CraftSendPacket();
             if (packet != nullptr) {
-                this->socket.Send(*packet, session->endpoint, session->port);
+                this->socket.Send(*packet, session->endpoint);
                 session->SendTick();
             }
         }
@@ -216,16 +214,15 @@ void Server::HandleInfo(MessagePtr msg, ShipzSession* session) {
 }
 
 // Create a session for address and port:
-ShipzSession* Server::CreateSessionForClient(SDLNet_Address* addr,
-                                             uint16_t port) {
+ShipzSession* Server::CreateSessionForClient(udp::endpoint client_endpoint) {
     // TODO: Refuse to create session for already existing endpoint
-    if (ShipzSession::Exists(addr, port)) {
+    if (ShipzSession::Exists(client_endpoint)) {
         log::error(
             "Refusing to create new session; Addr and port already in use");
         return nullptr;
     }
 
-    ShipzSession* new_session = new ShipzSession(addr, port);
+    ShipzSession* new_session = new ShipzSession(client_endpoint);
     if (new_session == nullptr) {
         log::error("Failed to create new session instance");
         return nullptr;
@@ -248,7 +245,7 @@ void Server::HandleCreateSession(MessagePtr msg, ShipzSession* session) {
     log::debug("client version ", (int)info->version, " requests new session");
 
     auto new_session =
-        CreateSessionForClient(this->handler.CurrentOrigin(), info->port);
+        CreateSessionForClient(this->handler.CurrentOrigin());
     if (new_session == nullptr) {
         log::error("Session request dropped");
         return;
@@ -258,7 +255,7 @@ void Server::HandleCreateSession(MessagePtr msg, ShipzSession* session) {
     // Send Info; Note this has no session header
     Packet pack;
     pack.Append(provide_session_message);
-    socket.Send(pack, handler.CurrentOrigin(), info->port);
+    socket.Send(pack, handler.CurrentOrigin());
     return;
 }
 

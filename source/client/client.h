@@ -1,6 +1,7 @@
 #ifndef SHIPZCLIENT_H
 #define SHIPZCLIENT_H
 #include <sstream>
+#include <asio.hpp>
 #include "net/message_handler.h"
 #include "net/net.h"
 #include "net/packet.h"
@@ -10,6 +11,7 @@
 #include "common/types.h"
 #include "common/chat.h"
 #include "messages/event.h"
+using asio::ip::udp;
 
 enum ClientState {
     S_ERROR, 
@@ -36,7 +38,9 @@ class Client {
 
     // networking state
     ShipzSession *session;
-    SDLNet_Address* server_address;  // The server
+    udp::endpoint server_endpoint;
+    asio::io_context io_context;
+
     Socket socket;
     MessageHandler handler;
 

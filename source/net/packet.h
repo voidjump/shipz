@@ -1,11 +1,13 @@
 #ifndef SHIPZ_PACKET_H
 #define SHIPZ_PACKET_H
+#include <asio.hpp>
 #include "net/message.h"
 #include "net/net.h"
 #include "utils/log.h"
 #include "common/types.h"
 
 #define AES_BLOCKSIZE 16
+using asio::ip::udp;
 
 // This should be changed if any thing is placed before the dynamic buffer
 constexpr uint16_t PACKET_HEADER_SIZE = sizeof(ShipzSessionID);
@@ -19,8 +21,7 @@ class Packet : public Buffer {
 
    public:
     ShipzSessionID session;
-    SDLNet_Address * origin;
-    SDLNet_Address * destination;
+    udp::endpoint origin;
 
     
     void Append(std::shared_ptr<Message> message) {
