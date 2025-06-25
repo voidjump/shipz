@@ -12,7 +12,6 @@ ifeq ($(UNAME_S),Linux)
     CXXFLAGS = $(CXXFLAGS_BASE) -I/usr/include
     LDFLAGS = $(LDFLAGS_BASE) -Wl,-rpath,$(RPATH) -L/usr/lib/x86_64-linux-gnu
 else ifeq ($(UNAME_S),Darwin)
-    RPATH = /opt/homebrew/lib
     CXXFLAGS = $(CXXFLAGS_BASE) -I/opt/homebrew/Cellar/googletest/1.15.2/include
     LDFLAGS = $(LDFLAGS_BASE) -Wl,-rpath,$(RPATH) -L/opt/homebrew/Cellar/googletest/1.15.2/lib/
 else

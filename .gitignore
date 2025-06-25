@@ -6,3 +6,5 @@ ss*.bmp
 build.sh
 test_program
 todo.md
+client
+server
