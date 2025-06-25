@@ -54,6 +54,8 @@ all: $(SERVER_EXEC) $(CLIENT_EXEC)
 server: $(SERVER_EXEC)
 client: $(CLIENT_EXEC)
 
+$(CLIENT_EXEC): CXXFLAGS += -DCLIENT
+
 $(SERVER_EXEC): $(SERVER_OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
