@@ -45,7 +45,9 @@ EventObjectSpawn * Bullet::Shoot(Player *self) {
 }
 
 void Bullet::Draw() {
+#ifdef CLIENT
 	DrawIMG(bulletpixmap, int(this->x - viewportx), int(this->y - viewporty));
+#endif
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -135,10 +137,12 @@ void Rocket::TurnToNearest(Player *nearest, float delta) {
 }
 
 void Rocket::Draw() {
+#ifdef CLIENT
 	int ta = int( this->angle ) / 10;
 	int x = (ta * 14) + ta +1;
 	DrawIMG(rocketpixmap, int(this->x - 7 - viewportx),
 		int(this->y -7 - viewporty), 14, 14, x, 1);
+#endif
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -168,6 +172,7 @@ Mine::Mine(EventObjectSpawn *sync) : Object(sync->id, OBJECT_TYPE::MINE) {
 }
 
 void Mine::Draw() {
+#ifdef CLIENT
 	int flick2 = int(SDL_GetTicks() - this->minelaidtime);
 	int flick = flick2;
 	
@@ -193,4 +198,5 @@ void Mine::Draw() {
 			int(this->y -6 - viewporty ), 13, 13, 13, 0);
 
 	}
+#endif
 }

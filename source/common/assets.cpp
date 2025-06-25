@@ -53,6 +53,8 @@ void LoadAssets() {
 	rocketsound = LoadSound( "rocket.wav" );
 	weaponswitch = LoadSound( "weapon_switch.wav" );
 
+#ifdef CLIENT
 	sansbold = LoadFont( "sansbold.ttf", 12 );
 	sansboldbig = LoadFont( "Beware.ttf", 16 );
+#endif
 }

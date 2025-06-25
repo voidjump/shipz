@@ -15,18 +15,6 @@
 
 // this function is for the creating of collision map. it checks whether a pixel is black or white.
 // returns black = true, white = false
-bool GetPixel(SDL_Surface *surf, int x, int y)
-{ 
-  Uint8 red = 0;
-
-  if( !SDL_ReadSurfacePixel(surf, x, y, &red, NULL, NULL, NULL) )
-  {
-	std::cout << "failed to retreive pixel value: " << SDL_GetError() << std::endl;
-	SDL_Quit();
-	exit(1);
-  }
-  return (red == 0);
-}
 
 void Slock(SDL_Surface *screen)
 {

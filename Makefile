@@ -59,7 +59,7 @@ $(SERVER_EXEC): $(SERVER_OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
 $(CLIENT_EXEC): $(CLIENT_OBJ)
-	$(CXX) -o $@ $^ $(LDFLAGS)
+	$(CXX) -o $@ $^ $(LDFLAGS) -DCLIENT
 
 # %.o: %.cpp
 # 	$(CXX) -c $(CXXFLAGS) $< -o $@

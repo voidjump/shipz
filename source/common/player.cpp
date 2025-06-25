@@ -638,6 +638,7 @@ void CheckBulletCollides(bool **colmap) {
 
 // Draw a player
 void Player::Draw() {
+#ifdef CLIENT
     if (this->status == PLAYER_STATUS::DEAD) {
         return;
     }
@@ -651,6 +652,7 @@ void Player::Draw() {
             DrawPlayer(shipblue, this);
             return;
     }
+#endif
 }
 
 // Return how many players there are in a given team

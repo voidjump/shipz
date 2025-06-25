@@ -11,6 +11,7 @@ std::vector<Base *> Base::all_bases;
 
 // Draw a base
 void Base::Draw() {
+#ifdef CLIENT
     auto index = 0;
     switch (this->owner) {
         case SHIPZ_TEAM::RED:
@@ -27,6 +28,7 @@ void Base::Draw() {
     }
     DrawIMG(basesimg, this->x - 20 - viewportx, this->y - 17 - viewporty, 41,
             18, 0, index);
+#endif
 }
 
 // Construct a base locally (use for server)

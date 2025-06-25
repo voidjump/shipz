@@ -130,7 +130,9 @@ void NewExplosion(int x, int y) {
             break;
         }
     }
+#ifdef CLIENT
     PlaySound(explodesound);
+#endif
 }
 
 void ClearOldExplosions() {
@@ -257,4 +259,17 @@ std::string GetCurrentTime() {
     oss << std::put_time(&now_tm, "%Y-%m-%d %H:%M:%S");
 
     return oss.str();
+}
+
+bool GetPixel(SDL_Surface *surf, int x, int y)
+{ 
+  Uint8 red = 0;
+
+  if( !SDL_ReadSurfacePixel(surf, x, y, &red, NULL, NULL, NULL) )
+  {
+	std::cout << "failed to retreive pixel value: " << SDL_GetError() << std::endl;
+	SDL_Quit();
+	exit(1);
+  }
+  return (red == 0);
 }
