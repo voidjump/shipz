@@ -32,4 +32,6 @@ SDL_Surface * LoadBMP( const char * filename );
 Mix_Chunk * LoadSound( const char * filename );
 
 std::string GetCurrentTime();
+
+bool GetPixel(SDL_Surface *surf, int x, int y);
 #endif

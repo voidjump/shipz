@@ -4,6 +4,7 @@
 
 #include <bitset>
 #include <list>
+#include <memory>
 #include <string>
 #include "net/net.h"
 

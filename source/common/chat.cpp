@@ -30,6 +30,7 @@ void ChatConsole::Clear() {
 
 // Iterate over last `height` lines in the console, and draw them
 void ChatConsole::Draw() {
+#ifdef client
     int y = 5, lines_done=0;
     for (auto it = lines.rbegin(); it != lines.rend(); ++it) {
         DrawFont(sansbold, it->line.c_str(), 5, y, FONT_COLOR::WHITE);
@@ -39,5 +40,6 @@ void ChatConsole::Draw() {
             return;
         }
     }
+#endif
 }
     

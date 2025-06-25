@@ -4,7 +4,7 @@
 #include <sstream>
 #include <termcolor/termcolor.hpp>
 
-namespace log {
+namespace logger {
 template <typename T>
 std::ostream &operator<<(std::ostream &os, const std::vector<T> &vec) {
     os << "[";
@@ -43,4 +43,4 @@ inline void debug(Args &&...args) {
 template <typename... Args>
 inline void debug(Args &&...args) {}
 #endif
-}  // namespace log
+}  // namespace logger

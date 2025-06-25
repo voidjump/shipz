@@ -50,9 +50,9 @@ void Server::Init() {
 // Perform level & asset loading
 bool Server::Load() {
     lvl.SetFile(level_name);
-    log::info("loading level ", level_name);
+    logger::info("loading level ", level_name);
     if (!lvl.Load()) {
-        log::error("failed to load level");
+        logger::error("failed to load level");
         return false;
     }
     return true;
@@ -73,7 +73,7 @@ void Server::WriteUpdates() {
 
 // Run the game loop; Start listening
 void Server::GameLoop() {
-    log::info("starting server ", GetCurrentTime());
+    logger::info("starting server ", GetCurrentTime());
     
     //initialize callback
     socket.ReceiveUDP();
@@ -86,7 +86,7 @@ void Server::GameLoop() {
     while (!done) {
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_EVENT_QUIT) {
-                log::info("quitting server ", GetCurrentTime());
+                logger::info("quitting server ", GetCurrentTime());
                 done = true;
             }
         }
@@ -94,7 +94,7 @@ void Server::GameLoop() {
         if (socket.Poll()) {
             auto recieved_packet = socket.GetPacket();
             auto session_id = recieved_packet->SessionID();
-            // log::debug("received a packet for session ", session_id);
+            // logger::debug("received a packet for session ", session_id);
 
             if (ShipzSession::IsNoneID(session_id)) {
                 // This is not a known session, so we directly handle the
@@ -106,7 +106,7 @@ void Server::GameLoop() {
                 ShipzSession::GetSessionById(session_id)
                     ->manager->HandleReceivedPacket(*recieved_packet);
             } else {
-                log::debug("dropped packed due to invalid session");
+                logger::debug("dropped packed due to invalid session");
             }
         }
 
@@ -152,7 +152,7 @@ void Server::SendOutboundMessages() {
 
 // Handle an unknown message
 void Server::HandleUnknownMessage(MessagePtr msg, ShipzSession* session) {
-    log::debug("received unknown message: ", msg->AsDebugStr());
+    logger::debug("received unknown message: ", msg->AsDebugStr());
 }
 
 // A player wants to join
@@ -165,7 +165,7 @@ void Server::HandleJoin(MessagePtr msg, ShipzSession* session) {
         return;
     }
     auto join = msg->As<RequestJoinGame>();
-    log::debug("client with name ", join->player_name, " requests join game");
+    logger::debug("client with name ", join->player_name, " requests join game");
 
     // Deny player if server full
     if (!(Player::instances.size() < this->max_clients)) {
@@ -177,7 +177,7 @@ void Server::HandleJoin(MessagePtr msg, ShipzSession* session) {
     // Allocate new player;
     auto new_player = new Player(session);
 
-    log::debug("Added new client id# ", new_player->player_id);
+    logger::debug("Added new client id# ", new_player->player_id);
     new_player->name = join->player_name;
 
     session->client_id = new_player->player_id;
@@ -208,7 +208,7 @@ void Server::HandleInfo(MessagePtr msg, ShipzSession* session) {
         return;
     }
     auto info = msg->As<RequestGetServerInfo>();
-    log::debug("client version ", (int)info->version, " requested information");
+    logger::debug("client version ", (int)info->version, " requested information");
 
     session->Write<ResponseServerInformation>(
         SHIPZ_VERSION, Player::instances.size(), MAXPLAYERS, lvl.m_levelversion,
@@ -220,14 +220,14 @@ void Server::HandleInfo(MessagePtr msg, ShipzSession* session) {
 ShipzSession* Server::CreateSessionForClient(udp::endpoint client_endpoint) {
     // TODO: Refuse to create session for already existing endpoint
     if (ShipzSession::Exists(client_endpoint)) {
-        log::error(
+        logger::error(
             "Refusing to create new session; Addr and port already in use");
         return nullptr;
     }
 
     ShipzSession* new_session = new ShipzSession(client_endpoint);
     if (new_session == nullptr) {
-        log::error("Failed to create new session instance");
+        logger::error("Failed to create new session instance");
         return nullptr;
     }
     active_sessions.push_back(new_session);
@@ -240,17 +240,17 @@ ShipzSession* Server::CreateSessionForClient(udp::endpoint client_endpoint) {
 // ignored.
 void Server::HandleCreateSession(MessagePtr msg, ShipzSession* session) {
     if (session != nullptr) {
-        log::error("ignoring request to create session for existing session");
+        logger::error("ignoring request to create session for existing session");
         return;
     }
 
     auto info = msg->As<SessionRequestSession>();
-    log::debug("client version ", (int)info->version, " requests new session");
+    logger::debug("client version ", (int)info->version, " requests new session");
 
     auto new_session =
         CreateSessionForClient(this->handler.CurrentOrigin());
     if (new_session == nullptr) {
-        log::error("Session request dropped");
+        logger::error("Session request dropped");
         return;
     }
     SessionProvideSession provide_session_message(new_session->session_id);
@@ -264,16 +264,16 @@ void Server::HandleCreateSession(MessagePtr msg, ShipzSession* session) {
 
 // Purge all stale sessions older than MAX_SESSION_AGE
 void Server::PurgeStaleSessions() {
-    // log::debug("purging stale sessions..");
+    // logger::debug("purging stale sessions..");
     uint64_t time = SDL_GetTicks();
     for (auto it = active_sessions.begin(); it != active_sessions.end();) {
         if (time - (*it)->last_active > MAX_SESSION_AGE) {
-            log::info("Dropping stale session ", (*it)->session_id);
+            logger::info("Dropping stale session ", (*it)->session_id);
             delete (*it);
             // Also remove any player with this session
             for (auto player : Player::instances) {
                 if (player.second->session == *it) {
-                    log::debug("removing associated player ",
+                    logger::debug("removing associated player ",
                                player.second->name);
                     delete player.second;
                     Player::instances.erase(player.first);
@@ -300,14 +300,14 @@ void Server::HandleAction(MessagePtr msg, ShipzSession* session) {
         return;
     }
     auto action = msg->As<RequestAction>();
-    log::debug("session ", session->session_id, " requests action");
+    logger::debug("session ", session->session_id, " requests action");
 
     if (session->client_id == 0) {
-        log::error("client is not playing");
+        logger::error("client is not playing");
     } else {
         auto player = Player::GetByID(session->client_id);
         if (player == nullptr) {
-            log::error("client ID invalid, not an active player");
+            logger::error("client ID invalid, not an active player");
             return;
         }
         // Handle the event

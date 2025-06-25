@@ -44,7 +44,7 @@ class Packet : public Buffer {
             message.LogDebug();
         }
 
-        log::debug("pack.Append: ", this->AsHexString());
+        logger::debug("pack.Append: ", this->AsHexString());
     }
 
 

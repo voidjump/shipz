@@ -64,7 +64,7 @@ MessagePtr Message::Deserialize(Buffer &buffer) {
             message = std::dynamic_pointer_cast<Message>(Session::Deserialize(&buffer));
             break;
         default:
-            log::debug("cannot deserialize: unknown message type: ",
+            logger::debug("cannot deserialize: unknown message type: ",
                        (Uint16)msg_type);
             return NULL;
     }

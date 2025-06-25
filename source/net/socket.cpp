@@ -17,11 +17,11 @@ udp::endpoint Socket::ResolveHostname(asio::io_context &context,
 
     // TODO implement timeout
     snprintf(buffer, 9, "%i", PORT_SERVER);
-    log::info("resolving hostname ", connect_address, " ...");
+    logger::info("resolving hostname ", connect_address, " ...");
     udp::endpoint resolve_endpoint =
         *resolver.resolve(udp::v4(), connect_address, buffer).begin();
     resolve_endpoint.port(port);
-    log::info("resolved ", resolve_endpoint.address().to_string());
+    logger::info("resolved ", resolve_endpoint.address().to_string());
     return resolve_endpoint;
 }
 
@@ -38,25 +38,25 @@ udp::endpoint Socket::ResolveHostname(asio::io_context &context,
 /// @return whether succesful
 bool Socket::Send(Buffer &buffer, udp::endpoint endpoint) {
     if (!this->socket || !this->socket->is_open()) {
-        log::error("cannot send, socket is not initialized or open");
+        logger::error("cannot send, socket is not initialized or open");
         return false;
     }
     if (endpoint.address().is_unspecified() || endpoint.port() == 0) {
-        log::error("cannot send, empty address");
+        logger::error("cannot send, empty address");
         return false;
     }
 
     if (buffer.length == 0) {
-        log::error("cannot send, empty buffer");
+        logger::error("cannot send, empty buffer");
         return false;
     }
 
-    // log::debug("sending buffer:", buffer.AsHexString());
+    // logger::debug("sending buffer:", buffer.AsHexString());
     try {
         this->socket->send_to(asio::buffer(buffer.data, buffer.length),
                               endpoint);
     } catch (const std::exception &e) {
-        log::error(e.what());
+        logger::error(e.what());
         return false;
     }
 
@@ -88,12 +88,12 @@ void Socket::ReceiveUDP() {
                 Packet pack;
                 if (!pack.ImportBytes(receive_buffer.data,
                                       receive_buffer.length)) {
-                    log::error("failed to import packet to buffer");
+                    logger::error("failed to import packet to buffer");
                 } else {
                     pack.ReadSession();
                     pack.origin = remote_endpoint;
                 }
-                // log::debug("received buffer:", pack.AsHexString());
+                // logger::debug("received buffer:", pack.AsHexString());
                 in_queue.Push(std::make_unique<Packet>(std::move(pack)));
 
                 ReceiveUDP();
@@ -107,5 +107,5 @@ Socket::Socket(asio::io_context &context, Uint16 listen_port) {
     this->socket =
         new udp::socket(context, udp::endpoint(udp::v4(), listen_port));
     this->listen_port = listen_port;
-    log::debug("started listening on port ", listen_port);
+    logger::debug("started listening on port ", listen_port);
 }

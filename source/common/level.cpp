@@ -32,7 +32,7 @@ void LevelData::SetFile(std::string filename) { m_filename = filename; }
 bool LevelData::Load() {
     // Validate inputs
     if(m_filename.length() == 0) {
-        log::error("refusing to load empty file");
+        logger::error("refusing to load empty file");
         return false;
     }
 
@@ -40,7 +40,7 @@ bool LevelData::Load() {
         std::string(SHAREPATH) + std::string("./levels/") + m_filename;
     std::ifstream file_handle(filepath);
 
-    log::info("reading levelfile: ", m_filename);
+    logger::info("reading levelfile: ", m_filename);
 
     try {
         nlohmann::json data = nlohmann::json::parse(file_handle);
@@ -59,28 +59,28 @@ bool LevelData::Load() {
         }
 
     } catch (const nlohmann::json::exception &e) {
-        log::error("failed to open level file: ", e.what());
+        logger::error("failed to open level file: ", e.what());
         return false;
     }
 
     // Get level dimensions
     SDL_Surface *level = LoadIMG(m_image_filename.c_str());
     if (!level) {
-        log::error("failed to load level image");
+        logger::error("failed to load level image");
         return false;
     }
     m_width = level->w;
     m_height = level->h;
     SDL_DestroySurface(level);
 
-    log::info(" . author:", m_author);
-    log::info(" . name:", m_name);
-    log::info(" . version:", m_levelversion);
-    log::info(" . bases:", m_num_bases);
-    log::info(" . collisionmap:", m_colmap_filename);
-    log::info(" . image:", m_image_filename);
+    logger::info(" . author:", m_author);
+    logger::info(" . name:", m_name);
+    logger::info(" . version:", m_levelversion);
+    logger::info(" . bases:", m_num_bases);
+    logger::info(" . collisionmap:", m_colmap_filename);
+    logger::info(" . image:", m_image_filename);
 
-    log::info(" . size:", m_width, " x ", m_height);
-    log::info("done reading");
+    logger::info(" . size:", m_width, " x ", m_height);
+    logger::info("done reading");
     return true;
 }

@@ -31,7 +31,7 @@ TTF_Font * sansbold;
 TTF_Font * sansboldbig;
 
 void LoadAssets() {
-	log::info( "loading data" );
+	logger::info( "loading data" );
 	shipred = LoadIMG( "red.png" );
 	shipblue = LoadIMG( "blue.png" );
 	chatpixmap = LoadIMG( "chatting.png" );
@@ -53,6 +53,8 @@ void LoadAssets() {
 	rocketsound = LoadSound( "rocket.wav" );
 	weaponswitch = LoadSound( "weapon_switch.wav" );
 
+#ifdef CLIENT
 	sansbold = LoadFont( "sansbold.ttf", 12 );
 	sansboldbig = LoadFont( "Beware.ttf", 16 );
+#endif
 }

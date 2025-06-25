@@ -26,14 +26,14 @@ Object::Object(ObjectType type) {
 void Object::HandleSpawn(EventObjectSpawn *sync) {
     auto it = instances.find(sync->id);
     if (it != instances.end()) {
-        log::error("Refusing to spawn object with id ", sync->id, " as it already exists;");
+        logger::error("Refusing to spawn object with id ", sync->id, " as it already exists;");
         return;
     }
 
-    // log::debug("handling spawn");
+    // logger::debug("handling spawn");
     // sync->LogDebug();
     // PrintRawBytes((char*)&sync->data[0], sync->size);
-    // log::debug("/");
+    // logger::debug("/");
 
     // Call appropriate constructor based on object type
     switch(sync->type) {
@@ -50,7 +50,7 @@ void Object::HandleSpawn(EventObjectSpawn *sync) {
             instances[sync->id] = std::make_shared<Base>(sync);
             break;
         default:
-            log::debug("Cannot spawn unknown object type ", (uint16_t)sync->type);
+            logger::debug("Cannot spawn unknown object type ", (uint16_t)sync->type);
     }
 }
 
@@ -70,7 +70,7 @@ void Object::HandleSync(SyncObjectUpdate *sync) {
         return;
     }
     if( !instance->sync_callback ) {
-        log::debug( "Received sync instruction for object without a sync callback");
+        logger::debug( "Received sync instruction for object without a sync callback");
         return;
     }
     instance->sync_callback(sync);
